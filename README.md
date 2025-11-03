@@ -1,70 +1,66 @@
-# Getting Started with Create React App
+# TaroTI Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+AI 기반 타로 카드 리딩 웹 애플리케이션의 프론트엔드
 
-## Available Scripts
+## 🎨 디자인 시스템
 
-In the project directory, you can run:
+### 색상 팔레트
+- **Primary**: `#FAFAF8` (오프화이트)
+- **Secondary**: `#1A1A1A` (차콜)
+- **Black**: `#000000` (검정)
 
-### `npm start`
+### 레이아웃 규격
+- **타겟**: 모바일 전용
+- **너비**: 최소 320px / 최대 500px
+- **정렬**: 데스크탑에서 중앙 정렬
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 🚀 시작하기
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 설치
+```bash
+npm install
+```
 
-### `npm test`
+### 개발 서버 실행
+```bash
+npm start
+# http://localhost:5001에서 실행
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 프로덕션 빌드
+```bash
+npm run build
+```
 
-### `npm run build`
+## 📱 주요 페이지
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 랜딩 페이지 (/landing)
+- 채팅 인터페이스 형식
+- 프로필 이미지와 말풍선으로 구성
+- 하단 선택지를 통한 인터랙션
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🛠 기술 스택
+- React 19.2.0
+- Tailwind CSS v3
+- shadcn/ui 컴포넌트
+- lucide-react 아이콘
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 📂 프로젝트 구조
+```
+src/
+├── components/
+│   └── ui/          # shadcn/ui 컴포넌트
+├── lib/
+│   └── utils.js     # 유틸리티 함수
+├── pages/          # 페이지 컴포넌트
+│   └── Landing.jsx  # 랜딩 페이지
+├── App.js          # 메인 앱
+└── index.css       # 전역 스타일
+```
 
-### `npm run eject`
+## 🔗 백엔드 연동
+- API 서버: http://localhost:5002
+- CORS 설정 완료
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## 📝 라이선스
+ISC
