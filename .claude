@@ -1,0 +1,60 @@
+# TaroTI Frontend Project
+
+## 프로젝트 개요
+- **프로젝트명**: TaroTI (타로티아이)
+- **설명**: AI 기반 타로 카드 리딩 웹 애플리케이션의 프론트엔드
+- **포트**: 5001
+- **백엔드 포트**: 5002
+
+## 기술 스택
+- **프레임워크**: React 19.2.0 (JavaScript)
+- **스타일링**:
+  - Tailwind CSS v3
+  - shadcn/ui 컴포넌트 라이브러리
+- **UI 컴포넌트**:
+  - shadcn/ui (Radix UI 기반)
+  - lucide-react (아이콘)
+- **유틸리티**:
+  - class-variance-authority (컴포넌트 변형 관리)
+  - clsx + tailwind-merge (클래스 병합)
+
+## 프로젝트 구조
+```
+src/
+├── components/
+│   └── ui/          # shadcn/ui 컴포넌트
+│       └── button.jsx
+├── lib/
+│   └── utils.js     # 유틸리티 함수 (cn 함수 등)
+├── App.js           # 메인 앱 컴포넌트
+├── index.css        # 전역 스타일 및 CSS 변수
+└── index.js         # 엔트리 포인트
+```
+
+## shadcn/ui 사용 가이드
+- **컴포넌트 추가**: 수동으로 컴포넌트 파일을 `src/components/ui/` 디렉토리에 생성
+- **스타일링**: Tailwind CSS 클래스와 CSS 변수를 활용
+- **테마**: 라이트/다크 모드 지원 (CSS 변수 기반)
+- **유틸리티**: `cn()` 함수를 사용하여 클래스 병합
+
+## 주요 색상 테마
+- **Primary**: 보라색 계열 (HSL: 265 89% 42%)
+- **Background**: 그라데이션 (purple-900 to indigo-900)
+- **다크모드**: CSS 클래스 기반 토글 지원
+
+## 개발 명령어
+```bash
+npm start          # 개발 서버 시작 (포트 5001)
+npm run build      # 프로덕션 빌드
+npm test          # 테스트 실행
+```
+
+## API 통신
+- **백엔드 URL**: http://localhost:5002
+- **CORS**: 백엔드에서 포트 5001 허용 설정됨
+- **Health Check**: /api/health 엔드포인트로 연결 상태 확인
+
+## 주의사항
+- TypeScript 미사용으로 인해 shadcn CLI 자동 설치 불가
+- 컴포넌트는 수동으로 생성 및 관리 필요
+- JSX 확장자 사용 (.jsx)
