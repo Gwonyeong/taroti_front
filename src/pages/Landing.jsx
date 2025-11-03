@@ -14,6 +14,7 @@ const Landing = () => {
   const [showMbtiInput, setShowMbtiInput] = useState(false);
   const [showCardSelect, setShowCardSelect] = useState(false);
   const [showSelectedCard, setShowSelectedCard] = useState(false);
+  const [showNavigateButton, setShowNavigateButton] = useState(false);
   const [birthDate, setBirthDate] = useState('');
   const [selectedGender, setSelectedGender] = useState('');
   const [mbtiSelections, setMbtiSelections] = useState({
@@ -55,7 +56,7 @@ const Landing = () => {
       hasInitialized.current = true;
       setTimeout(() => {
         showNextMessage();
-      }, 500);
+      }, 300);
     }
   }, [navigate]);
 
@@ -81,14 +82,14 @@ const Landing = () => {
           // 생년월일 입력창 표시
           setTimeout(() => {
             setShowDateInput(true);
-          }, 500);
+          }, 300);
         } else {
           // 다음 메시지를 위해 클릭 대기
           setWaitingForClick(true);
         }
 
         setCurrentStep(prev => prev + 1);
-      }, 1500);
+      }, 800);
     }
   };
 
@@ -127,10 +128,10 @@ const Landing = () => {
             addMessage("성별은 뭐냥?", "bot");
             setTimeout(() => {
               setShowGenderSelect(true);
-            }, 500);
-          }, 1000);
-        }, 1000);
-      }, 1500);
+            }, 300);
+          }, 600);
+        }, 600);
+      }, 800);
     }
   };
 
@@ -168,10 +169,10 @@ const Landing = () => {
             addMessage("MBTI는 뭐냥?", "bot");
             setTimeout(() => {
               setShowMbtiInput(true);
-            }, 500);
-          }, 1000);
-        }, 1000);
-      }, 1500);
+            }, 300);
+          }, 600);
+        }, 600);
+      }, 800);
     }
   };
 
@@ -213,10 +214,10 @@ const Landing = () => {
             addMessage("3장의 카드 중 하나를 선택해달라냥!", "bot");
             setTimeout(() => {
               setShowCardSelect(true);
-            }, 500);
-          }, 1000);
-        }, 1000);
-      }, 1500);
+            }, 300);
+          }, 600);
+        }, 600);
+      }, 800);
     }
   };
 
@@ -227,52 +228,56 @@ const Landing = () => {
 
     setTimeout(() => {
       setIsTyping(false);
-      addMessage("좋은 선택이다냥! 카드를 확인해보자냥.", "bot");
+      addMessage("좋은 선택이다냥! 이제 결과를 확인해보자냥.", "bot");
 
       setTimeout(() => {
         setShowSelectedCard(true);
+        setShowNavigateButton(true);
+      }, 300);
+    }, 800);
+  };
 
-        // 3초 후 사용자 데이터 저장 및 결과 페이지로 이동
-        setTimeout(async () => {
-          try {
-            // 이미 저장된 사용자인지 다시 한번 확인
-            const existingUserId = localStorage.getItem('taroTI_landingUserId');
-            if (existingUserId) {
-              navigate(`/result/${existingUserId}`);
-              return;
-            }
+  // 결과 페이지로 이동
+  const handleNavigateToResult = async () => {
+    setShowNavigateButton(false);
+    setIsTyping(true);
 
-            console.log('Sending user data:', userInfo);
+    try {
+      // 이미 저장된 사용자인지 다시 한번 확인
+      const existingUserId = localStorage.getItem('taroTI_landingUserId');
+      if (existingUserId) {
+        navigate(`/result/${existingUserId}`);
+        return;
+      }
 
-            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/landing-user`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(userInfo),
-            });
+      console.log('Sending user data:', userInfo);
 
-            console.log('Response status:', response.status);
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5002'}/api/landing-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userInfo),
+      });
 
-            if (response.ok) {
-              const data = await response.json();
-              console.log('Response data:', data);
-              // 로컬스토리지에 사용자 ID 저장
-              localStorage.setItem('taroTI_landingUserId', data.landingUserId.toString());
-              navigate(`/result/${data.landingUserId}`);
-            } else {
-              const errorText = await response.text();
-              console.error('Failed to save user data. Status:', response.status, 'Error:', errorText);
-              // 에러 시에도 임시 ID로 이동
-              navigate('/result/temp');
-            }
-          } catch (error) {
-            console.error('Error saving user data:', error);
-            navigate('/result/temp');
-          }
-        }, 3000);
-      }, 1000);
-    }, 1500);
+      console.log('Response status:', response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Response data:', data);
+        // 로컬스토리지에 사용자 ID 저장
+        localStorage.setItem('taroTI_landingUserId', data.landingUserId.toString());
+        navigate(`/result/${data.landingUserId}`);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to save user data. Status:', response.status, 'Error:', errorText);
+        // 에러 시에도 임시 ID로 이동
+        navigate('/result/temp');
+      }
+    } catch (error) {
+      console.error('Error saving user data:', error);
+      navigate('/result/temp');
+    }
   };
 
 
@@ -572,8 +577,19 @@ const Landing = () => {
                   <p className="text-center mt-2 font-medium text-charcoal">THE FOOL</p>
                 </div>
               </div>
-              <p className="text-xs text-center text-gray-500">잠시 후 결과 페이지로 이동합니다...</p>
             </div>
+          </div>
+        )}
+
+        {/* Navigate Button */}
+        {showNavigateButton && (
+          <div className="p-4 bg-white border-t border-gray-200">
+            <button
+              onClick={handleNavigateToResult}
+              className="w-full bg-charcoal text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
+            >
+              결과 페이지로 이동하기
+            </button>
           </div>
         )}
       </div>

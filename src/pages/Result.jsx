@@ -28,7 +28,7 @@ const Result = () => {
         }
 
         const response = await fetch(
-          `${process.env.REACT_APP_API_BASE_URL}/api/landing-user/${landingUserId}`
+          `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5002'}/api/landing-user/${landingUserId}`
         );
 
         if (response.ok) {
@@ -70,7 +70,7 @@ const Result = () => {
     if (landingUserId && landingUserId !== 'temp') {
       try {
         // 구매 클릭 데이터 저장
-        await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/landing-user/${landingUserId}/purchase`, {
+        await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5002'}/api/landing-user/${landingUserId}/purchase`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ const Result = () => {
 
     try {
       if (landingUserId && landingUserId !== 'temp') {
-        await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/landing-user/${landingUserId}/purchase`, {
+        await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5002'}/api/landing-user/${landingUserId}/purchase`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
