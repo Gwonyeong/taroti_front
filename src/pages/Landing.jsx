@@ -362,19 +362,19 @@ const Landing = () => {
           <div className="p-4 bg-gray-50 border-t border-gray-200">
             <div className="space-y-3">
               <p className="text-sm text-charcoal text-center">생년월일 6자리를 입력해주세요 (YYMMDD)</p>
-              <div className="flex space-x-2">
+              <div className="space-y-2">
                 <input
                   type="text"
                   value={birthDate}
                   onChange={handleDateChange}
                   placeholder="예: 951225"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-center text-charcoal focus:outline-none focus:ring-2 focus:ring-charcoal"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-center text-charcoal focus:outline-none focus:ring-2 focus:ring-charcoal"
                   maxLength={6}
                 />
                 <Button
                   onClick={handleDateSubmit}
                   disabled={birthDate.length !== 6}
-                  className="bg-charcoal hover:bg-gray-800 text-white px-6"
+                  className="w-full bg-charcoal hover:bg-gray-800 text-white py-3"
                 >
                   입력
                 </Button>
