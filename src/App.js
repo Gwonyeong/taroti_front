@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Landing from './pages/Landing';
+import Result from './pages/Result';
 
 function Home() {
   const [apiStatus, setApiStatus] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:5002/api/health')
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/api/health`)
       .then(res => res.json())
       .then(data => setApiStatus(data))
       .catch(err => console.error('API connection error:', err));
@@ -50,6 +51,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/landing" element={<Landing />} />
+        <Route path="/result/:landingUserId" element={<Result />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

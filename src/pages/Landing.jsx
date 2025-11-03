@@ -1,14 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 
 const Landing = () => {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [currentOptions, setCurrentOptions] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [waitingForClick, setWaitingForClick] = useState(false);
   const [showDateInput, setShowDateInput] = useState(false);
+  const [showGenderSelect, setShowGenderSelect] = useState(false);
+  const [showMbtiInput, setShowMbtiInput] = useState(false);
+  const [showCardSelect, setShowCardSelect] = useState(false);
+  const [showSelectedCard, setShowSelectedCard] = useState(false);
   const [birthDate, setBirthDate] = useState('');
+  const [selectedGender, setSelectedGender] = useState('');
+  const [mbtiSelections, setMbtiSelections] = useState({
+    EI: '', // E or I
+    SN: '', // S or N
+    TF: '', // T or F
+    JP: ''  // J or P
+  });
+  const [userInfo, setUserInfo] = useState({});
   const messagesEndRef = useRef(null);
   const hasInitialized = useRef(false);
 
@@ -28,6 +42,14 @@ const Landing = () => {
   ];
 
   useEffect(() => {
+    // 이미 저장된 사용자인지 확인
+    const existingUserId = localStorage.getItem('taroTI_landingUserId');
+    if (existingUserId) {
+      // 이미 저장된 사용자라면 바로 결과 페이지로 이동
+      navigate(`/result/${existingUserId}`);
+      return;
+    }
+
     // 첫 번째 메시지 자동 시작 (useRef로 중복 방지)
     if (!hasInitialized.current) {
       hasInitialized.current = true;
@@ -35,7 +57,7 @@ const Landing = () => {
         showNextMessage();
       }, 500);
     }
-  }, []);
+  }, [navigate]);
 
   const addMessage = (text, sender = "bot") => {
     setMessages(prev => [...prev, {
@@ -89,13 +111,25 @@ const Landing = () => {
 
       addMessage(formattedDate, "user");
       setShowDateInput(false);
-      setBirthDate('');
+      // birthDate를 초기화하지 않고 유지
       setIsTyping(true);
 
       // 봇 응답
       setTimeout(() => {
         setIsTyping(false);
-        addMessage("좋다냥! 이제 타로 카드를 뽑아보자냥.", "bot");
+        addMessage("좋다냥!", "bot");
+
+        // 성별 질문
+        setTimeout(() => {
+          setIsTyping(true);
+          setTimeout(() => {
+            setIsTyping(false);
+            addMessage("성별은 뭐냥?", "bot");
+            setTimeout(() => {
+              setShowGenderSelect(true);
+            }, 500);
+          }, 1000);
+        }, 1000);
       }, 1500);
     }
   };
@@ -106,6 +140,139 @@ const Landing = () => {
     if (value.length <= 6) {
       setBirthDate(value);
     }
+  };
+
+  // 성별 선택 처리
+  const handleGenderClick = (gender) => {
+    setSelectedGender(gender);
+  };
+
+  // 성별 확정 처리
+  const handleGenderConfirm = () => {
+    if (selectedGender) {
+      addMessage(selectedGender, "user");
+      setShowGenderSelect(false);
+      // selectedGender를 초기화하지 않고 유지
+      setIsTyping(true);
+
+      // 봇 응답
+      setTimeout(() => {
+        setIsTyping(false);
+        addMessage("좋다냥!", "bot");
+
+        // MBTI 질문
+        setTimeout(() => {
+          setIsTyping(true);
+          setTimeout(() => {
+            setIsTyping(false);
+            addMessage("MBTI는 뭐냥?", "bot");
+            setTimeout(() => {
+              setShowMbtiInput(true);
+            }, 500);
+          }, 1000);
+        }, 1000);
+      }, 1500);
+    }
+  };
+
+  // MBTI 선택 처리
+  const handleMbtiSelect = (category, value) => {
+    setMbtiSelections(prev => ({
+      ...prev,
+      [category]: value
+    }));
+  };
+
+  // MBTI 확정 처리
+  const handleMbtiConfirm = () => {
+    const { EI, SN, TF, JP } = mbtiSelections;
+    if (EI && SN && TF && JP) {
+      const mbtiType = EI + SN + TF + JP;
+      addMessage(mbtiType, "user");
+      setShowMbtiInput(false);
+      setIsTyping(true);
+
+      // 사용자 정보 저장
+      const userData = {
+        birthDate,
+        gender: selectedGender,
+        mbti: mbtiType
+      };
+      setUserInfo(userData);
+
+      // 봇 응답
+      setTimeout(() => {
+        setIsTyping(false);
+        addMessage("완벽하다냥! 이제 타로 카드를 뽑아보자냥.", "bot");
+
+        // 카드 선택 화면 표시
+        setTimeout(() => {
+          setIsTyping(true);
+          setTimeout(() => {
+            setIsTyping(false);
+            addMessage("3장의 카드 중 하나를 선택해달라냥!", "bot");
+            setTimeout(() => {
+              setShowCardSelect(true);
+            }, 500);
+          }, 1000);
+        }, 1000);
+      }, 1500);
+    }
+  };
+
+  // 카드 선택 처리
+  const handleCardSelect = async (cardIndex) => {
+    setShowCardSelect(false);
+    setIsTyping(true);
+
+    setTimeout(() => {
+      setIsTyping(false);
+      addMessage("좋은 선택이다냥! 카드를 확인해보자냥.", "bot");
+
+      setTimeout(() => {
+        setShowSelectedCard(true);
+
+        // 3초 후 사용자 데이터 저장 및 결과 페이지로 이동
+        setTimeout(async () => {
+          try {
+            // 이미 저장된 사용자인지 다시 한번 확인
+            const existingUserId = localStorage.getItem('taroTI_landingUserId');
+            if (existingUserId) {
+              navigate(`/result/${existingUserId}`);
+              return;
+            }
+
+            console.log('Sending user data:', userInfo);
+
+            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/landing-user`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(userInfo),
+            });
+
+            console.log('Response status:', response.status);
+
+            if (response.ok) {
+              const data = await response.json();
+              console.log('Response data:', data);
+              // 로컬스토리지에 사용자 ID 저장
+              localStorage.setItem('taroTI_landingUserId', data.landingUserId.toString());
+              navigate(`/result/${data.landingUserId}`);
+            } else {
+              const errorText = await response.text();
+              console.error('Failed to save user data. Status:', response.status, 'Error:', errorText);
+              // 에러 시에도 임시 ID로 이동
+              navigate('/result/temp');
+            }
+          } catch (error) {
+            console.error('Error saving user data:', error);
+            navigate('/result/temp');
+          }
+        }, 3000);
+      }, 1000);
+    }, 1500);
   };
 
 
@@ -210,6 +377,202 @@ const Landing = () => {
               {birthDate.length > 0 && birthDate.length < 6 && (
                 <p className="text-xs text-red-500 text-center">6자리를 모두 입력해주세요</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Gender Selection */}
+        {showGenderSelect && (
+          <div className="p-4 bg-gray-50 border-t border-gray-200">
+            <div className="space-y-3">
+              <p className="text-sm text-charcoal text-center">성별을 선택해주세요</p>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={() => handleGenderClick('남자')}
+                  className={`w-20 h-20 border-2 border-charcoal rounded-lg flex items-center justify-center text-charcoal font-medium transition-colors ${
+                    selectedGender === '남자' ? 'bg-charcoal text-white' : 'bg-white hover:bg-gray-100'
+                  }`}
+                >
+                  남자
+                </button>
+                <button
+                  onClick={() => handleGenderClick('여자')}
+                  className={`w-20 h-20 border-2 border-charcoal rounded-lg flex items-center justify-center text-charcoal font-medium transition-colors ${
+                    selectedGender === '여자' ? 'bg-charcoal text-white' : 'bg-white hover:bg-gray-100'
+                  }`}
+                >
+                  여자
+                </button>
+              </div>
+              <div className="flex justify-center">
+                <Button
+                  onClick={handleGenderConfirm}
+                  disabled={!selectedGender}
+                  className={`px-6 transition-colors ${
+                    selectedGender
+                      ? 'bg-charcoal hover:bg-gray-800 text-white'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  확인
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MBTI Selection */}
+        {showMbtiInput && (
+          <div className="p-4 bg-gray-50 border-t border-gray-200">
+            <div className="space-y-4">
+              <p className="text-sm text-charcoal text-center">MBTI를 선택해주세요</p>
+
+              {/* E/I Selection */}
+              <div className="space-y-2">
+                <div className="flex justify-center space-x-2">
+                  <button
+                    onClick={() => handleMbtiSelect('EI', 'E')}
+                    className={`w-16 h-16 border-2 border-charcoal rounded-lg flex items-center justify-center font-bold transition-colors ${
+                      mbtiSelections.EI === 'E' ? 'bg-charcoal text-white' : 'bg-white text-charcoal hover:bg-gray-100'
+                    }`}
+                  >
+                    E
+                  </button>
+                  <button
+                    onClick={() => handleMbtiSelect('EI', 'I')}
+                    className={`w-16 h-16 border-2 border-charcoal rounded-lg flex items-center justify-center font-bold transition-colors ${
+                      mbtiSelections.EI === 'I' ? 'bg-charcoal text-white' : 'bg-white text-charcoal hover:bg-gray-100'
+                    }`}
+                  >
+                    I
+                  </button>
+                </div>
+              </div>
+
+              {/* S/N Selection */}
+              <div className="space-y-2">
+                <div className="flex justify-center space-x-2">
+                  <button
+                    onClick={() => handleMbtiSelect('SN', 'S')}
+                    className={`w-16 h-16 border-2 border-charcoal rounded-lg flex items-center justify-center font-bold transition-colors ${
+                      mbtiSelections.SN === 'S' ? 'bg-charcoal text-white' : 'bg-white text-charcoal hover:bg-gray-100'
+                    }`}
+                  >
+                    S
+                  </button>
+                  <button
+                    onClick={() => handleMbtiSelect('SN', 'N')}
+                    className={`w-16 h-16 border-2 border-charcoal rounded-lg flex items-center justify-center font-bold transition-colors ${
+                      mbtiSelections.SN === 'N' ? 'bg-charcoal text-white' : 'bg-white text-charcoal hover:bg-gray-100'
+                    }`}
+                  >
+                    N
+                  </button>
+                </div>
+              </div>
+
+              {/* T/F Selection */}
+              <div className="space-y-2">
+                <div className="flex justify-center space-x-2">
+                  <button
+                    onClick={() => handleMbtiSelect('TF', 'T')}
+                    className={`w-16 h-16 border-2 border-charcoal rounded-lg flex items-center justify-center font-bold transition-colors ${
+                      mbtiSelections.TF === 'T' ? 'bg-charcoal text-white' : 'bg-white text-charcoal hover:bg-gray-100'
+                    }`}
+                  >
+                    T
+                  </button>
+                  <button
+                    onClick={() => handleMbtiSelect('TF', 'F')}
+                    className={`w-16 h-16 border-2 border-charcoal rounded-lg flex items-center justify-center font-bold transition-colors ${
+                      mbtiSelections.TF === 'F' ? 'bg-charcoal text-white' : 'bg-white text-charcoal hover:bg-gray-100'
+                    }`}
+                  >
+                    F
+                  </button>
+                </div>
+              </div>
+
+              {/* J/P Selection */}
+              <div className="space-y-2">
+                <div className="flex justify-center space-x-2">
+                  <button
+                    onClick={() => handleMbtiSelect('JP', 'J')}
+                    className={`w-16 h-16 border-2 border-charcoal rounded-lg flex items-center justify-center font-bold transition-colors ${
+                      mbtiSelections.JP === 'J' ? 'bg-charcoal text-white' : 'bg-white text-charcoal hover:bg-gray-100'
+                    }`}
+                  >
+                    J
+                  </button>
+                  <button
+                    onClick={() => handleMbtiSelect('JP', 'P')}
+                    className={`w-16 h-16 border-2 border-charcoal rounded-lg flex items-center justify-center font-bold transition-colors ${
+                      mbtiSelections.JP === 'P' ? 'bg-charcoal text-white' : 'bg-white text-charcoal hover:bg-gray-100'
+                    }`}
+                  >
+                    P
+                  </button>
+                </div>
+              </div>
+
+              {/* 확인 버튼 */}
+              <div className="flex justify-center pt-2">
+                <Button
+                  onClick={handleMbtiConfirm}
+                  disabled={!Object.values(mbtiSelections).every(value => value !== '')}
+                  className={`px-6 transition-colors ${
+                    Object.values(mbtiSelections).every(value => value !== '')
+                      ? 'bg-charcoal hover:bg-gray-800 text-white'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  확인
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Card Selection */}
+        {showCardSelect && (
+          <div className="p-4 bg-gray-50 border-t border-gray-200">
+            <div className="space-y-4">
+              <p className="text-sm text-charcoal text-center">마음에 끌리는 카드를 선택해주세요</p>
+              <div className="flex justify-center space-x-4">
+                {[1, 2, 3].map((cardIndex) => (
+                  <button
+                    key={cardIndex}
+                    onClick={() => handleCardSelect(cardIndex)}
+                    className="transition-transform hover:scale-105 active:scale-95"
+                  >
+                    <img
+                      src="/images/characters/card_back.png"
+                      alt={`카드 ${cardIndex}`}
+                      className="w-20 h-32 object-cover rounded-lg shadow-md"
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Selected Card Display */}
+        {showSelectedCard && (
+          <div className="p-4 bg-gray-50 border-t border-gray-200">
+            <div className="space-y-4">
+              <p className="text-sm text-charcoal text-center">선택하신 카드입니다</p>
+              <div className="flex justify-center">
+                <div className="bg-white p-4 rounded-lg shadow-lg">
+                  <img
+                    src="/images/cards/0_THE_FOOL.png"
+                    alt="THE FOOL 카드"
+                    className="w-32 h-48 object-cover rounded-lg"
+                  />
+                  <p className="text-center mt-2 font-medium text-charcoal">THE FOOL</p>
+                </div>
+              </div>
+              <p className="text-xs text-center text-gray-500">잠시 후 결과 페이지로 이동합니다...</p>
             </div>
           </div>
         )}
