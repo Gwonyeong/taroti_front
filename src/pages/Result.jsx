@@ -7,6 +7,7 @@ const Result = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [mbtiGroup, setMbtiGroup] = useState(null);
+  const [mbtiDetails, setMbtiDetails] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [email, setEmail] = useState("");
   const [emailSaving, setEmailSaving] = useState(false);
@@ -23,6 +24,7 @@ const Result = () => {
           };
           setUserData(tempData);
           await loadMbtiGroup(tempData.mbti);
+          await loadMbtiDetailFiles(tempData.mbti);
           setLoading(false);
           return;
         }
@@ -37,6 +39,7 @@ const Result = () => {
 
           // MBTI 그룹 정보 로드
           await loadMbtiGroup(data.mbti);
+          await loadMbtiDetailFiles(data.mbti);
         } else {
           setError("사용자 데이터를 불러올 수 없습니다.");
         }
@@ -61,6 +64,55 @@ const Result = () => {
       } catch (error) {
         console.error('Error loading MBTI group:', error);
       }
+    };
+
+    const getRandomPoint = (pointsArray) => {
+      if (!pointsArray || pointsArray.length === 0) return null;
+      const randomIndex = Math.floor(Math.random() * pointsArray.length);
+      return pointsArray[randomIndex];
+    };
+
+    const loadMbtiDetailFiles = async (mbti) => {
+      if (!mbti || mbti === 'UNKNOWN') return;
+
+      const folders = ['action', 'david', 'temperament'];
+      const mbtiDetails = {};
+
+      for (const folder of folders) {
+        // Get all possible combinations for this MBTI
+        const combinations = [
+          mbti.charAt(0) + mbti.charAt(1), // E/I + N/S
+          mbti.charAt(0) + mbti.charAt(2), // E/I + T/F
+          mbti.charAt(0) + mbti.charAt(3), // E/I + J/P
+          mbti.charAt(1) + mbti.charAt(2), // N/S + T/F
+          mbti.charAt(1) + mbti.charAt(3), // N/S + J/P
+          mbti.charAt(2) + mbti.charAt(3), // T/F + J/P
+        ];
+
+        // Try to find a matching file for this folder
+        for (const combination of combinations) {
+          try {
+            const response = await fetch(`/documents/mbtiDetail/${folder}/${combination}.json`);
+            if (response.ok) {
+              const data = await response.json();
+              const randomPoint = getRandomPoint(data.point);
+              if (randomPoint) {
+                mbtiDetails[folder] = {
+                  groupName: combination,
+                  title: randomPoint.title,
+                  description: randomPoint.description,
+                  fullData: data
+                };
+                break; // Found a match for this folder, move to next folder
+              }
+            }
+          } catch (error) {
+            console.error(`Error loading ${folder}/${combination}.json:`, error);
+          }
+        }
+      }
+
+      setMbtiDetails(mbtiDetails);
     };
 
     fetchUserData();
@@ -247,59 +299,87 @@ const Result = () => {
             </div>
           )}
 
-          {/* Fake MBTI Group Boxes */}
-          {userData?.mbti && userData.mbti !== 'UNKNOWN' && (
+          {/* MBTI Detail Boxes from JSON files */}
+          {userData?.mbti && userData.mbti !== 'UNKNOWN' && Object.keys(mbtiDetails).length > 0 && (
             <>
-              {/* First Fake Box: 첫번째, 두번째 글자 그룹 */}
-              <div className="bg-gray-100 p-4 rounded-lg opacity-60">
-                <h4 className="font-semibold text-charcoal mb-3">
-                  {userData.mbti.charAt(0) + userData.mbti.charAt(1)}그룹 - The Fool: 숨겨진 면모
-                </h4>
-                <div className="blur-sm">
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    - **핵심 특징**: 내면의 깊은 성찰과 외부 세계와의 균형을 추구하는 성향
-                    - **긍정적 측면**: 애인과의 관계에서 진정성 있는 소통을 중시하며, 상대방의 내면을 깊이 이해하려 노력함
-                    - **주의점**: 과도한 분석으로 인해 자연스러운 감정 표현이 어려울 수 있음
-                    - **개선 방향**: 직관적인 감정 표현을 통해 관계의 따뜻함을 더하기
-                  </p>
+              {/* Action Box */}
+              {mbtiDetails.action && (
+                <div className="bg-gray-100 p-4 rounded-lg opacity-60">
+                  <h4 className="font-semibold text-charcoal mb-3">
+                    {mbtiDetails.action.groupName}그룹 - {mbtiDetails.action.title}
+                  </h4>
+                  <div className="bg-white p-3 rounded mb-3">
+                    <p className="text-sm text-gray-700">
+                      {mbtiDetails.action.description}
+                    </p>
+                  </div>
+                  <div className="blur-sm">
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      - **핵심 특징**: 행동 지향적인 성향으로 애인과의 관계에서 실질적인 변화를 추구
+                      - **긍정적 측면**: 관계의 문제를 실행을 통해 해결하려 노력하며, 상대방을 위한 구체적인 행동을 보임
+                      - **주의점**: 때로는 감정보다 행동에 치중하여 상대방의 마음을 놓칠 수 있음
+                      - **개선 방향**: 행동과 함께 감정적 소통도 균형있게 유지하기
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Second Fake Box: 두번째, 세번째 글자 그룹 */}
-              <div className="bg-gray-100 p-4 rounded-lg opacity-60">
-                <h4 className="font-semibold text-charcoal mb-3">
-                  {userData.mbti.charAt(1) + userData.mbti.charAt(2)}그룹 - The Fool: 감정의 나침반
-                </h4>
-                <div className="blur-sm">
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    - **핵심 특징**: 감정과 논리의 조화를 통해 관계를 발전시키려는 특성
-                    - **긍정적 측면**: 애인의 감정 상태를 민감하게 파악하고 적절한 반응을 보일 수 있음. 갈등 상황에서도 냉정함을 잃지 않고 해결책을 모색함
-                    - **주의점**: 때로는 너무 완벽한 관계를 추구하여 자연스러움을 놓칠 위험이 있음
-                    - **개선 방향**: 완벽함보다는 진솔함을 추구하며, 서로의 불완전함도 사랑의 일부로 받아들이기
-                  </p>
+              {/* David Box */}
+              {mbtiDetails.david && (
+                <div className="bg-gray-100 p-4 rounded-lg opacity-60">
+                  <h4 className="font-semibold text-charcoal mb-3">
+                    {mbtiDetails.david.groupName}그룹 - {mbtiDetails.david.title}
+                  </h4>
+                  <div className="bg-white p-3 rounded mb-3">
+                    <p className="text-sm text-gray-700">
+                      {mbtiDetails.david.description}
+                    </p>
+                  </div>
+                  <div className="blur-sm">
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      - **핵심 특징**: 깊이 있는 관찰력과 분석적 사고로 관계를 바라보는 성향
+                      - **긍정적 측면**: 애인의 본질적 특성을 잘 파악하고 장기적인 관점에서 관계를 발전시킴
+                      - **주의점**: 과도한 분석으로 인해 자연스러운 감정의 흐름을 방해할 수 있음
+                      - **개선 방향**: 분석적 사고와 감정적 직관의 균형을 맞추어 관계의 따뜻함 유지하기
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Third Fake Box: 첫번째, 세번째 글자 그룹 */}
-              <div className="bg-gray-100 p-4 rounded-lg opacity-60">
-                <h4 className="font-semibold text-charcoal mb-3">
-                  {userData.mbti.charAt(0) + userData.mbti.charAt(2)}그룹 - The Fool: 미래의 설계자
-                </h4>
-                <div className="blur-sm">
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    이 조합을 가진 이들은 연애에서 독특한 패턴을 보입니다. 장기적인 비전과 즉각적인 감정 사이에서 균형을 잡으려 노력하며, 애인과의 미래를 구체적으로 그려나가는 것을 선호합니다. 하지만 때로는 계획에만 몰두하여 현재의 소중한 순간들을 놓칠 수 있습니다. 이들에게는 예상치 못한 로맨틱한 순간들이 관계에 새로운 활력을 불어넣어 줄 수 있습니다. 또한 상대방의 자발적인 애정 표현을 기다리기보다는, 먼저 솔직한 마음을 표현하는 것이 관계 발전에 도움이 됩니다.
-                  </p>
+              {/* Temperament Box */}
+              {mbtiDetails.temperament && (
+                <div className="bg-gray-100 p-4 rounded-lg opacity-60">
+                  <h4 className="font-semibold text-charcoal mb-3">
+                    {mbtiDetails.temperament.groupName}그룹 - {mbtiDetails.temperament.title}
+                  </h4>
+                  <div className="bg-white p-3 rounded mb-3">
+                    <p className="text-sm text-gray-700">
+                      {mbtiDetails.temperament.description}
+                    </p>
+                  </div>
+                  <div className="blur-sm">
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      - **핵심 특징**: 감정과 논리의 균형을 중시하며 상대방과의 조화를 추구하는 성향
+                      - **긍정적 측면**: 애인의 기질을 이해하고 맞춰가며 안정적인 관계를 유지할 수 있음
+                      - **주의점**: 상대방에게 너무 맞추려다 자신만의 특성을 잃을 위험이 있음
+                      - **개선 방향**: 상호 존중을 바탕으로 각자의 개성을 살리면서 조화를 이루기
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Fourth Fake Box: 종합 - 전체 MBTI */}
+              {/* Comprehensive Summary Box */}
               <div className="bg-gray-100 p-4 rounded-lg opacity-60">
                 <h4 className="font-semibold text-charcoal mb-3">
                   종합 - {userData.mbti}
                 </h4>
                 <div className="blur-sm">
                   <p className="text-sm text-gray-700 leading-relaxed">
-                    {userData.mbti} 유형의 연애 스타일은 복합적이고 다층적인 특성을 보입니다. 바보 카드와 결합될 때, 이들은 새로운 시작에 대한 열망과 동시에 신중함을 잃지 않는 독특한 균형감을 드러냅니다. 애인과의 관계에서 진정성을 추구하되, 때로는 과도한 완벽주의로 인해 자연스러운 흐름을 방해할 수 있습니다. 감정과 이성, 직관과 현실감각 사이에서 조화를 이루려 노력하며, 이러한 내적 갈등이 오히려 관계에 깊이를 더해주기도 합니다. 상대방에게는 예측 불가능하면서도 안정적인 파트너로 인식될 가능성이 높으며, 장기적인 관점에서 서로를 성장시키는 건강한 관계를 구축할 수 있는 잠재력을 가지고 있습니다.
+                    {userData.mbti} 유형의 연애 스타일은 복합적이고 다층적인 특성을 보입니다. 바보 카드와 결합될 때, 이들은 새로운 시작에 대한 열망과 동시에 신중함을 잃지 않는 독특한 균형감을 드러냅니다.
+                    {mbtiDetails.action && ` 행동적 측면에서는 ${mbtiDetails.action.title}의 특성을 보이며,`}
+                    {mbtiDetails.david && ` 분석적 측면에서는 ${mbtiDetails.david.title}의 성향을 나타내고,`}
+                    {mbtiDetails.temperament && ` 기질적으로는 ${mbtiDetails.temperament.title}의 면모를 보입니다.`}
+                    애인과의 관계에서 진정성을 추구하되, 때로는 과도한 완벽주의로 인해 자연스러운 흐름을 방해할 수 있습니다. 감정과 이성, 직관과 현실감각 사이에서 조화를 이루려 노력하며, 이러한 내적 갈등이 오히려 관계에 깊이를 더해주기도 합니다. 상대방에게는 예측 불가능하면서도 안정적인 파트너로 인식될 가능성이 높으며, 장기적인 관점에서 서로를 성장시키는 건강한 관계를 구축할 수 있는 잠재력을 가지고 있습니다.
                   </p>
                 </div>
               </div>
