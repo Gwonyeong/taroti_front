@@ -72,6 +72,12 @@ const Result = () => {
       return pointsArray[randomIndex];
     };
 
+    const getRandomDescription = (descriptionArray) => {
+      if (!descriptionArray || descriptionArray.length === 0) return null;
+      const randomIndex = Math.floor(Math.random() * descriptionArray.length);
+      return descriptionArray[randomIndex];
+    };
+
     const loadMbtiDetailFiles = async (mbti) => {
       if (!mbti || mbti === 'UNKNOWN') return;
 
@@ -96,11 +102,13 @@ const Result = () => {
             if (response.ok) {
               const data = await response.json();
               const randomPoint = getRandomPoint(data.point);
+              const randomDescription = getRandomDescription(data.description);
               if (randomPoint) {
                 mbtiDetails[folder] = {
                   groupName: combination,
                   title: randomPoint.title,
                   description: randomPoint.description,
+                  randomDescription: randomDescription,
                   fullData: data
                 };
                 break; // Found a match for this folder, move to next folder
@@ -313,13 +321,30 @@ const Result = () => {
                       {mbtiDetails.action.description}
                     </p>
                   </div>
-                  <div className="blur-sm">
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      - **핵심 특징**: 행동 지향적인 성향으로 애인과의 관계에서 실질적인 변화를 추구
-                      - **긍정적 측면**: 관계의 문제를 실행을 통해 해결하려 노력하며, 상대방을 위한 구체적인 행동을 보임
-                      - **주의점**: 때로는 감정보다 행동에 치중하여 상대방의 마음을 놓칠 수 있음
-                      - **개선 방향**: 행동과 함께 감정적 소통도 균형있게 유지하기
+                  {mbtiDetails.action.randomDescription && (
+                    <p className="text-sm text-gray-700 mb-3">
+                      {mbtiDetails.action.groupName}그룹은 {mbtiDetails.action.randomDescription} 이 그룹은...
                     </p>
+                  )}
+                  <div className="relative">
+                    <div className="blur-sm">
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        - **핵심 특징**: 행동 지향적인 성향으로 애인과의 관계에서 실질적인 변화를 추구
+                        - **긍정적 측면**: 관계의 문제를 실행을 통해 해결하려 노력하며, 상대방을 위한 구체적인 행동을 보임
+                        - **주의점**: 때로는 감정보다 행동에 치중하여 상대방의 마음을 놓칠 수 있음
+                        - **개선 방향**: 행동과 함께 감정적 소통도 균형있게 유지하기
+                      </p>
+                    </div>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <img
+                        src="/images/characters/carot.png"
+                        alt="캐럿"
+                        className="w-16 h-16 rounded-full mb-2"
+                      />
+                      <p className="text-sm font-medium text-charcoal bg-white px-3 py-1 rounded">
+                        구매시 내용을 확인할 수 있다냥.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -335,13 +360,30 @@ const Result = () => {
                       {mbtiDetails.david.description}
                     </p>
                   </div>
-                  <div className="blur-sm">
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      - **핵심 특징**: 깊이 있는 관찰력과 분석적 사고로 관계를 바라보는 성향
-                      - **긍정적 측면**: 애인의 본질적 특성을 잘 파악하고 장기적인 관점에서 관계를 발전시킴
-                      - **주의점**: 과도한 분석으로 인해 자연스러운 감정의 흐름을 방해할 수 있음
-                      - **개선 방향**: 분석적 사고와 감정적 직관의 균형을 맞추어 관계의 따뜻함 유지하기
+                  {mbtiDetails.david.randomDescription && (
+                    <p className="text-sm text-gray-700 mb-3">
+                      {mbtiDetails.david.groupName}그룹은 {mbtiDetails.david.randomDescription} 이 그룹은...
                     </p>
+                  )}
+                  <div className="relative">
+                    <div className="blur-sm">
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        - **핵심 특징**: 깊이 있는 관찰력과 분석적 사고로 관계를 바라보는 성향
+                        - **긍정적 측면**: 애인의 본질적 특성을 잘 파악하고 장기적인 관점에서 관계를 발전시킴
+                        - **주의점**: 과도한 분석으로 인해 자연스러운 감정의 흐름을 방해할 수 있음
+                        - **개선 방향**: 분석적 사고와 감정적 직관의 균형을 맞추어 관계의 따뜻함 유지하기
+                      </p>
+                    </div>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <img
+                        src="/images/characters/carot.png"
+                        alt="캐럿"
+                        className="w-16 h-16 rounded-full mb-2"
+                      />
+                      <p className="text-sm font-medium text-charcoal bg-white px-3 py-1 rounded">
+                        구매시 내용을 확인할 수 있다냥.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -357,13 +399,30 @@ const Result = () => {
                       {mbtiDetails.temperament.description}
                     </p>
                   </div>
-                  <div className="blur-sm">
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      - **핵심 특징**: 감정과 논리의 균형을 중시하며 상대방과의 조화를 추구하는 성향
-                      - **긍정적 측면**: 애인의 기질을 이해하고 맞춰가며 안정적인 관계를 유지할 수 있음
-                      - **주의점**: 상대방에게 너무 맞추려다 자신만의 특성을 잃을 위험이 있음
-                      - **개선 방향**: 상호 존중을 바탕으로 각자의 개성을 살리면서 조화를 이루기
+                  {mbtiDetails.temperament.randomDescription && (
+                    <p className="text-sm text-gray-700 mb-3">
+                      {mbtiDetails.temperament.groupName}그룹은 {mbtiDetails.temperament.randomDescription} 이 그룹은...
                     </p>
+                  )}
+                  <div className="relative">
+                    <div className="blur-sm">
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        - **핵심 특징**: 감정과 논리의 균형을 중시하며 상대방과의 조화를 추구하는 성향
+                        - **긍정적 측면**: 애인의 기질을 이해하고 맞춰가며 안정적인 관계를 유지할 수 있음
+                        - **주의점**: 상대방에게 너무 맞추려다 자신만의 특성을 잃을 위험이 있음
+                        - **개선 방향**: 상호 존중을 바탕으로 각자의 개성을 살리면서 조화를 이루기
+                      </p>
+                    </div>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <img
+                        src="/images/characters/carot.png"
+                        alt="캐럿"
+                        className="w-16 h-16 rounded-full mb-2"
+                      />
+                      <p className="text-sm font-medium text-charcoal bg-white px-3 py-1 rounded">
+                        구매시 내용을 확인할 수 있다냥.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -373,14 +432,26 @@ const Result = () => {
                 <h4 className="font-semibold text-charcoal mb-3">
                   종합 - {userData.mbti}
                 </h4>
-                <div className="blur-sm">
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {userData.mbti} 유형의 연애 스타일은 복합적이고 다층적인 특성을 보입니다. 바보 카드와 결합될 때, 이들은 새로운 시작에 대한 열망과 동시에 신중함을 잃지 않는 독특한 균형감을 드러냅니다.
-                    {mbtiDetails.action && ` 행동적 측면에서는 ${mbtiDetails.action.title}의 특성을 보이며,`}
-                    {mbtiDetails.david && ` 분석적 측면에서는 ${mbtiDetails.david.title}의 성향을 나타내고,`}
-                    {mbtiDetails.temperament && ` 기질적으로는 ${mbtiDetails.temperament.title}의 면모를 보입니다.`}
-                    애인과의 관계에서 진정성을 추구하되, 때로는 과도한 완벽주의로 인해 자연스러운 흐름을 방해할 수 있습니다. 감정과 이성, 직관과 현실감각 사이에서 조화를 이루려 노력하며, 이러한 내적 갈등이 오히려 관계에 깊이를 더해주기도 합니다. 상대방에게는 예측 불가능하면서도 안정적인 파트너로 인식될 가능성이 높으며, 장기적인 관점에서 서로를 성장시키는 건강한 관계를 구축할 수 있는 잠재력을 가지고 있습니다.
-                  </p>
+                <div className="relative">
+                  <div className="blur-sm">
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      {userData.mbti} 유형의 연애 스타일은 복합적이고 다층적인 특성을 보입니다. 바보 카드와 결합될 때, 이들은 새로운 시작에 대한 열망과 동시에 신중함을 잃지 않는 독특한 균형감을 드러냅니다.
+                      {mbtiDetails.action && ` 행동적 측면에서는 ${mbtiDetails.action.title}의 특성을 보이며,`}
+                      {mbtiDetails.david && ` 분석적 측면에서는 ${mbtiDetails.david.title}의 성향을 나타내고,`}
+                      {mbtiDetails.temperament && ` 기질적으로는 ${mbtiDetails.temperament.title}의 면모를 보입니다.`}
+                      애인과의 관계에서 진정성을 추구하되, 때로는 과도한 완벽주의로 인해 자연스러운 흐름을 방해할 수 있습니다. 감정과 이성, 직관과 현실감각 사이에서 조화를 이루려 노력하며, 이러한 내적 갈등이 오히려 관계에 깊이를 더해주기도 합니다. 상대방에게는 예측 불가능하면서도 안정적인 파트너로 인식될 가능성이 높으며, 장기적인 관점에서 서로를 성장시키는 건강한 관계를 구축할 수 있는 잠재력을 가지고 있습니다.
+                    </p>
+                  </div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <img
+                      src="/images/characters/carot.png"
+                      alt="캐럿"
+                      className="w-16 h-16 rounded-full mb-2"
+                    />
+                    <p className="text-sm font-medium text-charcoal bg-white px-3 py-1 rounded">
+                      구매시 내용을 확인할 수 있다냥.
+                    </p>
+                  </div>
                 </div>
               </div>
             </>
