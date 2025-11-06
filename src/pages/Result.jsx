@@ -30,7 +30,9 @@ const Result = () => {
         }
 
         const response = await fetch(
-          `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5002'}/api/landing-user/${landingUserId}`
+          `${
+            process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
+          }/api/landing-user/${landingUserId}`
         );
 
         if (response.ok) {
@@ -53,16 +55,16 @@ const Result = () => {
 
     const loadMbtiGroup = async (mbti) => {
       try {
-        const response = await fetch('/documents/mbti/1_NS_GROUP.json');
+        const response = await fetch("/documents/mbti/1_NS_GROUP.json");
         if (response.ok) {
           const groups = await response.json();
-          const matchedGroup = groups.find(group =>
+          const matchedGroup = groups.find((group) =>
             new RegExp(group.regex).test(mbti)
           );
           setMbtiGroup(matchedGroup);
         }
       } catch (error) {
-        console.error('Error loading MBTI group:', error);
+        console.error("Error loading MBTI group:", error);
       }
     };
 
@@ -79,9 +81,9 @@ const Result = () => {
     };
 
     const loadMbtiDetailFiles = async (mbti) => {
-      if (!mbti || mbti === 'UNKNOWN') return;
+      if (!mbti || mbti === "UNKNOWN") return;
 
-      const folders = ['action', 'david', 'temperament'];
+      const folders = ["action", "david", "temperament"];
       const mbtiDetails = {};
 
       for (const folder of folders) {
@@ -98,7 +100,9 @@ const Result = () => {
         // Try to find a matching file for this folder
         for (const combination of combinations) {
           try {
-            const response = await fetch(`/documents/mbtiDetail/${folder}/${combination}.json`);
+            const response = await fetch(
+              `/documents/mbtiDetail/${folder}/${combination}.json`
+            );
             if (response.ok) {
               const data = await response.json();
               const randomPoint = getRandomPoint(data.point);
@@ -109,13 +113,16 @@ const Result = () => {
                   title: randomPoint.title,
                   description: randomPoint.description,
                   randomDescription: randomDescription,
-                  fullData: data
+                  fullData: data,
                 };
                 break; // Found a match for this folder, move to next folder
               }
             }
           } catch (error) {
-            console.error(`Error loading ${folder}/${combination}.json:`, error);
+            console.error(
+              `Error loading ${folder}/${combination}.json:`,
+              error
+            );
           }
         }
       }
@@ -127,18 +134,23 @@ const Result = () => {
   }, [landingUserId]);
 
   const handlePurchaseClick = async () => {
-    if (landingUserId && landingUserId !== 'temp') {
+    if (landingUserId && landingUserId !== "temp") {
       try {
         // 구매 클릭 데이터 저장
-        await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5002'}/api/landing-user/${landingUserId}/purchase`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({})
-        });
+        await fetch(
+          `${
+            process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
+          }/api/landing-user/${landingUserId}/purchase`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+          }
+        );
       } catch (error) {
-        console.error('Error recording purchase click:', error);
+        console.error("Error recording purchase click:", error);
       }
     }
 
@@ -148,29 +160,36 @@ const Result = () => {
 
   const handleEmailSave = async () => {
     if (!email.trim()) {
-      alert('이메일을 입력해주세요.');
+      alert("이메일을 입력해주세요.");
       return;
     }
 
     setEmailSaving(true);
 
     try {
-      if (landingUserId && landingUserId !== 'temp') {
-        await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5002'}/api/landing-user/${landingUserId}/purchase`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email })
-        });
+      if (landingUserId && landingUserId !== "temp") {
+        await fetch(
+          `${
+            process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
+          }/api/landing-user/${landingUserId}/purchase`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email }),
+          }
+        );
       }
 
-      alert('이메일이 저장되었습니다. 서비스 준비가 완료되면 가장 먼저 연락드리겠습니다!');
+      alert(
+        "이메일이 저장되었습니다. 서비스 준비가 완료되면 가장 먼저 연락드리겠습니다!"
+      );
       setShowModal(false);
-      setEmail('');
+      setEmail("");
     } catch (error) {
-      console.error('Error saving email:', error);
-      alert('이메일 저장 중 오류가 발생했습니다.');
+      console.error("Error saving email:", error);
+      alert("이메일 저장 중 오류가 발생했습니다.");
     } finally {
       setEmailSaving(false);
     }
@@ -288,11 +307,50 @@ const Result = () => {
           {/* Card Meaning */}
           <div className="bg-purple-50 p-4 rounded-lg">
             <h4 className="font-semibold text-charcoal mb-3">카드의 의미</h4>
-            <p className="text-sm text-gray-700 leading-relaxed">
-              타로의 '바보' 카드는 보통 절벽 끝에서 앞을 보지 않고 한 발을
-              내딛으려는 젊은이의 모습으로 표현됩니다. 이는 미지의 것을 향한
-              도약과 새로운 시작을 상징합니다.
-            </p>
+            <div className="text-sm text-gray-700 leading-relaxed space-y-3">
+              <p>
+                타로의 '바보(The Fool)' 카드는 타로 덱의 첫 번째 카드로, 번호
+                0을 가지며 무한한 가능성과 새로운 시작을 상징합니다. 카드에는
+                보통 절벽 끝에서 앞을 보지 않고 한 발을 내딛으려는 젊은이의
+                모습이 그려져 있습니다.
+              </p>
+              <p>
+                <strong>핵심 키워드:</strong> 순수함, 자발성, 모험심, 직관,
+                무조건적 신뢰, 창의성, 자유로운 영혼, 잠재력, 영적 여정의 시작,
+                내면의 아이
+              </p>
+              <p>
+                이 카드는 단순한 '어리석음'이 아닌, 세상의 편견과 두려움에
+                얽매이지 않는 <strong>순수한 용기</strong>를 의미합니다. 바보는
+                과거의 경험이나 미래의 걱정 없이 오직 현재 순간의 직감을 따라
+                행동하며, 이러한 태도는 때로 기적 같은 결과를 가져다줍니다.
+              </p>
+              <p>
+                연애와 관계에서 '바보' 카드는 <strong>무조건적인 사랑</strong>,
+                편견 없는 마음, 그리고 상대방을 있는 그대로 받아들이는 순수함을
+                나타냅니다. 또한 관계에서의 새로운 시작, fresh start, 그리고 두
+                사람이 함께 만들어갈 예측할 수 없는 아름다운 여정을 의미하기도
+                합니다.
+              </p>
+            </div>
+          </div>
+
+          {/* Carrot Chat Message */}
+          <div className="flex items-start space-x-3">
+            <img
+              src="/images/characters/carot.png"
+              alt="캐럿"
+              className="w-10 h-10 rounded-full flex-shrink-0"
+            />
+            <div className="flex-1">
+              <div className="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 inline-block">
+                <p className="text-sm text-charcoal">
+                  MBTI에도 해석 방식이 여러개가 있다냥!
+                  <br />
+                  MBTI의 두번째 글자가 내면에 큰 영향을 미친다냥.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* MBTI Group Interpretation */}
@@ -308,31 +366,166 @@ const Result = () => {
           )}
 
           {/* MBTI Detail Boxes from JSON files */}
-          {userData?.mbti && userData.mbti !== 'UNKNOWN' && Object.keys(mbtiDetails).length > 0 && (
-            <>
-              {/* Action Box */}
-              {mbtiDetails.action && (
+          {userData?.mbti &&
+            userData.mbti !== "UNKNOWN" &&
+            Object.keys(mbtiDetails).length > 0 && (
+              <>
+                {/* Action Box */}
+                {mbtiDetails.action && (
+                  <div className="bg-gray-100 p-4 rounded-lg opacity-60">
+                    <h4 className="font-semibold text-charcoal mb-3">
+                      {mbtiDetails.action.groupName}그룹 -{" "}
+                      {mbtiDetails.action.title}
+                    </h4>
+                    <div className="bg-white p-3 rounded mb-3">
+                      <p className="text-sm text-gray-700">
+                        {mbtiDetails.action.description}
+                      </p>
+                    </div>
+                    {mbtiDetails.action.randomDescription && (
+                      <p className="text-sm text-gray-700 mb-3">
+                        {mbtiDetails.action.groupName}그룹은{" "}
+                        {mbtiDetails.action.randomDescription} 이 그룹은...
+                      </p>
+                    )}
+                    <div className="relative">
+                      <div className="blur-sm">
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          - **핵심 특징**: 행동 지향적인 성향으로 애인과의
+                          관계에서 실질적인 변화를 추구 - **긍정적 측면**:
+                          관계의 문제를 실행을 통해 해결하려 노력하며, 상대방을
+                          위한 구체적인 행동을 보임 - **주의점**: 때로는
+                          감정보다 행동에 치중하여 상대방의 마음을 놓칠 수 있음
+                          - **개선 방향**: 행동과 함께 감정적 소통도 균형있게
+                          유지하기
+                        </p>
+                      </div>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <img
+                          src="/images/characters/carot.png"
+                          alt="캐럿"
+                          className="w-16 h-16 rounded-full mb-2"
+                        />
+                        <p className="text-sm font-medium text-charcoal bg-white px-3 py-1 rounded">
+                          구매시 내용을 확인할 수 있다냥.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* David Box */}
+                {mbtiDetails.david && (
+                  <div className="bg-gray-100 p-4 rounded-lg opacity-60">
+                    <h4 className="font-semibold text-charcoal mb-3">
+                      {mbtiDetails.david.groupName}그룹 -{" "}
+                      {mbtiDetails.david.title}
+                    </h4>
+                    <div className="bg-white p-3 rounded mb-3">
+                      <p className="text-sm text-gray-700">
+                        {mbtiDetails.david.description}
+                      </p>
+                    </div>
+                    {mbtiDetails.david.randomDescription && (
+                      <p className="text-sm text-gray-700 mb-3">
+                        {mbtiDetails.david.groupName}그룹은{" "}
+                        {mbtiDetails.david.randomDescription} 이 그룹은...
+                      </p>
+                    )}
+                    <div className="relative">
+                      <div className="blur-sm">
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          - **핵심 특징**: 깊이 있는 관찰력과 분석적 사고로
+                          관계를 바라보는 성향 - **긍정적 측면**: 애인의 본질적
+                          특성을 잘 파악하고 장기적인 관점에서 관계를 발전시킴 -
+                          **주의점**: 과도한 분석으로 인해 자연스러운 감정의
+                          흐름을 방해할 수 있음 - **개선 방향**: 분석적 사고와
+                          감정적 직관의 균형을 맞추어 관계의 따뜻함 유지하기
+                        </p>
+                      </div>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <img
+                          src="/images/characters/carot.png"
+                          alt="캐럿"
+                          className="w-16 h-16 rounded-full mb-2"
+                        />
+                        <p className="text-sm font-medium text-charcoal bg-white px-3 py-1 rounded">
+                          구매시 내용을 확인할 수 있다냥.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Temperament Box */}
+                {mbtiDetails.temperament && (
+                  <div className="bg-gray-100 p-4 rounded-lg opacity-60">
+                    <h4 className="font-semibold text-charcoal mb-3">
+                      {mbtiDetails.temperament.groupName}그룹 -{" "}
+                      {mbtiDetails.temperament.title}
+                    </h4>
+                    <div className="bg-white p-3 rounded mb-3">
+                      <p className="text-sm text-gray-700">
+                        {mbtiDetails.temperament.description}
+                      </p>
+                    </div>
+                    {mbtiDetails.temperament.randomDescription && (
+                      <p className="text-sm text-gray-700 mb-3">
+                        {mbtiDetails.temperament.groupName}그룹은{" "}
+                        {mbtiDetails.temperament.randomDescription} 이 그룹은...
+                      </p>
+                    )}
+                    <div className="relative">
+                      <div className="blur-sm">
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          - **핵심 특징**: 감정과 논리의 균형을 중시하며
+                          상대방과의 조화를 추구하는 성향 - **긍정적 측면**:
+                          애인의 기질을 이해하고 맞춰가며 안정적인 관계를 유지할
+                          수 있음 - **주의점**: 상대방에게 너무 맞추려다
+                          자신만의 특성을 잃을 위험이 있음 - **개선 방향**: 상호
+                          존중을 바탕으로 각자의 개성을 살리면서 조화를 이루기
+                        </p>
+                      </div>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <img
+                          src="/images/characters/carot.png"
+                          alt="캐럿"
+                          className="w-16 h-16 rounded-full mb-2"
+                        />
+                        <p className="text-sm font-medium text-charcoal bg-white px-3 py-1 rounded">
+                          구매시 내용을 확인할 수 있다냥.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Comprehensive Summary Box */}
                 <div className="bg-gray-100 p-4 rounded-lg opacity-60">
                   <h4 className="font-semibold text-charcoal mb-3">
-                    {mbtiDetails.action.groupName}그룹 - {mbtiDetails.action.title}
+                    종합 - {userData.mbti}
                   </h4>
-                  <div className="bg-white p-3 rounded mb-3">
-                    <p className="text-sm text-gray-700">
-                      {mbtiDetails.action.description}
-                    </p>
-                  </div>
-                  {mbtiDetails.action.randomDescription && (
-                    <p className="text-sm text-gray-700 mb-3">
-                      {mbtiDetails.action.groupName}그룹은 {mbtiDetails.action.randomDescription} 이 그룹은...
-                    </p>
-                  )}
                   <div className="relative">
                     <div className="blur-sm">
                       <p className="text-sm text-gray-700 leading-relaxed">
-                        - **핵심 특징**: 행동 지향적인 성향으로 애인과의 관계에서 실질적인 변화를 추구
-                        - **긍정적 측면**: 관계의 문제를 실행을 통해 해결하려 노력하며, 상대방을 위한 구체적인 행동을 보임
-                        - **주의점**: 때로는 감정보다 행동에 치중하여 상대방의 마음을 놓칠 수 있음
-                        - **개선 방향**: 행동과 함께 감정적 소통도 균형있게 유지하기
+                        {userData.mbti} 유형의 연애 스타일은 복합적이고 다층적인
+                        특성을 보입니다. 바보 카드와 결합될 때, 이들은 새로운
+                        시작에 대한 열망과 동시에 신중함을 잃지 않는 독특한
+                        균형감을 드러냅니다.
+                        {mbtiDetails.action &&
+                          ` 행동적 측면에서는 ${mbtiDetails.action.title}의 특성을 보이며,`}
+                        {mbtiDetails.david &&
+                          ` 분석적 측면에서는 ${mbtiDetails.david.title}의 성향을 나타내고,`}
+                        {mbtiDetails.temperament &&
+                          ` 기질적으로는 ${mbtiDetails.temperament.title}의 면모를 보입니다.`}
+                        애인과의 관계에서 진정성을 추구하되, 때로는 과도한
+                        완벽주의로 인해 자연스러운 흐름을 방해할 수 있습니다.
+                        감정과 이성, 직관과 현실감각 사이에서 조화를 이루려
+                        노력하며, 이러한 내적 갈등이 오히려 관계에 깊이를
+                        더해주기도 합니다. 상대방에게는 예측 불가능하면서도
+                        안정적인 파트너로 인식될 가능성이 높으며, 장기적인
+                        관점에서 서로를 성장시키는 건강한 관계를 구축할 수 있는
+                        잠재력을 가지고 있습니다.
                       </p>
                     </div>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -347,116 +540,8 @@ const Result = () => {
                     </div>
                   </div>
                 </div>
-              )}
-
-              {/* David Box */}
-              {mbtiDetails.david && (
-                <div className="bg-gray-100 p-4 rounded-lg opacity-60">
-                  <h4 className="font-semibold text-charcoal mb-3">
-                    {mbtiDetails.david.groupName}그룹 - {mbtiDetails.david.title}
-                  </h4>
-                  <div className="bg-white p-3 rounded mb-3">
-                    <p className="text-sm text-gray-700">
-                      {mbtiDetails.david.description}
-                    </p>
-                  </div>
-                  {mbtiDetails.david.randomDescription && (
-                    <p className="text-sm text-gray-700 mb-3">
-                      {mbtiDetails.david.groupName}그룹은 {mbtiDetails.david.randomDescription} 이 그룹은...
-                    </p>
-                  )}
-                  <div className="relative">
-                    <div className="blur-sm">
-                      <p className="text-sm text-gray-700 leading-relaxed">
-                        - **핵심 특징**: 깊이 있는 관찰력과 분석적 사고로 관계를 바라보는 성향
-                        - **긍정적 측면**: 애인의 본질적 특성을 잘 파악하고 장기적인 관점에서 관계를 발전시킴
-                        - **주의점**: 과도한 분석으로 인해 자연스러운 감정의 흐름을 방해할 수 있음
-                        - **개선 방향**: 분석적 사고와 감정적 직관의 균형을 맞추어 관계의 따뜻함 유지하기
-                      </p>
-                    </div>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <img
-                        src="/images/characters/carot.png"
-                        alt="캐럿"
-                        className="w-16 h-16 rounded-full mb-2"
-                      />
-                      <p className="text-sm font-medium text-charcoal bg-white px-3 py-1 rounded">
-                        구매시 내용을 확인할 수 있다냥.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Temperament Box */}
-              {mbtiDetails.temperament && (
-                <div className="bg-gray-100 p-4 rounded-lg opacity-60">
-                  <h4 className="font-semibold text-charcoal mb-3">
-                    {mbtiDetails.temperament.groupName}그룹 - {mbtiDetails.temperament.title}
-                  </h4>
-                  <div className="bg-white p-3 rounded mb-3">
-                    <p className="text-sm text-gray-700">
-                      {mbtiDetails.temperament.description}
-                    </p>
-                  </div>
-                  {mbtiDetails.temperament.randomDescription && (
-                    <p className="text-sm text-gray-700 mb-3">
-                      {mbtiDetails.temperament.groupName}그룹은 {mbtiDetails.temperament.randomDescription} 이 그룹은...
-                    </p>
-                  )}
-                  <div className="relative">
-                    <div className="blur-sm">
-                      <p className="text-sm text-gray-700 leading-relaxed">
-                        - **핵심 특징**: 감정과 논리의 균형을 중시하며 상대방과의 조화를 추구하는 성향
-                        - **긍정적 측면**: 애인의 기질을 이해하고 맞춰가며 안정적인 관계를 유지할 수 있음
-                        - **주의점**: 상대방에게 너무 맞추려다 자신만의 특성을 잃을 위험이 있음
-                        - **개선 방향**: 상호 존중을 바탕으로 각자의 개성을 살리면서 조화를 이루기
-                      </p>
-                    </div>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <img
-                        src="/images/characters/carot.png"
-                        alt="캐럿"
-                        className="w-16 h-16 rounded-full mb-2"
-                      />
-                      <p className="text-sm font-medium text-charcoal bg-white px-3 py-1 rounded">
-                        구매시 내용을 확인할 수 있다냥.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Comprehensive Summary Box */}
-              <div className="bg-gray-100 p-4 rounded-lg opacity-60">
-                <h4 className="font-semibold text-charcoal mb-3">
-                  종합 - {userData.mbti}
-                </h4>
-                <div className="relative">
-                  <div className="blur-sm">
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      {userData.mbti} 유형의 연애 스타일은 복합적이고 다층적인 특성을 보입니다. 바보 카드와 결합될 때, 이들은 새로운 시작에 대한 열망과 동시에 신중함을 잃지 않는 독특한 균형감을 드러냅니다.
-                      {mbtiDetails.action && ` 행동적 측면에서는 ${mbtiDetails.action.title}의 특성을 보이며,`}
-                      {mbtiDetails.david && ` 분석적 측면에서는 ${mbtiDetails.david.title}의 성향을 나타내고,`}
-                      {mbtiDetails.temperament && ` 기질적으로는 ${mbtiDetails.temperament.title}의 면모를 보입니다.`}
-                      애인과의 관계에서 진정성을 추구하되, 때로는 과도한 완벽주의로 인해 자연스러운 흐름을 방해할 수 있습니다. 감정과 이성, 직관과 현실감각 사이에서 조화를 이루려 노력하며, 이러한 내적 갈등이 오히려 관계에 깊이를 더해주기도 합니다. 상대방에게는 예측 불가능하면서도 안정적인 파트너로 인식될 가능성이 높으며, 장기적인 관점에서 서로를 성장시키는 건강한 관계를 구축할 수 있는 잠재력을 가지고 있습니다.
-                    </p>
-                  </div>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <img
-                      src="/images/characters/carot.png"
-                      alt="캐럿"
-                      className="w-16 h-16 rounded-full mb-2"
-                    />
-                    <p className="text-sm font-medium text-charcoal bg-white px-3 py-1 rounded">
-                      구매시 내용을 확인할 수 있다냥.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
+              </>
+            )}
         </div>
 
         {/* Fixed Bottom Purchase Section */}
@@ -501,7 +586,8 @@ const Result = () => {
                   <div className="flex-1">
                     <div className="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3">
                       <p className="text-sm text-charcoal leading-relaxed">
-                        사실 TaroTI는 서비스 준비중이다냥, 이메일을 남겨주면 가장 먼저 초대하겠다냥
+                        사실 TaroTI는 서비스 준비중이다냥, 이메일을 남겨주면
+                        가장 먼저 초대하겠다냥
                       </p>
                     </div>
                   </div>
@@ -526,7 +612,7 @@ const Result = () => {
                   <button
                     onClick={() => {
                       setShowModal(false);
-                      setEmail('');
+                      setEmail("");
                     }}
                     className="flex-1 bg-gray-200 text-charcoal py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors"
                   >
@@ -537,7 +623,7 @@ const Result = () => {
                     disabled={emailSaving}
                     className="flex-1 bg-charcoal text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
                   >
-                    {emailSaving ? '저장 중...' : '저장하기'}
+                    {emailSaving ? "저장 중..." : "저장하기"}
                   </button>
                 </div>
               </div>
