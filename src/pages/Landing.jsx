@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
+import ChatMessage from '../components/ChatMessage';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -37,9 +38,9 @@ const Landing = () => {
 
   // 메시지 시나리오 정의
   const messageScenario = [
-    { text: "반갑다냥, 나는 캐럿이다냥.", sender: "bot" },
-    { text: "네가 애인을 대할 때, 좋은 행동을 알려줄거다냥.", sender: "bot" },
-    { text: "나이를 알려달라냥", sender: "bot", showDateInput: true }
+    { text: "반갑다마, 나는 페넥이다마.", sender: "bot" },
+    { text: "네가 애인을 대할 때, 좋은 행동을 알려줄거다마.", sender: "bot" },
+    { text: "나이를 알려달라마", sender: "bot", showDateInput: true }
   ];
 
   useEffect(() => {
@@ -118,14 +119,14 @@ const Landing = () => {
       // 봇 응답
       setTimeout(() => {
         setIsTyping(false);
-        addMessage("좋다냥!", "bot");
+        addMessage("좋다마!", "bot");
 
         // 성별 질문
         setTimeout(() => {
           setIsTyping(true);
           setTimeout(() => {
             setIsTyping(false);
-            addMessage("성별은 뭐냥?", "bot");
+            addMessage("성별은 뭐다마?", "bot");
             setTimeout(() => {
               setShowGenderSelect(true);
             }, 300);
@@ -159,14 +160,14 @@ const Landing = () => {
       // 봇 응답
       setTimeout(() => {
         setIsTyping(false);
-        addMessage("좋다냥!", "bot");
+        addMessage("좋다마!", "bot");
 
         // MBTI 질문
         setTimeout(() => {
           setIsTyping(true);
           setTimeout(() => {
             setIsTyping(false);
-            addMessage("MBTI는 뭐냥?", "bot");
+            addMessage("MBTI는 뭐다마?", "bot");
             setTimeout(() => {
               setShowMbtiInput(true);
             }, 300);
@@ -204,14 +205,14 @@ const Landing = () => {
       // 봇 응답
       setTimeout(() => {
         setIsTyping(false);
-        addMessage("완벽하다냥! 이제 타로 카드를 뽑아보자냥.", "bot");
+        addMessage("완벽하다마! 이제 타로 카드를 뽑아보자마.", "bot");
 
         // 카드 선택 화면 표시
         setTimeout(() => {
           setIsTyping(true);
           setTimeout(() => {
             setIsTyping(false);
-            addMessage("3장의 카드 중 하나를 선택해달라냥!", "bot");
+            addMessage("3장의 카드 중 하나를 선택해달라마!", "bot");
             setTimeout(() => {
               setShowCardSelect(true);
             }, 300);
@@ -228,7 +229,7 @@ const Landing = () => {
 
     setTimeout(() => {
       setIsTyping(false);
-      addMessage("좋은 선택이다냥! 이제 결과를 확인해보자냥.", "bot");
+      addMessage("좋은 선택이다마! 이제 결과를 확인해보자마.", "bot");
 
       setTimeout(() => {
         setShowSelectedCard(true);
@@ -295,55 +296,16 @@ const Landing = () => {
           onClick={handleChatClick}
         >
           {messages.map((message) => (
-            <div
+            <ChatMessage
               key={message.id}
-              className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              {message.sender === 'bot' && (
-                <div className="flex flex-col items-center mr-3">
-                  <div className="w-10 h-10 bg-white border-2 border-charcoal rounded-full overflow-hidden">
-                    <img
-                      src="/images/characters/carot.png"
-                      alt="캐럿 캐릭터"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <span className="text-xs text-charcoal mt-1">캐럿</span>
-                </div>
-              )}
-
-              <div
-                className={`max-w-[70%] px-4 py-3 rounded-2xl ${
-                  message.sender === 'user'
-                    ? 'bg-charcoal text-white rounded-br-none'
-                    : 'bg-gray-100 text-charcoal rounded-bl-none'
-                }`}
-              >
-                <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-              </div>
-            </div>
+              message={message}
+            />
           ))}
 
           {isTyping && (
-            <div className="flex justify-start">
-              <div className="flex flex-col items-center mr-3">
-                <div className="w-10 h-10 bg-white border-2 border-charcoal rounded-full overflow-hidden">
-                  <img
-                    src="/images/characters/carot.png"
-                    alt="캐럿 캐릭터"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <span className="text-xs text-charcoal mt-1">캐럿</span>
-              </div>
-              <div className="bg-gray-100 text-charcoal px-4 py-3 rounded-2xl rounded-bl-none">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                </div>
-              </div>
-            </div>
+            <ChatMessage
+              showTypingIndicator={true}
+            />
           )}
 
           {waitingForClick && (

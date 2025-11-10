@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import CarrotChatBubble from "../components/CarrotChatBubble";
 
 const Result = () => {
   const { landingUserId } = useParams();
@@ -336,22 +337,10 @@ const Result = () => {
           </div>
 
           {/* Carrot Chat Message */}
-          <div className="flex items-start space-x-3">
-            <img
-              src="/images/characters/carot.png"
-              alt="캐럿"
-              className="w-10 h-10 rounded-full flex-shrink-0"
-            />
-            <div className="flex-1">
-              <div className="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 inline-block">
-                <p className="text-sm text-charcoal">
-                  MBTI에도 해석 방식이 여러개가 있다냥!
-                  <br />
-                  MBTI의 두번째 글자가 내면에 큰 영향을 미친다냥.
-                </p>
-              </div>
-            </div>
-          </div>
+          <CarrotChatBubble
+            message={`MBTI에도 해석 방식이 여러개가 있다냥!\nMBTI의 두번째 글자가 내면에 큰 영향을 미친다냥.`}
+            removeMaxWidth={true}
+          />
 
           {/* MBTI Group Interpretation */}
           {mbtiGroup && (
@@ -547,19 +536,10 @@ const Result = () => {
         {/* Fixed Bottom Purchase Section */}
         <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full min-w-[320px] max-w-[500px] bg-white border-t border-gray-200 p-4 shadow-lg">
           {/* Carrot Chat Message */}
-          <div className="flex items-start space-x-3 mb-4">
-            <img
-              src="/images/characters/carot.png"
-              alt="캐럿"
-              className="w-10 h-10 rounded-full flex-shrink-0"
+          <div className="mb-4">
+            <CarrotChatBubble
+              message="1000원으로 모든 내용을 확인할 수 있다냥"
             />
-            <div className="flex-1">
-              <div className="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 inline-block max-w-[80%]">
-                <p className="text-sm text-charcoal">
-                  1000원으로 모든 내용을 확인할 수 있다냥
-                </p>
-              </div>
-            </div>
           </div>
 
           {/* Purchase Button */}
