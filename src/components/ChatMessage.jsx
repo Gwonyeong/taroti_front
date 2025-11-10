@@ -6,7 +6,10 @@ const ChatMessage = ({
   characterImageSrc = "/images/characters/desert_fox/desert_fox_open_mouse.png",
   characterName = "페넥",
   showCharacterName = true,
-  maxWidth = "70%"
+  maxWidth = "70%",
+  displayImage = null,
+  imageAlt = "",
+  imageClassName = "w-48 h-48 object-cover rounded-lg"
 }) => {
   // 타이핑 인디케이터 렌더링
   if (showTypingIndicator) {
@@ -57,15 +60,25 @@ const ChatMessage = ({
         </div>
       )}
 
-      <div
-        className={`max-w-[${maxWidth}] px-4 py-3 rounded-2xl ${
-          message.sender === 'user'
-            ? 'bg-charcoal text-white rounded-br-none'
-            : 'bg-gray-100 text-charcoal rounded-bl-none'
-        }`}
-      >
-        <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-      </div>
+      {displayImage ? (
+        <div className={`max-w-[${maxWidth}]`}>
+          <img
+            src={displayImage}
+            alt={imageAlt}
+            className={imageClassName}
+          />
+        </div>
+      ) : (
+        <div
+          className={`max-w-[${maxWidth}] px-4 py-3 rounded-2xl ${
+            message.sender === 'user'
+              ? 'bg-charcoal text-white rounded-br-none'
+              : 'bg-gray-100 text-charcoal rounded-bl-none'
+          }`}
+        >
+          <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+        </div>
+      )}
     </div>
   );
 };

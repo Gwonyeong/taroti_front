@@ -61,13 +61,16 @@ const Landing = () => {
     }
   }, [navigate]);
 
-  const addMessage = (text, sender = "bot") => {
+  const addMessage = (text, sender = "bot", imageUrl = null) => {
+    const messageId = Date.now() + Math.random();
     setMessages(prev => [...prev, {
-      id: Date.now() + Math.random(),
+      id: messageId,
       text,
       sender,
-      timestamp: new Date()
+      timestamp: new Date(),
+      image: imageUrl
     }]);
+    return messageId;
   };
 
   const showNextMessage = () => {
@@ -167,7 +170,7 @@ const Landing = () => {
           setIsTyping(true);
           setTimeout(() => {
             setIsTyping(false);
-            addMessage("MBTI는 뭐다마?", "bot");
+            addMessage("성격 유형은 뭐다마?", "bot");
             setTimeout(() => {
               setShowMbtiInput(true);
             }, 300);
@@ -205,19 +208,42 @@ const Landing = () => {
       // 봇 응답
       setTimeout(() => {
         setIsTyping(false);
-        addMessage("완벽하다마! 이제 타로 카드를 뽑아보자마.", "bot");
+        addMessage("완벽하다마! 페넥의 노트에 기록하겠다마!", "bot");
 
-        // 카드 선택 화면 표시
+        // 이미지 메시지 추가 (먼저 GIF)
         setTimeout(() => {
-          setIsTyping(true);
+          const gifMessageId = addMessage("", "bot", "/images/characters/desert_fox/desert_fox_write_with_pen_square.gif");
+
+          // 3초 후 이미지 교체
           setTimeout(() => {
-            setIsTyping(false);
-            addMessage("3장의 카드 중 하나를 선택해달라마!", "bot");
+            setMessages(prev => prev.map(msg =>
+              msg.id === gifMessageId
+                ? { ...msg, image: "/images/characters/desert_fox/desert_fox_sit_desk.jpeg" }
+                : msg
+            ));
+
+            // 카드 선택 메시지
             setTimeout(() => {
-              setShowCardSelect(true);
-            }, 300);
-          }, 600);
-        }, 600);
+              setIsTyping(true);
+              setTimeout(() => {
+                setIsTyping(false);
+                addMessage("이제 타로 카드를 뽑아보자마.", "bot");
+
+                // 카드 선택 화면 표시
+                setTimeout(() => {
+                  setIsTyping(true);
+                  setTimeout(() => {
+                    setIsTyping(false);
+                    addMessage("3장의 카드 중 하나를 선택해달라마!", "bot");
+                    setTimeout(() => {
+                      setShowCardSelect(true);
+                    }, 300);
+                  }, 600);
+                }, 600);
+              }, 600);
+            }, 600);
+          }, 3000);
+        }, 400);
       }, 800);
     }
   };
@@ -299,6 +325,9 @@ const Landing = () => {
             <ChatMessage
               key={message.id}
               message={message}
+              displayImage={message.image}
+              imageAlt="페넥 이미지"
+              imageClassName="w-64 h-auto rounded-lg"
             />
           ))}
 
@@ -392,7 +421,7 @@ const Landing = () => {
         {showMbtiInput && (
           <div className="p-4 bg-gray-50 border-t border-gray-200">
             <div className="space-y-4">
-              <p className="text-sm text-charcoal text-center">MBTI를 선택해주세요</p>
+              <p className="text-sm text-charcoal text-center">성격 유형을 선택해주세요</p>
 
               {/* E/I Selection */}
               <div className="space-y-2">
