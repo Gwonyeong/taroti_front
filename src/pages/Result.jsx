@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import CarrotChatBubble from "../components/CarrotChatBubble";
 
 const Result = () => {
   const { landingUserId } = useParams();
+  const [searchParams] = useSearchParams();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,9 +13,113 @@ const Result = () => {
   const [showModal, setShowModal] = useState(false);
   const [email, setEmail] = useState("");
   const [emailSaving, setEmailSaving] = useState(false);
+  const [selectedCardNumber, setSelectedCardNumber] = useState(null);
+  const [cardData, setCardData] = useState(null);
+
+  // 카드명 매핑 함수
+  const getCardName = (cardNumber) => {
+    const cardNames = {
+      0: "TheFool",
+      1: "TheMagician",
+      2: "TheHighPriestess",
+      3: "TheEmpress",
+      4: "TheEmperor",
+      5: "TheHierophant",
+      6: "TheLovers",
+      7: "TheChariot",
+      8: "Strength",
+      9: "TheHermit",
+      10: "WheelOfFortune"
+    };
+    return cardNames[cardNumber] || "TheFool";
+  };
+
+  // 카드 표시명 함수
+  const getCardDisplayName = (cardNumber) => {
+    const displayNames = {
+      0: "THE FOOL (바보)",
+      1: "THE MAGICIAN (마법사)",
+      2: "THE HIGH PRIESTESS (여사제)",
+      3: "THE EMPRESS (여황제)",
+      4: "THE EMPEROR (황제)",
+      5: "THE HIEROPHANT (교황)",
+      6: "THE LOVERS (연인)",
+      7: "THE CHARIOT (전차)",
+      8: "STRENGTH (힘)",
+      9: "THE HERMIT (은둔자)",
+      10: "WHEEL OF FORTUNE (운명의 수레바퀴)"
+    };
+    return displayNames[cardNumber] || "THE FOOL (바보)";
+  };
+
+  // **텍스트** 형식을 볼드 처리로 변환하는 함수
+  const formatBoldText = (text) => {
+    if (!text) return null;
+
+    // **텍스트** 패턴을 찾아서 <strong> 태그로 변환
+    const parts = text.split(/\*\*(.*?)\*\*/g);
+
+    return parts.map((part, index) => {
+      // 홀수 인덱스는 **로 감싸진 텍스트
+      if (index % 2 === 1) {
+        return <strong key={index} className="font-bold">{part}</strong>;
+      }
+      return part;
+    });
+  };
+
+  // MBTI 그룹별 조언 가져오기
+  const getMbtiAdvice = (mbti, cardData) => {
+    if (!mbti || !cardData) return null;
+
+    const secondLetter = mbti.charAt(1); // N 또는 S
+    const thirdLetter = mbti.charAt(2); // T 또는 F
+
+    // MBTI 그룹 결정
+    let adviceKey = '';
+    if (secondLetter === 'N' && thirdLetter === 'F') {
+      adviceKey = 'nfAdvice';
+    } else if (secondLetter === 'N' && thirdLetter === 'T') {
+      adviceKey = 'ntAdvice';
+    } else if (secondLetter === 'S' && thirdLetter === 'J') {
+      adviceKey = 'sjAdvice';
+    } else if (secondLetter === 'S' && thirdLetter === 'P') {
+      adviceKey = 'spAdvice';
+    }
+
+    return cardData[adviceKey] || '해당 MBTI 그룹에 대한 조언이 준비 중입니다.';
+  };
+
+  // 카드 데이터 로드 함수
+  const loadCardData = async (cardNumber) => {
+    try {
+      const response = await fetch('/documents/cardDescription/3cardSpread/1.current.json');
+      if (response.ok) {
+        const data = await response.json();
+        const cardInfo = data.TarotInterpretations.find(card => card.CardNumber === cardNumber.toString());
+        setCardData(cardInfo);
+      }
+    } catch (error) {
+      console.error('Error loading card data:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchUserData = async () => {
+      // 카드 번호 가져오기 (URL 파라미터 또는 로컬스토리지)
+      let cardNumber = searchParams.get('cardNumber');
+      if (!cardNumber) {
+        cardNumber = localStorage.getItem('taroTI_selectedCardNumber');
+      }
+      if (cardNumber) {
+        setSelectedCardNumber(parseInt(cardNumber));
+        await loadCardData(parseInt(cardNumber));
+      } else {
+        // 기본값으로 0번 카드 설정
+        setSelectedCardNumber(0);
+        await loadCardData(0);
+      }
+
       try {
         if (landingUserId === "temp") {
           // 임시 데이터
@@ -132,7 +237,7 @@ const Result = () => {
     };
 
     fetchUserData();
-  }, [landingUserId]);
+  }, [landingUserId, searchParams]);
 
   const handlePurchaseClick = async () => {
     if (landingUserId && landingUserId !== "temp") {
@@ -258,19 +363,26 @@ const Result = () => {
           </div>
 
           {/* Selected Card */}
-          <div className="flex justify-center">
-            <div className="bg-white p-6 rounded-lg shadow-lg border">
-              <img
-                src="/images/cards/0_THE_FOOL.png"
-                alt="THE FOOL 카드"
-                className="w-40 h-60 object-cover rounded-lg mx-auto"
-              />
-              <h3 className="text-center mt-4 text-xl font-bold text-charcoal">
-                THE FOOL
-              </h3>
-              <p className="text-center text-sm text-gray-500">새로운 시작</p>
+          {selectedCardNumber !== null && (
+            <div className="flex justify-center">
+              <div className="bg-white p-6 rounded-lg shadow-lg border">
+                <img
+                  src={`/documents/illustrator/${String(selectedCardNumber).padStart(2, '0')}-${getCardName(selectedCardNumber)}.jpg`}
+                  alt={`${getCardName(selectedCardNumber)} 카드`}
+                  className="w-40 h-60 object-cover rounded-lg mx-auto"
+                  onError={(e) => {
+                    e.target.src = "/images/cards/back/camp_band.jpeg";
+                  }}
+                />
+                <h3 className="text-center mt-4 text-xl font-bold text-charcoal">
+                  {getCardDisplayName(selectedCardNumber)}
+                </h3>
+                <p className="text-center text-sm text-gray-500">
+                  {cardData?.['CardFeature/Concept']?.[0] || "새로운 시작"}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* User Info */}
           <div className="bg-gray-50 p-4 rounded-lg">
@@ -305,36 +417,49 @@ const Result = () => {
             </div>
           </div>
 
-          {/* Card Meaning */}
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-charcoal mb-3">카드의 의미</h4>
-            <div className="text-sm text-gray-700 leading-relaxed space-y-3">
-              <p>
-                타로의 '바보(The Fool)' 카드는 타로 덱의 첫 번째 카드로, 번호
-                0을 가지며 무한한 가능성과 새로운 시작을 상징합니다. 카드에는
-                보통 절벽 끝에서 앞을 보지 않고 한 발을 내딛으려는 젊은이의
-                모습이 그려져 있습니다.
-              </p>
-              <p>
-                <strong>핵심 키워드:</strong> 순수함, 자발성, 모험심, 직관,
-                무조건적 신뢰, 창의성, 자유로운 영혼, 잠재력, 영적 여정의 시작,
-                내면의 아이
-              </p>
-              <p>
-                이 카드는 단순한 '어리석음'이 아닌, 세상의 편견과 두려움에
-                얽매이지 않는 <strong>순수한 용기</strong>를 의미합니다. 바보는
-                과거의 경험이나 미래의 걱정 없이 오직 현재 순간의 직감을 따라
-                행동하며, 이러한 태도는 때로 기적 같은 결과를 가져다줍니다.
-              </p>
-              <p>
-                연애와 관계에서 '바보' 카드는 <strong>무조건적인 사랑</strong>,
-                편견 없는 마음, 그리고 상대방을 있는 그대로 받아들이는 순수함을
-                나타냅니다. 또한 관계에서의 새로운 시작, fresh start, 그리고 두
-                사람이 함께 만들어갈 예측할 수 없는 아름다운 여정을 의미하기도
-                합니다.
-              </p>
+          {/* 카드 설명 */}
+          {cardData && (
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="font-semibold text-charcoal mb-3">카드 해석</h4>
+              <div className="text-sm text-gray-700 leading-relaxed space-y-3">
+                {cardData.CardDescription && (
+                  <div>
+                    <p><strong>그림 설명:</strong></p>
+                    <p className="whitespace-pre-line">{formatBoldText(cardData.CardDescription)}</p>
+                  </div>
+                )}
+                {cardData.CardFeeling && (
+                  <div>
+                    <p><strong>카드가 주는 느낌:</strong></p>
+                    <p className="whitespace-pre-line">{formatBoldText(cardData.CardFeeling)}</p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Card Meaning */}
+          {cardData && (
+            <>
+              {/* 애인이 나를 어떻게 생각하는지 */}
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-charcoal mb-3">애인이 나를 어떻게 생각하는지</h4>
+                <div className="text-sm text-gray-700 leading-relaxed">
+                  <p className="whitespace-pre-line">{formatBoldText(cardData["Lover'sPerception"])}</p>
+                </div>
+              </div>
+
+              {/* MBTI별 조언 */}
+              {userData?.mbti && userData.mbti !== "UNKNOWN" && (
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-charcoal mb-3">당신의 MBTI({userData.mbti})에 맞는 조언</h4>
+                  <div className="text-sm text-gray-700 leading-relaxed">
+                    <p className="whitespace-pre-line">{formatBoldText(getMbtiAdvice(userData.mbti, cardData))}</p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
 
           {/* Carrot Chat Message */}
           <CarrotChatBubble

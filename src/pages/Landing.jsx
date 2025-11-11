@@ -26,6 +26,7 @@ const Landing = () => {
     JP: "", // J or P
   });
   const [userInfo, setUserInfo] = useState({});
+  const [selectedCardNumber, setSelectedCardNumber] = useState(null);
   const messagesEndRef = useRef(null);
   const hasInitialized = useRef(false);
 
@@ -282,8 +283,48 @@ const Landing = () => {
     }
   };
 
+  // 카드명 매핑 함수
+  const getCardName = (cardNumber) => {
+    const cardNames = {
+      0: "TheFool",
+      1: "TheMagician",
+      2: "TheHighPriestess",
+      3: "TheEmpress",
+      4: "TheEmperor",
+      5: "TheHierophant",
+      6: "TheLovers",
+      7: "TheChariot",
+      8: "Strength",
+      9: "TheHermit",
+      10: "WheelOfFortune"
+    };
+    return cardNames[cardNumber] || "TheFool";
+  };
+
+  // 카드 표시명 함수
+  const getCardDisplayName = (cardNumber) => {
+    const displayNames = {
+      0: "THE FOOL (바보)",
+      1: "THE MAGICIAN (마법사)",
+      2: "THE HIGH PRIESTESS (여사제)",
+      3: "THE EMPRESS (여황제)",
+      4: "THE EMPEROR (황제)",
+      5: "THE HIEROPHANT (교황)",
+      6: "THE LOVERS (연인)",
+      7: "THE CHARIOT (전차)",
+      8: "STRENGTH (힘)",
+      9: "THE HERMIT (은둔자)",
+      10: "WHEEL OF FORTUNE (운명의 수레바퀴)"
+    };
+    return displayNames[cardNumber] || "THE FOOL (바보)";
+  };
+
   // 카드 선택 처리
   const handleCardSelect = async (cardIndex) => {
+    // 0-10번 중 랜덤 선택
+    const randomCardNumber = Math.floor(Math.random() * 11); // 0부터 10까지
+    setSelectedCardNumber(randomCardNumber);
+
     setShowCardSelect(false);
     setIsTyping(true);
 
@@ -307,11 +348,17 @@ const Landing = () => {
       // 이미 저장된 사용자인지 다시 한번 확인
       const existingUserId = localStorage.getItem("taroTI_landingUserId");
       if (existingUserId) {
-        navigate(`/result/${existingUserId}`);
+        navigate(`/result/${existingUserId}?cardNumber=${selectedCardNumber}`);
         return;
       }
 
-      console.log("Sending user data:", userInfo);
+      // 사용자 정보에 선택된 카드 번호 추가
+      const userDataWithCard = {
+        ...userInfo,
+        selectedCardNumber
+      };
+
+      console.log("Sending user data:", userDataWithCard);
 
       const response = await fetch(
         `${
@@ -322,7 +369,7 @@ const Landing = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(userInfo),
+          body: JSON.stringify(userDataWithCard),
         }
       );
 
@@ -331,12 +378,13 @@ const Landing = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("Response data:", data);
-        // 로컬스토리지에 사용자 ID 저장
+        // 로컬스토리지에 사용자 ID와 카드 번호 저장
         localStorage.setItem(
           "taroTI_landingUserId",
           data.landingUserId.toString()
         );
-        navigate(`/result/${data.landingUserId}`);
+        localStorage.setItem("taroTI_selectedCardNumber", selectedCardNumber.toString());
+        navigate(`/result/${data.landingUserId}?cardNumber=${selectedCardNumber}`);
       } else {
         const errorText = await response.text();
         console.error(
@@ -346,11 +394,11 @@ const Landing = () => {
           errorText
         );
         // 에러 시에도 임시 ID로 이동
-        navigate("/result/temp");
+        navigate(`/result/temp?cardNumber=${selectedCardNumber}`);
       }
     } catch (error) {
       console.error("Error saving user data:", error);
-      navigate("/result/temp");
+      navigate(`/result/temp?cardNumber=${selectedCardNumber}`);
     }
   };
 
@@ -627,7 +675,7 @@ const Landing = () => {
         )}
 
         {/* Selected Card Display */}
-        {showSelectedCard && (
+        {showSelectedCard && selectedCardNumber !== null && (
           <div className="p-4 bg-gray-50 border-t border-gray-200">
             <div className="space-y-4">
               <p className="text-sm text-charcoal text-center">
@@ -636,12 +684,16 @@ const Landing = () => {
               <div className="flex justify-center">
                 <div className="bg-white p-4 rounded-lg shadow-lg">
                   <img
-                    src="/images/cards/0_THE_FOOL.png"
-                    alt="THE FOOL 카드"
+                    src={`/documents/illustrator/${String(selectedCardNumber).padStart(2, '0')}-${getCardName(selectedCardNumber)}.jpg`}
+                    alt={`${getCardName(selectedCardNumber)} 카드`}
                     className="w-32 h-48 object-cover rounded-lg"
+                    onError={(e) => {
+                      // 이미지 로드 실패 시 기본 이미지로 대체
+                      e.target.src = "/images/cards/back/camp_band.jpeg";
+                    }}
                   />
                   <p className="text-center mt-2 font-medium text-charcoal">
-                    THE FOOL
+                    {getCardDisplayName(selectedCardNumber)}
                   </p>
                 </div>
               </div>
