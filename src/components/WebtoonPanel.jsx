@@ -105,9 +105,10 @@ const WebtoonPanel = ({
 
                   {/* Bubble content */}
                   <div
-                    className={
+                    className={`${
                       bubble.textStyle || "text-sm text-gray-800 font-medium"
-                    }
+                    } break-keep`}
+                    style={{ wordBreak: 'keep-all' }}
                   >
                     {typeof bubble.content === "string" ? (
                       <p className="whitespace-pre-line">{bubble.content}</p>
@@ -238,9 +239,10 @@ const WebtoonPanel = ({
 
             {/* Bubble content */}
             <div
-              className={
+              className={`${
                 bubble.textStyle || "text-sm text-gray-800 font-medium"
-              }
+              } break-keep`}
+              style={{ wordBreak: 'keep-all' }}
             >
               {typeof bubble.content === "string" ? (
                 <p className="whitespace-pre-line">{bubble.content}</p>

@@ -167,7 +167,7 @@ const SpeechBubble = ({
         )}
 
         {/* Bubble content */}
-        <div className={textStyle}>
+        <div className={`${textStyle} break-keep`} style={{ wordBreak: 'keep-all' }}>
           {typeof content === "string" ? (
             <p className="whitespace-pre-line">{content}</p>
           ) : (
