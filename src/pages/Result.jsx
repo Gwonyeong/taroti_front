@@ -382,15 +382,44 @@ const Result = () => {
                 fitImage={true}
                 allowOverflow={false}
                 className=""
+                borderRadius="rounded-lg"
                 speechBubbles={[
                   {
                     content: "카드를 잘 골랐다마!",
                     position: "top-4 left-4",
 
                     bubbleStyle:
-                      "bg-white bg-opacity-95 border-3 border-amber-400",
+                      "bg-white bg-opacity-95 border-3 border-amber-400 ",
                     tailPosition: "bottom",
-                    maxWidth: "45%",
+                    maxWidth: "55%",
+                    textStyle:
+                      "text-lg text-gray-800 font-bold leading-relaxed",
+                    zIndex: 20,
+                  },
+                ]}
+              />
+            </div>
+          </div>
+
+          {/* Second Webtoon Panel - 페넥의 타로 해석 (세로 직사각형) */}
+          <div className="flex justify-center w-full overflow-visible py-12">
+            <div className="w-full max-w-sm mr-20 ">
+              <WebtoonPanel
+                backgroundImage="/images/characters/webtoon/book_highligting.png"
+                fitImage={false}
+                panelHeight="h-32"
+                allowOverflow={true}
+                className=""
+                borderRadius="rounded-lg"
+                speechBubbles={[
+                  {
+                    content: "네 정보는 꼼꼼히 확인했다마!",
+                    position: "right-[-80px] bottom-4",
+                    bubbleStyle:
+                      "bg-white bg-opacity-95 border-3 border-purple-400",
+                    showTail: false,
+                    tailPosition: "left",
+                    maxWidth: "55%",
                     textStyle:
                       "text-sm text-gray-800 font-bold leading-relaxed",
                     zIndex: 20,
@@ -400,23 +429,24 @@ const Result = () => {
             </div>
           </div>
 
-          {/* Second Webtoon Panel - 페넥의 타로 해석 (세로 직사각형) */}
-          <div className="flex justify-center w-full overflow-visible py-4">
-            <div className="w-full max-w-sm mr-20 ">
+          {/* Third Webtoon Panel - 페넥의 타로 해석 (세로 직사각형) */}
+          <div className="flex justify-center w-full overflow-visible py-12">
+            <div className="w-full max-w-xs ml-20">
               <WebtoonPanel
-                backgroundImage="/images/characters/webtoon/book_highligting.png"
+                backgroundImage="/images/characters/webtoon/desert_fox_card_on_hands.jpeg"
                 fitImage={false}
-                panelHeight="h-32"
+                panelHeight="h-48"
                 allowOverflow={true}
-                className="rounded-lg "
+                className=""
+                borderRadius="rounded-lg"
                 speechBubbles={[
                   {
-                    content: "네 정보는 꼼꼼히 확인했다마!",
-                    position: "right-[-80px] bottom-4",
+                    content: "이제 카드의 뜻을 알려줄 것이다마!",
+                    position: " left-[-100px] top-4",
                     bubbleStyle:
-                      "bg-white bg-opacity-95 border-3 border-purple-400",
-                    // tailPosition: "left",
-                    maxWidth: "45%",
+                      "bg-yellow-50 bg-opacity-95 border-3 border-purple-400",
+                    tailPosition: "right",
+                    maxWidth: "65%",
                     textStyle:
                       "text-xs text-gray-800 font-bold leading-relaxed",
                     zIndex: 20,
@@ -426,26 +456,23 @@ const Result = () => {
             </div>
           </div>
 
-          {/* Third Webtoon Panel - 페넥의 타로 해석 (세로 직사각형) */}
           <div className="flex justify-center w-full">
-            <div className="w-full max-w-xs ml-20">
+            <div className="w-full max-w-lg">
               <WebtoonPanel
-                backgroundImage="/images/characters/webtoon/desert_fox_card_on_hands.jpeg"
-                fitImage={false}
-                panelHeight="h-48"
-                allowOverflow={false}
-                className="rounded-lg"
-                speechBubbles={[
+                backgroundImage="/images/characters/webtoon/desert_fox_watching_card.jpeg"
+                fitImage={true}
+                allowOverflow={true}
+                className=""
+                borderRadius="rounded-lg"
+                soundEffects={[
                   {
-                    content: "너의 카드가 알려주는",
-                    position: "top-4 left-4",
-                    bubbleStyle:
-                      "bg-yellow-50 bg-opacity-95 border-3 border-purple-400",
-                    tailPosition: "bottom",
-                    maxWidth: "85%",
-                    textStyle:
-                      "text-xs text-gray-800 font-bold leading-relaxed",
-                    zIndex: 20,
+                    content: "흠!",
+                    position: "top-32 right-6",
+                    rotation: -15,
+                    textStyle: "text-4xl font-black ",
+
+                    stroke: "3px #fff",
+                    zIndex: 25,
                   },
                 ]}
               />

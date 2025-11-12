@@ -5,6 +5,13 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'WebtoonSound';
+  src: url('./assets/fonts/webtoon_sound.ttf') format('truetype');
+  font-weight: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
