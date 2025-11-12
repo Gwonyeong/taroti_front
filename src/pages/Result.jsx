@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import CarrotChatBubble from "../components/CarrotChatBubble";
 import WebtoonPanel from "../components/WebtoonPanel";
+import SpeechBubble from "../components/SpeechBubble";
 
 const Result = () => {
   const { landingUserId } = useParams();
@@ -11,11 +12,14 @@ const Result = () => {
   const [error, setError] = useState(null);
   const [mbtiGroup, setMbtiGroup] = useState(null);
   const [mbtiDetails, setMbtiDetails] = useState({});
+  const [mbtiDescriptions, setMbtiDescriptions] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [email, setEmail] = useState("");
   const [emailSaving, setEmailSaving] = useState(false);
   const [selectedCardNumber, setSelectedCardNumber] = useState(null);
   const [cardData, setCardData] = useState(null);
+  const [backgroundOpacity, setBackgroundOpacity] = useState(0);
+  const triggerPanelRef = useRef(null);
 
   // 카드명 매핑 함수
   const getCardName = (cardNumber) => {
@@ -197,10 +201,80 @@ const Result = () => {
       return descriptionArray[randomIndex];
     };
 
+    const getRandomDescriptions = (descriptionArray, count = 5) => {
+      if (!descriptionArray || descriptionArray.length === 0) return [];
+      const shuffled = [...descriptionArray].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, Math.min(count, descriptionArray.length));
+    };
+
     const loadMbtiDetailFiles = async (mbti) => {
       if (!mbti || mbti === "UNKNOWN") return;
 
       const mbtiDetails = {};
+      const mbtiDescriptions = {};
+
+      // 각 폴더에서 해당 MBTI에 맞는 파일들을 찾기
+      const folders = ["action", "david", "temperament"];
+
+      for (const folder of folders) {
+        const matchedFiles = [];
+
+        // 가능한 모든 파일 체크
+        const possibleFiles = [
+          { file: "EJ.json", letters: ["E", "J"] },
+          { file: "EP.json", letters: ["E", "P"] },
+          { file: "IJ.json", letters: ["I", "J"] },
+          { file: "IP.json", letters: ["I", "P"] },
+          { file: "TJ.json", letters: ["T", "J"] },
+          { file: "TP.json", letters: ["T", "P"] },
+          { file: "FJ.json", letters: ["F", "J"] },
+          { file: "FP.json", letters: ["F", "P"] },
+          { file: "NT.json", letters: ["N", "T"] },
+          { file: "NF.json", letters: ["N", "F"] },
+          { file: "SJ.json", letters: ["S", "J"] },
+          { file: "SP.json", letters: ["S", "P"] },
+        ];
+
+        for (const fileInfo of possibleFiles) {
+          // MBTI가 파일의 모든 글자를 포함하는지 체크
+          const hasAllLetters = fileInfo.letters.every((letter) =>
+            mbti.includes(letter)
+          );
+
+          if (hasAllLetters) {
+            try {
+              const response = await fetch(
+                `/documents/mbtiDetail/${folder}/${fileInfo.file}`
+              );
+              if (response.ok) {
+                const data = await response.json();
+                matchedFiles.push({
+                  fileName: fileInfo.file.replace(".json", ""),
+                  data: data,
+                });
+              }
+            } catch (error) {
+              // 파일이 없을 수 있으므로 에러 무시
+            }
+          }
+        }
+
+        // 매칭된 파일들의 description을 모두 모음
+        let allDescriptions = [];
+        for (const file of matchedFiles) {
+          if (file.data.description) {
+            allDescriptions = [...allDescriptions, ...file.data.description];
+          }
+        }
+
+        // 랜덤으로 5개 선택
+        if (allDescriptions.length > 0) {
+          mbtiDescriptions[folder] = {
+            descriptions: getRandomDescriptions(allDescriptions, 5),
+            matchedFiles: matchedFiles.map((f) => f.fileName),
+          };
+        }
+      }
 
       // Define folder-specific combination patterns based on available files
       const folderCombinations = {
@@ -247,10 +321,46 @@ const Result = () => {
       }
 
       setMbtiDetails(mbtiDetails);
+      setMbtiDescriptions(mbtiDescriptions);
     };
 
     fetchUserData();
   }, [landingUserId, searchParams]);
+
+  // 스크롤 기반 배경색 변경 효과
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!triggerPanelRef.current) return;
+
+      const triggerElement = triggerPanelRef.current;
+      const triggerRect = triggerElement.getBoundingClientRect();
+      const triggerTop = triggerRect.top;
+      const windowHeight = window.innerHeight;
+
+      // 트리거 패널이 화면 중앙을 지날 때를 기준점으로 설정
+      const triggerPoint = windowHeight * 0.5;
+
+      if (triggerTop <= triggerPoint) {
+        // 패널이 기준점을 지나면 어두워지기 시작
+        const scrollDistance = triggerPoint - triggerTop;
+        const maxDistance = windowHeight * 1.5; // 최대 어두워지는 거리
+        const opacity = Math.min(scrollDistance / maxDistance, 0.92); // 최대 92% 어둡게
+        setBackgroundOpacity(opacity);
+      } else {
+        // 패널이 기준점 위에 있으면 밝게
+        setBackgroundOpacity(0);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    // 초기 상태 확인
+    handleScroll();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   const handlePurchaseClick = async () => {
     if (landingUserId && landingUserId !== "temp") {
@@ -359,8 +469,14 @@ const Result = () => {
   }
 
   return (
-    <div className="min-h-screen bg-offWhite flex justify-center">
-      <div className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col h-screen">
+    <div className="min-h-screen bg-offWhite flex justify-center relative">
+      {/* 스크롤 기반 배경 오버레이 */}
+      <div
+        className="fixed inset-0 bg-gray-950 pointer-events-none transition-opacity duration-300 ease-out"
+        style={{ opacity: backgroundOpacity, zIndex: 1 }}
+      />
+
+      <div className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col h-screen relative z-10">
         {/* Header */}
         <div className="bg-white text-black p-4 shadow-md">
           <h1 className="text-xl font-bold text-left">TaroTI</h1>
@@ -429,6 +545,39 @@ const Result = () => {
             </div>
           </div>
 
+          {/* User Info - 두 번째 웹툰 패널 바로 다음에 배치 */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h4 className="font-semibold text-charcoal mb-3">입력하신 정보</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">생년월일:</span>
+                <span className="text-charcoal font-medium">
+                  {userData?.birthDate
+                    ? `${userData.birthDate.substring(
+                        0,
+                        2
+                      )}년 ${userData.birthDate.substring(
+                        2,
+                        4
+                      )}월 ${userData.birthDate.substring(4, 6)}일`
+                    : "알 수 없음"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">성별:</span>
+                <span className="text-charcoal font-medium">
+                  {userData?.gender || "알 수 없음"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">성격 유형:</span>
+                <span className="text-charcoal font-medium">
+                  {userData?.mbti || "알 수 없음"}
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Third Webtoon Panel - 페넥의 타로 해석 (세로 직사각형) */}
           <div className="flex justify-center w-full overflow-visible py-12">
             <div className="w-full max-w-xs ml-20">
@@ -481,8 +630,31 @@ const Result = () => {
 
           {/* Selected Card */}
           {selectedCardNumber !== null && (
-            <div className="flex justify-center">
-              <div className="bg-white p-6 rounded-lg shadow-lg border">
+            <div className="flex justify-center pt-12">
+              <div className="relative bg-white p-6 rounded-lg shadow-lg border">
+                {/* 말풍선 추가 */}
+                <SpeechBubble
+                  content="이게 네가 뽑은 카드다마!"
+                  position="top-[-80px] left-4"
+                  borderStyle="solid"
+                  borderType="oval"
+                  // backgroundColor="bg-amber-50"
+                  // borderColor="border-amber-400"
+                  borderWidth="border-2"
+                  textStyle="text-sm font-bold text-gray-800"
+                  padding="p-6"
+                  maxWidth="200px"
+                  zIndex={20}
+                  showTail={false}
+                  tailShow={false}
+                  edgeImage="/images/characters/desert_fox/desert_fox_non_bg_watch_card.jpeg"
+                  edgeImagePosition="top-right"
+                  edgeImageSize="w-12 h-12"
+                  customStyle={{
+                    boxShadow: "0 4px 12px rgba(245, 158, 11, 0.2)",
+                  }}
+                />
+
                 <img
                   src={`/documents/illustrator/${String(
                     selectedCardNumber
@@ -502,39 +674,6 @@ const Result = () => {
               </div>
             </div>
           )}
-
-          {/* User Info */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-charcoal mb-3">입력하신 정보</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">생년월일:</span>
-                <span className="text-charcoal font-medium">
-                  {userData?.birthDate
-                    ? `${userData.birthDate.substring(
-                        0,
-                        2
-                      )}년 ${userData.birthDate.substring(
-                        2,
-                        4
-                      )}월 ${userData.birthDate.substring(4, 6)}일`
-                    : "알 수 없음"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">성별:</span>
-                <span className="text-charcoal font-medium">
-                  {userData?.gender || "알 수 없음"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">성격 유형:</span>
-                <span className="text-charcoal font-medium">
-                  {userData?.mbti || "알 수 없음"}
-                </span>
-              </div>
-            </div>
-          </div>
 
           {/* 카드 설명 */}
           {cardData && (
@@ -565,6 +704,33 @@ const Result = () => {
             </div>
           )}
 
+          {/* Webtoon Panel - After Card Interpretation */}
+          <div className="flex justify-center w-full">
+            <div className="w-full max-w-lg">
+              <WebtoonPanel
+                backgroundImage="/images/characters/webtoon/desert_fox_taro.png"
+                fitImage={true}
+                allowOverflow={false}
+                className=""
+                borderRadius="rounded-lg"
+                speechBubbles={[
+                  {
+                    content:
+                      "카드의 의미를 이해했다마!\n이제 진짜 해석을 시작하겠다마!",
+                    position: "top-4 right-4",
+                    bubbleStyle:
+                      "bg-white bg-opacity-95 border-3 border-green-400",
+                    tailPosition: "bottom",
+                    maxWidth: "55%",
+                    textStyle:
+                      "text-sm text-gray-800 font-bold leading-relaxed",
+                    zIndex: 20,
+                  },
+                ]}
+              />
+            </div>
+          </div>
+
           {/* Card Meaning */}
           {cardData && (
             <>
@@ -580,6 +746,167 @@ const Result = () => {
                 </div>
               </div>
 
+              {/* First Webtoon Panel - Before MBTI Advice */}
+              <div className="flex justify-center w-full overflow-visible py-8">
+                <div className="w-full max-w-lg">
+                  <WebtoonPanel
+                    backgroundImage="/images/characters/webtoon/desert_fox_watching_card.jpeg"
+                    fitImage={true}
+                    allowOverflow={true}
+                    className=""
+                    borderRadius="rounded-lg"
+                    speechBubbles={[
+                      {
+                        content:
+                          "흠... 이제 너의 성격에 맞게 애인을 어떻게 대하면 좋을지 알려주겠다마..",
+                        position: "top-4 left-2",
+                        bubbleStyle:
+                          "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
+                        tailPosition: "bottom",
+                        maxWidth: "80%",
+                        textStyle:
+                          "text-sm text-gray-800 font-bold leading-relaxed",
+                        zIndex: 20,
+                      },
+                    ]}
+                    soundEffects={[
+                      {
+                        content: "분석중!",
+                        position: "bottom-20 right-8",
+                        rotation: -10,
+                        textStyle: "text-2xl font-black text-yellow-600",
+                        stroke: "2px #fff",
+                        zIndex: 25,
+                      },
+                    ]}
+                  />
+                </div>
+              </div>
+              {/* Webtoon Panel - After Lover's Perception */}
+              <div
+                ref={triggerPanelRef}
+                className="flex justify-center w-full py-8"
+              >
+                <div className="w-full max-w-md">
+                  <WebtoonPanel
+                    backgroundImage="/images/characters/webtoon/desert_fox_light_hands.jpeg"
+                    fitImage={false}
+                    panelHeight="h-40"
+                    allowOverflow={true}
+                    className=""
+                    borderRadius="rounded-lg"
+                    speechBubbles={[
+                      {
+                        content:
+                          "성격유형 전문가인 내 친구 리트리버를 소개하겠다마..!",
+                        position: "bottom-[-120px]",
+                        bubbleStyle:
+                          "bg-pink-50 bg-opacity-95 border-3 border-pink-400",
+                        tailPosition: "",
+                        maxWidth: "60%",
+                        textStyle:
+                          "text-sm text-gray-800 font-bold leading-relaxed",
+                        zIndex: 20,
+                      },
+                    ]}
+                  />
+                </div>
+              </div>
+
+              {/* Second Webtoon Panel - Before MBTI Advice */}
+              <div className="flex justify-center w-full overflow-visible py-4 pt-[800px]">
+                <div className="w-full max-w-sm ml-16">
+                  {userData?.mbti && userData.mbti !== "UNKNOWN" && (
+                    <div className="relative py-12 pb-[500px]">
+                      <SpeechBubble
+                        content={`... 갑자기 주변이 어두워졌다.`}
+                        position="top-4 left-1/2 transform -translate-x-1/2"
+                        borderStyle="solid"
+                        borderType="oval"
+                        backgroundColor="bg-purple-100"
+                        borderColor="border-purple-500"
+                        borderWidth="border-3"
+                        textStyle="text-lg font-bold text-purple-900"
+                        padding="p-6"
+                        maxWidth="200px"
+                        zIndex={30}
+                        showTail={false}
+                        customStyle={{
+                          boxShadow: "0 8px 25px rgba(147, 51, 234, 0.3)",
+                          background:
+                            "linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%)",
+                        }}
+                      />
+                    </div>
+                  )}
+                  <WebtoonPanel
+                    backgroundImage="/images/characters/webtoon/ritriber_guitar_fire_space.png"
+                    fitImage={false}
+                    panelHeight="h-36"
+                    allowOverflow={true}
+                    className=""
+                    borderRadius="rounded-lg"
+                    soundEffects={[
+                      {
+                        content: "디리링~",
+                        position: "top-20 right-8",
+                        rotation: -10,
+                        textStyle: "text-2xl font-black text-yellow-600",
+                        stroke: "2px #fff",
+                        zIndex: 25,
+                      },
+                    ]}
+                  />
+                </div>
+              </div>
+
+              {/* Standalone Speech Bubble - Before MBTI Advice */}
+              <WebtoonPanel
+                backgroundImage="/images/characters/webtoon/ritriber_guitar_fire_space.png"
+                fitImage={false}
+                // panelHeight="h-36"
+                allowOverflow={true}
+                className=""
+                borderRadius="rounded-lg"
+                soundEffects={[
+                  {
+                    content: "안녕하세요!",
+                    position: "top-20 right-2",
+                    rotation: -10,
+                    textStyle: "text-2xl font-black text-yellow-600",
+                    stroke: "2px #fff",
+                    zIndex: 25,
+                  },
+                ]}
+                speechBubbles={[
+                  {
+                    content: "당신의 성격유형 분석을 도와줄 리트리에요!",
+                    position: " left-[-20px] top-4",
+                    bubbleStyle:
+                      "bg-yellow-50 bg-opacity-95 border-3 border-purple-400",
+                    showTail: false,
+
+                    maxWidth: "55%",
+                    textStyle:
+                      "text-xs text-gray-800 font-bold leading-relaxed",
+                    zIndex: 20,
+                  },
+                  {
+                    content:
+                      "성격에 따라 애인에게 더 좋은 행동을 해줄 수 있을거예요!",
+                    position: " right-[-20px] bottom-[-50px]",
+                    bubbleStyle:
+                      "bg-yellow-50 bg-opacity-95 border-3 border-purple-400",
+                    showTail: false,
+
+                    maxWidth: "55%",
+                    textStyle:
+                      "text-xs text-gray-800 font-bold leading-relaxed",
+                    zIndex: 20,
+                  },
+                ]}
+              />
+
               {/* 성격 유형별 조언 */}
               {userData?.mbti && userData.mbti !== "UNKNOWN" && (
                 <div className="bg-green-50 p-4 rounded-lg">
@@ -593,257 +920,108 @@ const Result = () => {
                   </div>
                 </div>
               )}
+
+              {/* MBTI 상세 설명 섹션 */}
+              {userData?.mbti &&
+                userData.mbti !== "UNKNOWN" &&
+                Object.keys(mbtiDescriptions).length > 0 && (
+                  <div className="space-y-6 mt-8">
+                    <div className="text-center">
+                      <h3 className="text-xl font-bold text-charcoal mb-2">
+                        {userData.mbti} 성격유형 상세 분석
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        당신의 성격유형에 대한 더 자세한 설명입니다
+                      </p>
+                    </div>
+
+                    {/* Action 카테고리 */}
+                    {mbtiDescriptions.action && (
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <h4 className="font-bold text-blue-900 mb-3 text-lg">
+                          행동 패턴 분석
+                        </h4>
+                        <p className="text-xs text-blue-700 mb-3">
+                          매칭된 유형:{" "}
+                          {mbtiDescriptions.action.matchedFiles.join(", ")}
+                        </p>
+                        <ul className="space-y-2">
+                          {mbtiDescriptions.action.descriptions.map(
+                            (desc, index) => (
+                              <li key={index} className="flex items-start">
+                                <span className="text-blue-600 mr-2">•</span>
+                                <span className="text-sm text-gray-700">
+                                  {desc}
+                                </span>
+                              </li>
+                            )
+                          )}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* David Keirsey 기질 분류 */}
+                    {mbtiDescriptions.david && (
+                      <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                        <h4 className="font-bold text-purple-900 mb-3 text-lg">
+                          기질별 특성
+                        </h4>
+                        <p className="text-xs text-purple-700 mb-3">
+                          매칭된 유형:{" "}
+                          {mbtiDescriptions.david.matchedFiles.join(", ")}
+                        </p>
+                        <ul className="space-y-2">
+                          {mbtiDescriptions.david.descriptions.map(
+                            (desc, index) => (
+                              <li key={index} className="flex items-start">
+                                <span className="text-purple-600 mr-2">•</span>
+                                <span className="text-sm text-gray-700">
+                                  {desc}
+                                </span>
+                              </li>
+                            )
+                          )}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Temperament 카테고리 */}
+                    {mbtiDescriptions.temperament && (
+                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <h4 className="font-bold text-green-900 mb-3 text-lg">
+                          기질과 판단 스타일
+                        </h4>
+                        <p className="text-xs text-green-700 mb-3">
+                          매칭된 유형:{" "}
+                          {mbtiDescriptions.temperament.matchedFiles.join(", ")}
+                        </p>
+                        <ul className="space-y-2">
+                          {mbtiDescriptions.temperament.descriptions.map(
+                            (desc, index) => (
+                              <li key={index} className="flex items-start">
+                                <span className="text-green-600 mr-2">•</span>
+                                <span className="text-sm text-gray-700">
+                                  {desc}
+                                </span>
+                              </li>
+                            )
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
             </>
           )}
 
           {/* Webtoon Panel - Character Introduction */}
-          <WebtoonPanel
-            panelHeight="h-40"
-            backgroundColor="bg-gradient-to-r from-blue-50 to-purple-50"
-            borderStyle=""
-            characters={[
-              {
-                image: "/images/characters/carot.png",
-                position: "bottom-2 right-6",
-                className: "h-24 w-auto object-contain",
-                name: "캐럿",
-              },
-            ]}
-            speechBubbles={[
-              {
-                content:
-                  "성격 유형에도 해석 방식이\n여러개가 있다냥!\n\n성격 유형의 두번째 글자가\n내면에 큰 영향을 미친다냥!",
-                position: "top-3 left-4",
-                characterName: "캐럿",
-                bubbleStyle: "bg-white border-2 border-orange-400",
-                tailPosition: "bottom",
-                maxWidth: "65%",
-                textStyle: "text-sm text-gray-800 font-medium leading-relaxed",
-              },
-            ]}
-          />
 
           {/* 성격 유형 Group Interpretation */}
-          {mbtiGroup && (
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-charcoal mb-3">
-                {mbtiGroup.tempTitle}
-              </h4>
-              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                {mbtiGroup.tempResult}
-              </p>
-            </div>
-          )}
-
-          {/* 성격 유형 Detail Boxes from JSON files */}
-          {userData?.mbti &&
-            userData.mbti !== "UNKNOWN" &&
-            Object.keys(mbtiDetails).length > 0 && (
-              <>
-                {/* Action Box */}
-                {mbtiDetails.action && (
-                  <div className="bg-gray-100 p-4 rounded-lg opacity-60">
-                    <h4 className="font-semibold text-charcoal mb-3">
-                      {mbtiDetails.action.groupName}그룹 -{" "}
-                      {mbtiDetails.action.title}
-                    </h4>
-                    <div className="bg-white p-3 rounded mb-3">
-                      <p className="text-sm text-gray-700">
-                        {mbtiDetails.action.description}
-                      </p>
-                    </div>
-                    {mbtiDetails.action.randomDescription && (
-                      <p className="text-sm text-gray-700 mb-3">
-                        {mbtiDetails.action.groupName}그룹은{" "}
-                        {mbtiDetails.action.randomDescription} 이 그룹은...
-                      </p>
-                    )}
-                    <div className="relative">
-                      <div className="blur-sm">
-                        <p className="text-sm text-gray-700 leading-relaxed">
-                          - **핵심 특징**: 행동 지향적인 성향으로 애인과의
-                          관계에서 실질적인 변화를 추구 - **긍정적 측면**:
-                          관계의 문제를 실행을 통해 해결하려 노력하며, 상대방을
-                          위한 구체적인 행동을 보임 - **주의점**: 때로는
-                          감정보다 행동에 치중하여 상대방의 마음을 놓칠 수 있음
-                          - **개선 방향**: 행동과 함께 감정적 소통도 균형있게
-                          유지하기
-                        </p>
-                      </div>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <img
-                          src="/images/characters/carot.png"
-                          alt="캐럿"
-                          className="w-16 h-16 rounded-full mb-2"
-                        />
-                        <p className="text-sm font-medium text-charcoal bg-white px-3 py-1 rounded">
-                          구매시 내용을 확인할 수 있다냥.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* David Box */}
-                {mbtiDetails.david && (
-                  <div className="bg-gray-100 p-4 rounded-lg opacity-60">
-                    <h4 className="font-semibold text-charcoal mb-3">
-                      {mbtiDetails.david.groupName}그룹 -{" "}
-                      {mbtiDetails.david.title}
-                    </h4>
-                    <div className="bg-white p-3 rounded mb-3">
-                      <p className="text-sm text-gray-700">
-                        {mbtiDetails.david.description}
-                      </p>
-                    </div>
-                    {mbtiDetails.david.randomDescription && (
-                      <p className="text-sm text-gray-700 mb-3">
-                        {mbtiDetails.david.groupName}그룹은{" "}
-                        {mbtiDetails.david.randomDescription} 이 그룹은...
-                      </p>
-                    )}
-                    <div className="relative">
-                      <div className="blur-sm">
-                        <p className="text-sm text-gray-700 leading-relaxed">
-                          - **핵심 특징**: 깊이 있는 관찰력과 분석적 사고로
-                          관계를 바라보는 성향 - **긍정적 측면**: 애인의 본질적
-                          특성을 잘 파악하고 장기적인 관점에서 관계를 발전시킴 -
-                          **주의점**: 과도한 분석으로 인해 자연스러운 감정의
-                          흐름을 방해할 수 있음 - **개선 방향**: 분석적 사고와
-                          감정적 직관의 균형을 맞추어 관계의 따뜻함 유지하기
-                        </p>
-                      </div>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <img
-                          src="/images/characters/carot.png"
-                          alt="캐럿"
-                          className="w-16 h-16 rounded-full mb-2"
-                        />
-                        <p className="text-sm font-medium text-charcoal bg-white px-3 py-1 rounded">
-                          구매시 내용을 확인할 수 있다냥.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Temperament Box */}
-                {mbtiDetails.temperament && (
-                  <div className="bg-gray-100 p-4 rounded-lg opacity-60">
-                    <h4 className="font-semibold text-charcoal mb-3">
-                      {mbtiDetails.temperament.groupName}그룹 -{" "}
-                      {mbtiDetails.temperament.title}
-                    </h4>
-                    <div className="bg-white p-3 rounded mb-3">
-                      <p className="text-sm text-gray-700">
-                        {mbtiDetails.temperament.description}
-                      </p>
-                    </div>
-                    {mbtiDetails.temperament.randomDescription && (
-                      <p className="text-sm text-gray-700 mb-3">
-                        {mbtiDetails.temperament.groupName}그룹은{" "}
-                        {mbtiDetails.temperament.randomDescription} 이 그룹은...
-                      </p>
-                    )}
-                    <div className="relative">
-                      <div className="blur-sm">
-                        <p className="text-sm text-gray-700 leading-relaxed">
-                          - **핵심 특징**: 감정과 논리의 균형을 중시하며
-                          상대방과의 조화를 추구하는 성향 - **긍정적 측면**:
-                          애인의 기질을 이해하고 맞춰가며 안정적인 관계를 유지할
-                          수 있음 - **주의점**: 상대방에게 너무 맞추려다
-                          자신만의 특성을 잃을 위험이 있음 - **개선 방향**: 상호
-                          존중을 바탕으로 각자의 개성을 살리면서 조화를 이루기
-                        </p>
-                      </div>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <img
-                          src="/images/characters/carot.png"
-                          alt="캐럿"
-                          className="w-16 h-16 rounded-full mb-2"
-                        />
-                        <p className="text-sm font-medium text-charcoal bg-white px-3 py-1 rounded">
-                          구매시 내용을 확인할 수 있다냥.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Comprehensive Summary Box */}
-                <div className="bg-gray-100 p-4 rounded-lg opacity-60">
-                  <h4 className="font-semibold text-charcoal mb-3">
-                    종합 - {userData.mbti}
-                  </h4>
-                  <div className="relative">
-                    <div className="blur-sm">
-                      <p className="text-sm text-gray-700 leading-relaxed">
-                        {userData.mbti} 유형의 연애 스타일은 복합적이고 다층적인
-                        특성을 보입니다. 바보 카드와 결합될 때, 이들은 새로운
-                        시작에 대한 열망과 동시에 신중함을 잃지 않는 독특한
-                        균형감을 드러냅니다.
-                        {mbtiDetails.action &&
-                          ` 행동적 측면에서는 ${mbtiDetails.action.title}의 특성을 보이며,`}
-                        {mbtiDetails.david &&
-                          ` 분석적 측면에서는 ${mbtiDetails.david.title}의 성향을 나타내고,`}
-                        {mbtiDetails.temperament &&
-                          ` 기질적으로는 ${mbtiDetails.temperament.title}의 면모를 보입니다.`}
-                        애인과의 관계에서 진정성을 추구하되, 때로는 과도한
-                        완벽주의로 인해 자연스러운 흐름을 방해할 수 있습니다.
-                        감정과 이성, 직관과 현실감각 사이에서 조화를 이루려
-                        노력하며, 이러한 내적 갈등이 오히려 관계에 깊이를
-                        더해주기도 합니다. 상대방에게는 예측 불가능하면서도
-                        안정적인 파트너로 인식될 가능성이 높으며, 장기적인
-                        관점에서 서로를 성장시키는 건강한 관계를 구축할 수 있는
-                        잠재력을 가지고 있습니다.
-                      </p>
-                    </div>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <img
-                        src="/images/characters/carot.png"
-                        alt="캐럿"
-                        className="w-16 h-16 rounded-full mb-2"
-                      />
-                      <p className="text-sm font-medium text-charcoal bg-white px-3 py-1 rounded">
-                        구매시 내용을 확인할 수 있다냥.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
         </div>
 
         {/* Fixed Bottom Purchase Section */}
-        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full min-w-[320px] max-w-[500px] bg-white border-t border-gray-200 p-4 shadow-lg">
+        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full min-w-[320px] max-w-[500px] bg-white border-t border-gray-200 p-4 shadow-lg" style={{ zIndex: 9999 }}>
           {/* Webtoon Panel - Purchase Message */}
-          <div className="mb-4">
-            <WebtoonPanel
-              panelHeight="h-20"
-              backgroundColor="bg-gradient-to-r from-yellow-50 to-orange-50"
-              borderStyle=""
-              className="mb-2"
-              characters={[
-                {
-                  image: "/images/characters/carot.png",
-                  position: "bottom-1 right-4",
-                  className: "h-14 w-auto object-contain",
-                  name: "캐럿",
-                },
-              ]}
-              speechBubbles={[
-                {
-                  content: "1000원으로 모든 내용을\n확인할 수 있다냥!",
-                  position: "top-2 left-3",
-                  characterName: "캐럿",
-                  bubbleStyle: "bg-white border-2 border-yellow-400",
-                  tailPosition: "bottom",
-                  maxWidth: "70%",
-                  textStyle: "text-xs text-gray-800 font-bold",
-                },
-              ]}
-            />
-          </div>
 
           {/* Purchase Button */}
           <button
