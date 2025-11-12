@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import CarrotChatBubble from "../components/CarrotChatBubble";
+import WebtoonPanel from "../components/WebtoonPanel";
 
 const Result = () => {
   const { landingUserId } = useParams();
@@ -29,7 +30,7 @@ const Result = () => {
       7: "TheChariot",
       8: "Strength",
       9: "TheHermit",
-      10: "WheelOfFortune"
+      10: "WheelOfFortune",
     };
     return cardNames[cardNumber] || "TheFool";
   };
@@ -47,7 +48,7 @@ const Result = () => {
       7: "THE CHARIOT (전차)",
       8: "STRENGTH (힘)",
       9: "THE HERMIT (은둔자)",
-      10: "WHEEL OF FORTUNE (운명의 수레바퀴)"
+      10: "WHEEL OF FORTUNE (운명의 수레바퀴)",
     };
     return displayNames[cardNumber] || "THE FOOL (바보)";
   };
@@ -62,54 +63,64 @@ const Result = () => {
     return parts.map((part, index) => {
       // 홀수 인덱스는 **로 감싸진 텍스트
       if (index % 2 === 1) {
-        return <strong key={index} className="font-bold">{part}</strong>;
+        return (
+          <strong key={index} className="font-bold">
+            {part}
+          </strong>
+        );
       }
       return part;
     });
   };
 
-  // MBTI 그룹별 조언 가져오기
+  // 성격 유형 그룹별 조언 가져오기
   const getMbtiAdvice = (mbti, cardData) => {
     if (!mbti || !cardData) return null;
 
     const secondLetter = mbti.charAt(1); // N 또는 S
     const thirdLetter = mbti.charAt(2); // T 또는 F
 
-    // MBTI 그룹 결정
-    let adviceKey = '';
-    if (secondLetter === 'N' && thirdLetter === 'F') {
-      adviceKey = 'nfAdvice';
-    } else if (secondLetter === 'N' && thirdLetter === 'T') {
-      adviceKey = 'ntAdvice';
-    } else if (secondLetter === 'S' && thirdLetter === 'J') {
-      adviceKey = 'sjAdvice';
-    } else if (secondLetter === 'S' && thirdLetter === 'P') {
-      adviceKey = 'spAdvice';
+    // 성격 유형 그룹 결정
+    let adviceKey = "";
+    if (secondLetter === "N" && thirdLetter === "F") {
+      adviceKey = "nfAdvice";
+    } else if (secondLetter === "N" && thirdLetter === "T") {
+      adviceKey = "ntAdvice";
+    } else if (secondLetter === "S" && thirdLetter === "J") {
+      adviceKey = "sjAdvice";
+    } else if (secondLetter === "S" && thirdLetter === "P") {
+      adviceKey = "spAdvice";
     }
 
-    return cardData[adviceKey] || '해당 MBTI 그룹에 대한 조언이 준비 중입니다.';
+    return (
+      cardData[adviceKey] || "해당 성격 유형 그룹에 대한 조언이 준비 중입니다."
+    );
   };
 
   // 카드 데이터 로드 함수
   const loadCardData = async (cardNumber) => {
     try {
-      const response = await fetch('/documents/cardDescription/3cardSpread/1.current.json');
+      const response = await fetch(
+        "/documents/cardDescription/3cardSpread/1.current.json"
+      );
       if (response.ok) {
         const data = await response.json();
-        const cardInfo = data.TarotInterpretations.find(card => card.CardNumber === cardNumber.toString());
+        const cardInfo = data.TarotInterpretations.find(
+          (card) => card.CardNumber === cardNumber.toString()
+        );
         setCardData(cardInfo);
       }
     } catch (error) {
-      console.error('Error loading card data:', error);
+      console.error("Error loading card data:", error);
     }
   };
 
   useEffect(() => {
     const fetchUserData = async () => {
       // 카드 번호 가져오기 (URL 파라미터 또는 로컬스토리지)
-      let cardNumber = searchParams.get('cardNumber');
+      let cardNumber = searchParams.get("cardNumber");
       if (!cardNumber) {
-        cardNumber = localStorage.getItem('taroTI_selectedCardNumber');
+        cardNumber = localStorage.getItem("taroTI_selectedCardNumber");
       }
       if (cardNumber) {
         setSelectedCardNumber(parseInt(cardNumber));
@@ -145,7 +156,7 @@ const Result = () => {
           const data = await response.json();
           setUserData(data);
 
-          // MBTI 그룹 정보 로드
+          // 성격 유형 그룹 정보 로드
           await loadMbtiGroup(data.mbti);
           await loadMbtiDetailFiles(data.mbti);
         } else {
@@ -170,7 +181,7 @@ const Result = () => {
           setMbtiGroup(matchedGroup);
         }
       } catch (error) {
-        console.error("Error loading MBTI group:", error);
+        console.error("Error loading 성격 유형 group:", error);
       }
     };
 
@@ -189,20 +200,22 @@ const Result = () => {
     const loadMbtiDetailFiles = async (mbti) => {
       if (!mbti || mbti === "UNKNOWN") return;
 
-      const folders = ["action", "david", "temperament"];
       const mbtiDetails = {};
 
-      for (const folder of folders) {
-        // Get all possible combinations for this MBTI
-        const combinations = [
-          mbti.charAt(0) + mbti.charAt(1), // E/I + N/S
-          mbti.charAt(0) + mbti.charAt(2), // E/I + T/F
-          mbti.charAt(0) + mbti.charAt(3), // E/I + J/P
-          mbti.charAt(1) + mbti.charAt(2), // N/S + T/F
-          mbti.charAt(1) + mbti.charAt(3), // N/S + J/P
-          mbti.charAt(2) + mbti.charAt(3), // T/F + J/P
-        ];
+      // Define folder-specific combination patterns based on available files
+      const folderCombinations = {
+        action: [
+          mbti.charAt(0) + mbti.charAt(3), // E/I + J/P (EJ, EP, IJ, IP)
+        ],
+        david: [
+          mbti.charAt(1) + mbti.charAt(2), // N/S + T/F (NF, NT, SJ, SP)
+        ],
+        temperament: [
+          mbti.charAt(2) + mbti.charAt(3), // T/F + J/P (TJ, TP, FJ, FP)
+        ],
+      };
 
+      for (const [folder, combinations] of Object.entries(folderCombinations)) {
         // Try to find a matching file for this folder
         for (const combination of combinations) {
           try {
@@ -357,9 +370,86 @@ const Result = () => {
         <div className="flex-1 p-6 space-y-6 pb-40">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-charcoal mb-2">
-              타로 리딩 결과
+              결과 : 페넥의 연애조언
             </h2>
-            <p className="text-gray-600">당신을 위한 특별한 메시지입니다</p>
+          </div>
+
+          {/* Webtoon Panel - 타로 마법사 여우 소개 */}
+          <div className="flex justify-center w-full">
+            <div className="w-full max-w-lg">
+              <WebtoonPanel
+                backgroundImage="/images/characters/webtoon/desert_fox_taro.png"
+                fitImage={true}
+                allowOverflow={false}
+                className=""
+                speechBubbles={[
+                  {
+                    content: "카드를 잘 골랐다마!",
+                    position: "top-4 left-4",
+
+                    bubbleStyle:
+                      "bg-white bg-opacity-95 border-3 border-amber-400",
+                    tailPosition: "bottom",
+                    maxWidth: "45%",
+                    textStyle:
+                      "text-sm text-gray-800 font-bold leading-relaxed",
+                    zIndex: 20,
+                  },
+                ]}
+              />
+            </div>
+          </div>
+
+          {/* Second Webtoon Panel - 페넥의 타로 해석 (세로 직사각형) */}
+          <div className="flex justify-center w-full overflow-visible py-4">
+            <div className="w-full max-w-sm mr-20 ">
+              <WebtoonPanel
+                backgroundImage="/images/characters/webtoon/book_highligting.png"
+                fitImage={false}
+                panelHeight="h-32"
+                allowOverflow={true}
+                className="rounded-lg "
+                speechBubbles={[
+                  {
+                    content: "네 정보는 꼼꼼히 확인했다마!",
+                    position: "right-[-80px] bottom-4",
+                    bubbleStyle:
+                      "bg-white bg-opacity-95 border-3 border-purple-400",
+                    // tailPosition: "left",
+                    maxWidth: "45%",
+                    textStyle:
+                      "text-xs text-gray-800 font-bold leading-relaxed",
+                    zIndex: 20,
+                  },
+                ]}
+              />
+            </div>
+          </div>
+
+          {/* Third Webtoon Panel - 페넥의 타로 해석 (세로 직사각형) */}
+          <div className="flex justify-center w-full">
+            <div className="w-full max-w-xs ml-20">
+              <WebtoonPanel
+                backgroundImage="/images/characters/webtoon/desert_fox_card_on_hands.jpeg"
+                fitImage={false}
+                panelHeight="h-48"
+                allowOverflow={false}
+                className="rounded-lg"
+                speechBubbles={[
+                  {
+                    content: "너의 카드가 알려주는",
+                    position: "top-4 left-4",
+                    bubbleStyle:
+                      "bg-yellow-50 bg-opacity-95 border-3 border-purple-400",
+                    tailPosition: "bottom",
+                    maxWidth: "85%",
+                    textStyle:
+                      "text-xs text-gray-800 font-bold leading-relaxed",
+                    zIndex: 20,
+                  },
+                ]}
+              />
+            </div>
           </div>
 
           {/* Selected Card */}
@@ -367,7 +457,9 @@ const Result = () => {
             <div className="flex justify-center">
               <div className="bg-white p-6 rounded-lg shadow-lg border">
                 <img
-                  src={`/documents/illustrator/${String(selectedCardNumber).padStart(2, '0')}-${getCardName(selectedCardNumber)}.jpg`}
+                  src={`/documents/illustrator/${String(
+                    selectedCardNumber
+                  ).padStart(2, "0")}-${getCardName(selectedCardNumber)}.jpg`}
                   alt={`${getCardName(selectedCardNumber)} 카드`}
                   className="w-40 h-60 object-cover rounded-lg mx-auto"
                   onError={(e) => {
@@ -378,7 +470,7 @@ const Result = () => {
                   {getCardDisplayName(selectedCardNumber)}
                 </h3>
                 <p className="text-center text-sm text-gray-500">
-                  {cardData?.['CardFeature/Concept']?.[0] || "새로운 시작"}
+                  {cardData?.["CardFeature/Concept"]?.[0] || "새로운 시작"}
                 </p>
               </div>
             </div>
@@ -409,7 +501,7 @@ const Result = () => {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">MBTI:</span>
+                <span className="text-gray-600">성격 유형:</span>
                 <span className="text-charcoal font-medium">
                   {userData?.mbti || "알 수 없음"}
                 </span>
@@ -424,14 +516,22 @@ const Result = () => {
               <div className="text-sm text-gray-700 leading-relaxed space-y-3">
                 {cardData.CardDescription && (
                   <div>
-                    <p><strong>그림 설명:</strong></p>
-                    <p className="whitespace-pre-line">{formatBoldText(cardData.CardDescription)}</p>
+                    <p>
+                      <strong>그림 설명:</strong>
+                    </p>
+                    <p className="whitespace-pre-line">
+                      {formatBoldText(cardData.CardDescription)}
+                    </p>
                   </div>
                 )}
                 {cardData.CardFeeling && (
                   <div>
-                    <p><strong>카드가 주는 느낌:</strong></p>
-                    <p className="whitespace-pre-line">{formatBoldText(cardData.CardFeeling)}</p>
+                    <p>
+                      <strong>카드가 주는 느낌:</strong>
+                    </p>
+                    <p className="whitespace-pre-line">
+                      {formatBoldText(cardData.CardFeeling)}
+                    </p>
                   </div>
                 )}
               </div>
@@ -443,31 +543,60 @@ const Result = () => {
             <>
               {/* 애인이 나를 어떻게 생각하는지 */}
               <div className="bg-purple-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-charcoal mb-3">애인이 나를 어떻게 생각하는지</h4>
+                <h4 className="font-semibold text-charcoal mb-3">
+                  애인이 나를 어떻게 생각하는지
+                </h4>
                 <div className="text-sm text-gray-700 leading-relaxed">
-                  <p className="whitespace-pre-line">{formatBoldText(cardData["Lover'sPerception"])}</p>
+                  <p className="whitespace-pre-line">
+                    {formatBoldText(cardData["Lover'sPerception"])}
+                  </p>
                 </div>
               </div>
 
-              {/* MBTI별 조언 */}
+              {/* 성격 유형별 조언 */}
               {userData?.mbti && userData.mbti !== "UNKNOWN" && (
                 <div className="bg-green-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-charcoal mb-3">당신의 MBTI({userData.mbti})에 맞는 조언</h4>
+                  <h4 className="font-semibold text-charcoal mb-3">
+                    당신의 성격 유형({userData.mbti})에 맞는 조언
+                  </h4>
                   <div className="text-sm text-gray-700 leading-relaxed">
-                    <p className="whitespace-pre-line">{formatBoldText(getMbtiAdvice(userData.mbti, cardData))}</p>
+                    <p className="whitespace-pre-line">
+                      {formatBoldText(getMbtiAdvice(userData.mbti, cardData))}
+                    </p>
                   </div>
                 </div>
               )}
             </>
           )}
 
-          {/* Carrot Chat Message */}
-          <CarrotChatBubble
-            message={`MBTI에도 해석 방식이 여러개가 있다냥!\nMBTI의 두번째 글자가 내면에 큰 영향을 미친다냥.`}
-            removeMaxWidth={true}
+          {/* Webtoon Panel - Character Introduction */}
+          <WebtoonPanel
+            panelHeight="h-40"
+            backgroundColor="bg-gradient-to-r from-blue-50 to-purple-50"
+            borderStyle=""
+            characters={[
+              {
+                image: "/images/characters/carot.png",
+                position: "bottom-2 right-6",
+                className: "h-24 w-auto object-contain",
+                name: "캐럿",
+              },
+            ]}
+            speechBubbles={[
+              {
+                content:
+                  "성격 유형에도 해석 방식이\n여러개가 있다냥!\n\n성격 유형의 두번째 글자가\n내면에 큰 영향을 미친다냥!",
+                position: "top-3 left-4",
+                characterName: "캐럿",
+                bubbleStyle: "bg-white border-2 border-orange-400",
+                tailPosition: "bottom",
+                maxWidth: "65%",
+                textStyle: "text-sm text-gray-800 font-medium leading-relaxed",
+              },
+            ]}
           />
 
-          {/* MBTI Group Interpretation */}
+          {/* 성격 유형 Group Interpretation */}
           {mbtiGroup && (
             <div className="bg-blue-50 p-4 rounded-lg">
               <h4 className="font-semibold text-charcoal mb-3">
@@ -479,7 +608,7 @@ const Result = () => {
             </div>
           )}
 
-          {/* MBTI Detail Boxes from JSON files */}
+          {/* 성격 유형 Detail Boxes from JSON files */}
           {userData?.mbti &&
             userData.mbti !== "UNKNOWN" &&
             Object.keys(mbtiDetails).length > 0 && (
@@ -660,10 +789,32 @@ const Result = () => {
 
         {/* Fixed Bottom Purchase Section */}
         <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full min-w-[320px] max-w-[500px] bg-white border-t border-gray-200 p-4 shadow-lg">
-          {/* Carrot Chat Message */}
+          {/* Webtoon Panel - Purchase Message */}
           <div className="mb-4">
-            <CarrotChatBubble
-              message="1000원으로 모든 내용을 확인할 수 있다냥"
+            <WebtoonPanel
+              panelHeight="h-20"
+              backgroundColor="bg-gradient-to-r from-yellow-50 to-orange-50"
+              borderStyle=""
+              className="mb-2"
+              characters={[
+                {
+                  image: "/images/characters/carot.png",
+                  position: "bottom-1 right-4",
+                  className: "h-14 w-auto object-contain",
+                  name: "캐럿",
+                },
+              ]}
+              speechBubbles={[
+                {
+                  content: "1000원으로 모든 내용을\n확인할 수 있다냥!",
+                  position: "top-2 left-3",
+                  characterName: "캐럿",
+                  bubbleStyle: "bg-white border-2 border-yellow-400",
+                  tailPosition: "bottom",
+                  maxWidth: "70%",
+                  textStyle: "text-xs text-gray-800 font-bold",
+                },
+              ]}
             />
           </div>
 
@@ -681,21 +832,34 @@ const Result = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="w-full min-w-[320px] max-w-[400px] mx-4">
               <div className="bg-white rounded-lg p-6 shadow-xl">
-                {/* Carrot Chat Message */}
-                <div className="flex items-start space-x-3 mb-6">
-                  <img
-                    src="/images/characters/carot.png"
-                    alt="캐럿"
-                    className="w-12 h-12 rounded-full flex-shrink-0"
+                {/* Webtoon Panel - Service Announcement */}
+                <div className="mb-6">
+                  <WebtoonPanel
+                    panelHeight="h-28"
+                    backgroundColor="bg-gradient-to-r from-pink-50 to-blue-50"
+                    borderStyle=""
+                    characters={[
+                      {
+                        image: "/images/characters/carot.png",
+                        position: "bottom-2 right-6",
+                        className: "h-20 w-auto object-contain",
+                        name: "캐럿",
+                      },
+                    ]}
+                    speechBubbles={[
+                      {
+                        content:
+                          "사실 TaroTI는 서비스 준비중이다냥!\n\n이메일을 남겨주면\n가장 먼저 초대하겠다냥!",
+                        position: "top-3 left-4",
+                        characterName: "캐럿",
+                        bubbleStyle: "bg-white border-2 border-pink-400",
+                        tailPosition: "bottom",
+                        maxWidth: "65%",
+                        textStyle:
+                          "text-sm text-charcoal font-medium leading-relaxed",
+                      },
+                    ]}
                   />
-                  <div className="flex-1">
-                    <div className="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3">
-                      <p className="text-sm text-charcoal leading-relaxed">
-                        사실 TaroTI는 서비스 준비중이다냥, 이메일을 남겨주면
-                        가장 먼저 초대하겠다냥
-                      </p>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Email Input */}
