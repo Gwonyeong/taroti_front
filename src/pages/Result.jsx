@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import CarrotChatBubble from "../components/CarrotChatBubble";
 import WebtoonPanel from "../components/WebtoonPanel";
 import SpeechBubble from "../components/SpeechBubble";
 
@@ -11,8 +10,6 @@ const Result = () => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [mbtiGroup, setMbtiGroup] = useState(null);
-  const [mbtiDetails, setMbtiDetails] = useState({});
   const [mbtiDescriptions, setMbtiDescriptions] = useState({});
   // 모달 관련 변수들 제거 (더 이상 사용 안함)
   const [selectedCardNumber, setSelectedCardNumber] = useState(null);
@@ -78,29 +75,6 @@ const Result = () => {
     });
   };
 
-  // 성격 유형 그룹별 조언 가져오기
-  const getMbtiAdvice = (mbti, cardData) => {
-    if (!mbti || !cardData) return null;
-
-    const secondLetter = mbti.charAt(1); // N 또는 S
-    const thirdLetter = mbti.charAt(2); // T 또는 F
-
-    // 성격 유형 그룹 결정
-    let adviceKey = "";
-    if (secondLetter === "N" && thirdLetter === "F") {
-      adviceKey = "nfAdvice";
-    } else if (secondLetter === "N" && thirdLetter === "T") {
-      adviceKey = "ntAdvice";
-    } else if (secondLetter === "S" && thirdLetter === "J") {
-      adviceKey = "sjAdvice";
-    } else if (secondLetter === "S" && thirdLetter === "P") {
-      adviceKey = "spAdvice";
-    }
-
-    return (
-      cardData[adviceKey] || "해당 성격 유형 그룹에 대한 조언이 준비 중입니다."
-    );
-  };
 
   // 카드 데이터 로드 함수
   const loadCardData = async (cardNumber) => {
@@ -150,7 +124,6 @@ const Result = () => {
             mbti: "UNKNOWN",
           };
           setUserData(tempData);
-          await loadMbtiGroup(tempData.mbti);
           await loadMbtiDetailFiles(tempData.mbti);
           setLoading(false);
           return;
@@ -171,8 +144,7 @@ const Result = () => {
           const data = await response.json();
           setUserData(data);
 
-          // 성격 유형 그룹 정보 로드
-          await loadMbtiGroup(data.mbti);
+          // 성격 유형 정보 로드
           await loadMbtiDetailFiles(data.mbti);
         } else {
           setError("사용자 데이터를 불러올 수 없습니다.");
@@ -185,20 +157,6 @@ const Result = () => {
       }
     };
 
-    const loadMbtiGroup = async (mbti) => {
-      try {
-        const response = await fetch("/documents/mbti/1_NS_GROUP.json");
-        if (response.ok) {
-          const groups = await response.json();
-          const matchedGroup = groups.find((group) =>
-            new RegExp(group.regex).test(mbti)
-          );
-          setMbtiGroup(matchedGroup);
-        }
-      } catch (error) {
-        console.error("Error loading 성격 유형 group:", error);
-      }
-    };
 
     const getRandomPoint = (pointsArray) => {
       if (!pointsArray || pointsArray.length === 0) return null;
@@ -331,7 +289,6 @@ const Result = () => {
         }
       }
 
-      setMbtiDetails(mbtiDetails);
       setMbtiDescriptions(mbtiDescriptions);
     };
 

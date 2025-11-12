@@ -7,7 +7,6 @@ import CardBack from "../components/CardBack";
 const Landing = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
-  const [currentOptions, setCurrentOptions] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [waitingForClick, setWaitingForClick] = useState(false);
@@ -63,6 +62,7 @@ const Landing = () => {
         showNextMessage();
       }, 300);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addMessage = (text, sender = "bot", imageUrl = null) => {
@@ -314,7 +314,7 @@ const Landing = () => {
   };
 
   // 카드 선택 처리
-  const handleCardSelect = async (cardIndex) => {
+  const handleCardSelect = async () => {
     // 0-10번 중 랜덤 선택
     const randomCardNumber = Math.floor(Math.random() * 11); // 0부터 10까지
     setSelectedCardNumber(randomCardNumber);
@@ -653,7 +653,7 @@ const Landing = () => {
                 {[1, 2, 3].map((cardIndex) => (
                   <CardBack
                     key={cardIndex}
-                    onClick={() => handleCardSelect(cardIndex)}
+                    onClick={() => handleCardSelect()}
                     centerImage="/images/cards/back/camp_band.jpeg"
                     alt={`카드 ${cardIndex}`}
                   />
