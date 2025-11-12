@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import CarrotChatBubble from "../components/CarrotChatBubble";
 import WebtoonPanel from "../components/WebtoonPanel";
 import SpeechBubble from "../components/SpeechBubble";
@@ -7,18 +7,19 @@ import SpeechBubble from "../components/SpeechBubble";
 const Result = () => {
   const { landingUserId } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [mbtiGroup, setMbtiGroup] = useState(null);
   const [mbtiDetails, setMbtiDetails] = useState({});
   const [mbtiDescriptions, setMbtiDescriptions] = useState({});
-  const [showModal, setShowModal] = useState(false);
-  const [email, setEmail] = useState("");
-  const [emailSaving, setEmailSaving] = useState(false);
+  // 모달 관련 변수들 제거 (더 이상 사용 안함)
   const [selectedCardNumber, setSelectedCardNumber] = useState(null);
   const [cardData, setCardData] = useState(null);
   const [backgroundOpacity, setBackgroundOpacity] = useState(0);
+  // 피드백 모달 관련 변수들 제거 (더 이상 사용 안함)
+  const [isV2, setIsV2] = useState(false);
   const triggerPanelRef = useRef(null);
 
   // 카드명 매핑 함수
@@ -121,6 +122,11 @@ const Result = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
+      // 버전 확인
+      const version = searchParams.get("version");
+      const isVersion2 = version === "2";
+      setIsV2(isVersion2);
+
       // 카드 번호 가져오기 (URL 파라미터 또는 로컬스토리지)
       let cardNumber = searchParams.get("cardNumber");
       if (!cardNumber) {
@@ -150,10 +156,15 @@ const Result = () => {
           return;
         }
 
+        // V2와 V1 API 구분하여 호출
+        const apiUrl = isVersion2
+          ? `/api/landing-user-v2/${landingUserId}`
+          : `/api/landing-user/${landingUserId}`;
+
         const response = await fetch(
           `${
             process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
-          }/api/landing-user/${landingUserId}`
+          }${apiUrl}`
         );
 
         if (response.ok) {
@@ -366,10 +377,14 @@ const Result = () => {
     if (landingUserId && landingUserId !== "temp") {
       try {
         // 구매 클릭 데이터 저장
+        const apiUrl = isV2
+          ? `/api/landing-user-v2/${landingUserId}/purchase`
+          : `/api/landing-user/${landingUserId}/purchase`;
+
         await fetch(
           `${
             process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
-          }/api/landing-user/${landingUserId}/purchase`,
+          }${apiUrl}`,
           {
             method: "PATCH",
             headers: {
@@ -383,46 +398,12 @@ const Result = () => {
       }
     }
 
-    // 모달 표시
-    setShowModal(true);
+    // Feedback 페이지로 이동
+    const cardNumber = searchParams.get("cardNumber") || selectedCardNumber;
+    const versionParam = isV2 ? "&version=2" : "&version=1";
+    navigate(`/feedback/${landingUserId}?cardNumber=${cardNumber}${versionParam}`);
   };
 
-  const handleEmailSave = async () => {
-    if (!email.trim()) {
-      alert("이메일을 입력해주세요.");
-      return;
-    }
-
-    setEmailSaving(true);
-
-    try {
-      if (landingUserId && landingUserId !== "temp") {
-        await fetch(
-          `${
-            process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
-          }/api/landing-user/${landingUserId}/purchase`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email }),
-          }
-        );
-      }
-
-      alert(
-        "이메일이 저장되었습니다. 서비스 준비가 완료되면 가장 먼저 연락드리겠습니다!"
-      );
-      setShowModal(false);
-      setEmail("");
-    } catch (error) {
-      console.error("Error saving email:", error);
-      alert("이메일 저장 중 오류가 발생했습니다.");
-    } finally {
-      setEmailSaving(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -908,7 +889,7 @@ const Result = () => {
               />
 
               {/* 성격 유형별 조언 */}
-              {userData?.mbti && userData.mbti !== "UNKNOWN" && (
+              {/* {userData?.mbti && userData.mbti !== "UNKNOWN" && (
                 <div className="bg-green-50 p-4 rounded-lg">
                   <h4 className="font-semibold text-charcoal mb-3">
                     당신의 성격 유형({userData.mbti})에 맞는 조언
@@ -919,7 +900,7 @@ const Result = () => {
                     </p>
                   </div>
                 </div>
-              )}
+              )} */}
 
               {/* MBTI 상세 설명 섹션 */}
               {userData?.mbti &&
@@ -1020,9 +1001,10 @@ const Result = () => {
         </div>
 
         {/* Fixed Bottom Purchase Section */}
-        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full min-w-[320px] max-w-[500px] bg-white border-t border-gray-200 p-4 shadow-lg" style={{ zIndex: 9999 }}>
-          {/* Webtoon Panel - Purchase Message */}
-
+        <div
+          className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full min-w-[320px] max-w-[500px] bg-white border-t border-gray-200 p-4 shadow-lg"
+          style={{ zIndex: 9999 }}
+        >
           {/* Purchase Button */}
           <button
             onClick={handlePurchaseClick}
@@ -1032,78 +1014,6 @@ const Result = () => {
           </button>
         </div>
 
-        {/* Modal */}
-        {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="w-full min-w-[320px] max-w-[400px] mx-4">
-              <div className="bg-white rounded-lg p-6 shadow-xl">
-                {/* Webtoon Panel - Service Announcement */}
-                <div className="mb-6">
-                  <WebtoonPanel
-                    panelHeight="h-28"
-                    backgroundColor="bg-gradient-to-r from-pink-50 to-blue-50"
-                    borderStyle=""
-                    characters={[
-                      {
-                        image: "/images/characters/carot.png",
-                        position: "bottom-2 right-6",
-                        className: "h-20 w-auto object-contain",
-                        name: "캐럿",
-                      },
-                    ]}
-                    speechBubbles={[
-                      {
-                        content:
-                          "사실 TaroTI는 서비스 준비중이다냥!\n\n이메일을 남겨주면\n가장 먼저 초대하겠다냥!",
-                        position: "top-3 left-4",
-                        characterName: "캐럿",
-                        bubbleStyle: "bg-white border-2 border-pink-400",
-                        tailPosition: "bottom",
-                        maxWidth: "65%",
-                        textStyle:
-                          "text-sm text-charcoal font-medium leading-relaxed",
-                      },
-                    ]}
-                  />
-                </div>
-
-                {/* Email Input */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-charcoal mb-2">
-                    이메일 주소
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-charcoal focus:border-transparent"
-                  />
-                </div>
-
-                {/* Buttons */}
-                <div className="flex space-x-3">
-                  <button
-                    onClick={() => {
-                      setShowModal(false);
-                      setEmail("");
-                    }}
-                    className="flex-1 bg-gray-200 text-charcoal py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-                  >
-                    닫기
-                  </button>
-                  <button
-                    onClick={handleEmailSave}
-                    disabled={emailSaving}
-                    className="flex-1 bg-charcoal text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
-                  >
-                    {emailSaving ? "저장 중..." : "저장하기"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

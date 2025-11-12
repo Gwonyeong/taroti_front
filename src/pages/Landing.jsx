@@ -54,13 +54,7 @@ const Landing = () => {
   ];
 
   useEffect(() => {
-    // 이미 저장된 사용자인지 확인
-    const existingUserId = localStorage.getItem("taroTI_landingUserId");
-    if (existingUserId) {
-      // 이미 저장된 사용자라면 바로 결과 페이지로 이동
-      navigate(`/result/${existingUserId}`);
-      return;
-    }
+    // 자동 리다이렉트 제거 - 항상 랜딩 페이지에서 시작
 
     // 첫 번째 메시지 자동 시작 (useRef로 중복 방지)
     if (!hasInitialized.current) {
@@ -69,7 +63,7 @@ const Landing = () => {
         showNextMessage();
       }, 300);
     }
-  }, [navigate]);
+  }, []);
 
   const addMessage = (text, sender = "bot", imageUrl = null) => {
     const messageId = Date.now() + Math.random();
@@ -345,12 +339,7 @@ const Landing = () => {
     setIsTyping(true);
 
     try {
-      // 이미 저장된 사용자인지 다시 한번 확인
-      const existingUserId = localStorage.getItem("taroTI_landingUserId");
-      if (existingUserId) {
-        navigate(`/result/${existingUserId}?cardNumber=${selectedCardNumber}`);
-        return;
-      }
+      // 항상 새로운 사용자로 처리
 
       // 사용자 정보에 선택된 카드 번호 추가
       const userDataWithCard = {
@@ -363,7 +352,7 @@ const Landing = () => {
       const response = await fetch(
         `${
           process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
-        }/api/landing-user`,
+        }/api/landing-user-v2`,
         {
           method: "POST",
           headers: {
@@ -380,11 +369,11 @@ const Landing = () => {
         console.log("Response data:", data);
         // 로컬스토리지에 사용자 ID와 카드 번호 저장
         localStorage.setItem(
-          "taroTI_landingUserId",
+          "taroTI_landingUserIdV2",
           data.landingUserId.toString()
         );
         localStorage.setItem("taroTI_selectedCardNumber", selectedCardNumber.toString());
-        navigate(`/result/${data.landingUserId}?cardNumber=${selectedCardNumber}`);
+        navigate(`/result/${data.landingUserId}?cardNumber=${selectedCardNumber}&version=2`);
       } else {
         const errorText = await response.text();
         console.error(
