@@ -335,7 +335,7 @@ const PromotionSection = () => {
 
         {/* 지금 구매해야 하는 이유 섹션 */}
         <div className="w-full max-w-lg mt-16 mb-20 space-y-8">
-          <h2 className="text-2xl font-bold text-center text-white mb-8">
+          <h2 className="text-2xl font-bold text-center text-white mb-8" style={{ wordBreak: 'keep-all' }}>
             지금 구매해야 하는 이유
           </h2>
 
@@ -347,10 +347,10 @@ const PromotionSection = () => {
                   1
                 </div>
               </div>
-              <h3 className="font-bold text-lg text-gray-900 mb-3">
+              <h3 className="font-bold text-lg text-gray-900 mb-3" style={{ wordBreak: 'keep-all' }}>
                 귀여운 타마들의 지루할 틈 없는 웹툰형 해설
               </h3>
-              <p className="text-sm text-gray-700 mb-4">
+              <p className="text-sm text-gray-700 mb-4" style={{ wordBreak: 'keep-all' }}>
                 타마들이 해설해주는 당신의 이야기! 웹툰을 보다보면 어느새 내
                 미래를 확인할 수 있어요!
               </p>
@@ -364,7 +364,7 @@ const PromotionSection = () => {
                   }}
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                  <p className="text-white text-xs font-medium">
+                  <p className="text-white text-xs font-medium" style={{ wordBreak: 'keep-all' }}>
                     지루한 텍스트가 아닌, 캐릭터와 함께하는 즐거운 타로 리딩
                   </p>
                 </div>
@@ -380,7 +380,7 @@ const PromotionSection = () => {
                   2
                 </div>
               </div>
-              <h3 className="font-bold text-lg text-gray-900 mb-3">
+              <h3 className="font-bold text-lg text-gray-900 mb-3" style={{ wordBreak: 'keep-all' }}>
                 그럴듯한 조언이 아닌 '나의 성격유형'을 이용한 나에게 맞는
                 구체적인 조언
               </h3>
@@ -511,7 +511,7 @@ const PromotionSection = () => {
 
         {/* 리뷰 섹션 */}
         <div className="w-full max-w-lg mt-16 mb-20 space-y-6">
-          <h2 className="text-2xl font-bold text-center text-white mb-8">
+          <h2 className="text-2xl font-bold text-center text-white mb-8" style={{ wordBreak: 'keep-all' }}>
             조언을 듣고간 사람들의 이야기
           </h2>
 
@@ -660,7 +660,7 @@ const PromotionSection = () => {
             {/* 하단 검정 박스 - 이미지와 자연스럽게 연결 */}
             <div className="bg-black -mt-1 p-8">
               <div className="bg-gray-900 rounded-lg p-6 border-2 border-amber-400/20">
-                <h3 className="text-xl font-bold text-white mb-6 text-center">
+                <h3 className="text-xl font-bold text-white mb-6 text-center" style={{ wordBreak: 'keep-all' }}>
                   이런 분들에게 추천합니다!
                 </h3>
                 <div className="space-y-3">
@@ -723,7 +723,7 @@ const PromotionSection = () => {
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black"></div>
               {/* 이미지 위 제목 텍스트 */}
               <div className="absolute top-4 left-4 right-4">
-                <h2 className="text-white text-xl font-bold text-center drop-shadow-lg">
+                <h2 className="text-white text-xl font-bold text-center drop-shadow-lg" style={{ wordBreak: 'keep-all' }}>
                   페넥의 편지
                 </h2>
               </div>

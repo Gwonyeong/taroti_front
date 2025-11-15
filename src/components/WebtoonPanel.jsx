@@ -33,7 +33,7 @@ const WebtoonPanel = ({
           <img
             src={backgroundImage}
             alt="Background"
-            className={`w-full h-auto object-contain min-h-[400px] sm:min-h-[500px] mx-auto ${borderRadius}`}
+            className="w-full h-auto object-contain min-h-[400px] sm:min-h-[500px] mx-auto"
           />
 
           {/* Overlay container for characters and speech bubbles */}
@@ -172,7 +172,7 @@ const WebtoonPanel = ({
         <img
           src={backgroundImage}
           alt="Background"
-          className={`absolute inset-0 w-full h-full object-cover ${borderRadius}`}
+          className="absolute inset-0 w-full h-full object-cover"
         />
       )}
 

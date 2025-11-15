@@ -21,7 +21,12 @@ const Result = () => {
   // 피드백 모달 관련 변수들 제거 (더 이상 사용 안함)
   const [isV2, setIsV2] = useState(false);
   const triggerPanelRef = useRef(null);
+  const promotionTriggerRef = useRef(null);
   const [mbtiGroupData, setMbtiGroupData] = useState(null);
+  const [isBottomBarVisible, setIsBottomBarVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const [timeRemaining, setTimeRemaining] = useState({ hours: 0, minutes: 0, seconds: 0, hundredths: 0 });
+  const [isPromotionVisible, setIsPromotionVisible] = useState(false);
 
   // 카드명 매핑 함수
   const getCardName = (cardNumber) => {
@@ -361,34 +366,50 @@ const Result = () => {
     fetchUserData();
   }, [landingUserId, searchParams]);
 
-  // 스크롤 기반 배경색 변경 효과 (섹션 1에만 적용)
+  // 스크롤 기반 배경색 변경 효과
   useEffect(() => {
     const handleScroll = () => {
-      // 섹션 2에서는 배경 효과를 적용하지 않음
-      if (currentSection === 2) {
-        setBackgroundOpacity(0);
-        return;
-      }
-
-      if (!triggerPanelRef.current) return;
-
-      const triggerElement = triggerPanelRef.current;
-      const triggerRect = triggerElement.getBoundingClientRect();
-      const triggerTop = triggerRect.top;
       const windowHeight = window.innerHeight;
-
-      // 트리거 패널이 화면 중앙을 지날 때를 기준점으로 설정
       const triggerPoint = windowHeight * 0.5;
 
-      if (triggerTop <= triggerPoint) {
-        // 패널이 기준점을 지나면 어두워지기 시작
-        const scrollDistance = triggerPoint - triggerTop;
-        const maxDistance = windowHeight * 1.5; // 최대 어두워지는 거리
-        const opacity = Math.min(scrollDistance / maxDistance, 0.92); // 최대 92% 어둡게
-        setBackgroundOpacity(opacity);
-      } else {
-        // 패널이 기준점 위에 있으면 밝게
-        setBackgroundOpacity(0);
+      if (currentSection === 1) {
+        // 섹션 1: 기존 로직
+        if (!triggerPanelRef.current) {
+          setBackgroundOpacity(0);
+          return;
+        }
+
+        const triggerElement = triggerPanelRef.current;
+        const triggerRect = triggerElement.getBoundingClientRect();
+        const triggerTop = triggerRect.top;
+
+        if (triggerTop <= triggerPoint) {
+          const scrollDistance = triggerPoint - triggerTop;
+          const maxDistance = windowHeight * 1.5;
+          const opacity = Math.min(scrollDistance / maxDistance, 0.92);
+          setBackgroundOpacity(opacity);
+        } else {
+          setBackgroundOpacity(0);
+        }
+      } else if (currentSection === 2) {
+        // 섹션 2: 프로모션 섹션에 도달하면 배경 어둡게
+        if (!promotionTriggerRef.current) {
+          setBackgroundOpacity(0);
+          return;
+        }
+
+        const promotionElement = promotionTriggerRef.current;
+        const promotionRect = promotionElement.getBoundingClientRect();
+        const promotionTop = promotionRect.top;
+
+        if (promotionTop <= triggerPoint) {
+          const scrollDistance = triggerPoint - promotionTop;
+          const maxDistance = windowHeight * 0.5;
+          const opacity = Math.min(scrollDistance / maxDistance, 0.85);
+          setBackgroundOpacity(opacity);
+        } else {
+          setBackgroundOpacity(0);
+        }
       }
     };
 
@@ -399,6 +420,121 @@ const Result = () => {
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
+    };
+  }, [currentSection]);
+
+  // 스크롤 방향에 따른 하단바 표시/숨김
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+
+          // 프로모션 섹션 체크 (실시간으로)
+          const promotionElement = document.querySelector('.promotion-section');
+          let isCurrentlyInPromotion = false;
+
+          if (currentSection === 2 && promotionElement) {
+            const rect = promotionElement.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+            isCurrentlyInPromotion = rect.top < windowHeight && rect.bottom > 0;
+          }
+
+          // 프로모션 섹션에서는 항상 하단바를 보여줌
+          if (isCurrentlyInPromotion) {
+            setIsBottomBarVisible(true);
+          } else {
+            // 스크롤을 아래로 내릴 때 (스크롤 값이 증가)
+            if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+              setIsBottomBarVisible(false);
+            }
+            // 스크롤을 위로 올릴 때 (스크롤 값이 감소)
+            else if (currentScrollY < lastScrollY.current) {
+              setIsBottomBarVisible(true);
+            }
+          }
+
+          lastScrollY.current = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [currentSection]);
+
+  // 할인 종료 타이머 - 오늘 자정까지 남은 시간 (0.01초 단위)
+  useEffect(() => {
+    const updateTimeUntilMidnight = () => {
+      const now = new Date();
+      const midnight = new Date();
+      midnight.setHours(24, 0, 0, 0); // 다음 자정
+
+      const diff = midnight - now;
+
+      if (diff <= 0) {
+        // 자정이 지났으면 다음 자정까지의 시간
+        const nextMidnight = new Date();
+        nextMidnight.setDate(nextMidnight.getDate() + 1);
+        nextMidnight.setHours(0, 0, 0, 0);
+        const newDiff = nextMidnight - now;
+
+        const hours = Math.floor(newDiff / (1000 * 60 * 60));
+        const minutes = Math.floor((newDiff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((newDiff % (1000 * 60)) / 1000);
+        const hundredths = Math.floor((newDiff % 1000) / 10);
+
+        setTimeRemaining({ hours, minutes, seconds, hundredths });
+      } else {
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        const hundredths = Math.floor((diff % 1000) / 10);
+
+        setTimeRemaining({ hours, minutes, seconds, hundredths });
+      }
+    };
+
+    // 초기 설정
+    updateTimeUntilMidnight();
+
+    // 10ms마다 업데이트
+    const timer = setInterval(updateTimeUntilMidnight, 10);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // 프로모션 섹션 가시성 체크
+  useEffect(() => {
+    const checkPromotionVisibility = () => {
+      if (currentSection !== 2) {
+        setIsPromotionVisible(false);
+        return;
+      }
+
+      const promotionElement = document.querySelector('.promotion-section');
+      if (promotionElement) {
+        const rect = promotionElement.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+
+        // 프로모션 섹션이 화면에 조금이라도 보이면 true
+        const isVisible = rect.top < windowHeight && rect.bottom > 0;
+        setIsPromotionVisible(isVisible);
+      }
+    };
+
+    window.addEventListener('scroll', checkPromotionVisibility, { passive: true });
+    checkPromotionVisibility(); // 초기 체크
+
+    return () => {
+      window.removeEventListener('scroll', checkPromotionVisibility);
     };
   }, [currentSection]);
 
@@ -501,14 +637,20 @@ const Result = () => {
         style={{ opacity: backgroundOpacity, zIndex: 1 }}
       />
 
-      <div className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col h-screen relative z-10">
+      <div
+        className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col h-screen relative"
+        style={{ zIndex: 10 }}
+      >
         {/* Header */}
         <div className="bg-white text-black p-4 shadow-md">
           <h1 className="text-xl font-bold text-left">TaroTI</h1>
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-6 space-y-6 pb-40">
+        <div
+          className="flex-1 p-6 space-y-6 pb-40"
+          style={{ position: "relative", zIndex: 20 }}
+        >
           <div className="text-center">
             <h2 className="text-2xl font-bold text-charcoal mb-2">
               결과 : 페넥의 연애조언 {currentSection === 2 && "(세부 분석)"}
@@ -524,7 +666,7 @@ const Result = () => {
                   <WebtoonPanel
                     backgroundImage="/images/characters/webtoon/desert_fox_taro.png"
                     fitImage={true}
-                    allowOverflow={false}
+                    allowOverflow={true}
                     className=""
                     borderRadius="rounded-lg"
                     speechBubbles={[
@@ -533,7 +675,7 @@ const Result = () => {
                         position: "top-4 left-4",
 
                         bubbleStyle:
-                          "bg-white bg-opacity-95 border-3 border-amber-400 ",
+                          "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
                         tailPosition: "bottom",
                         maxWidth: "55%",
                         textStyle:
@@ -560,7 +702,7 @@ const Result = () => {
                         content: "네 정보는 꼼꼼히 확인했다마!",
                         position: "right-[-80px] bottom-4",
                         bubbleStyle:
-                          "bg-white bg-opacity-95 border-3 border-purple-400",
+                          "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
                         showTail: false,
                         tailPosition: "left",
                         maxWidth: "55%",
@@ -623,7 +765,7 @@ const Result = () => {
                         content: "이제 카드의 뜻을 알려줄 것이다마!",
                         position: " left-[-100px] top-4",
                         bubbleStyle:
-                          "bg-yellow-50 bg-opacity-95 border-3 border-purple-400",
+                          "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
                         tailPosition: "right",
                         maxWidth: "65%",
                         textStyle:
@@ -744,7 +886,7 @@ const Result = () => {
                   <WebtoonPanel
                     backgroundImage="/images/characters/webtoon/desert_fox_taro.png"
                     fitImage={true}
-                    allowOverflow={false}
+                    allowOverflow={true}
                     className=""
                     borderRadius="rounded-lg"
                     speechBubbles={[
@@ -753,7 +895,7 @@ const Result = () => {
                           "카드의 의미를 이해했다마!\n이제 진짜 해석을 시작하겠다마!",
                         position: "top-4 right-4",
                         bubbleStyle:
-                          "bg-white bg-opacity-95 border-3 border-green-400",
+                          "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
                         tailPosition: "bottom",
                         maxWidth: "55%",
                         textStyle:
@@ -881,7 +1023,7 @@ const Result = () => {
                               "성격유형 전문가인 내 친구 리트리버를 소개하겠다마..!",
                             position: "bottom-[-120px]",
                             bubbleStyle:
-                              "bg-pink-50 bg-opacity-95 border-3 border-pink-400",
+                              "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
                             tailPosition: "",
                             maxWidth: "60%",
                             textStyle:
@@ -1053,7 +1195,7 @@ const Result = () => {
                                 <WebtoonPanel
                                   backgroundImage="/images/characters/ritriber/ritriber_talk.jpeg"
                                   fitImage={true}
-                                  allowOverflow={false}
+                                  allowOverflow={true}
                                   className=""
                                   borderRadius="rounded-lg"
                                   speechBubbles={[
@@ -1062,7 +1204,7 @@ const Result = () => {
                                         "성격 유형의 바깥쪽 글자로 '행동'을 알아볼 수 있어요!",
                                       position: "top-4 left-4",
                                       bubbleStyle:
-                                        "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
+                                        "bg-yellow-50 bg-opacity-95 border-3 border-purple-400",
                                       tailPosition: "bottom",
                                       maxWidth: "60%",
                                       textStyle:
@@ -1123,7 +1265,7 @@ const Result = () => {
                                         "성격 유형의 가운데 두글자를 보면 내면을 확인할 수 있어요!",
                                       position: "top-[-30px] right-4",
                                       bubbleStyle:
-                                        "bg-purple-50 bg-opacity-95 border-3 border-purple-400",
+                                        "bg-yellow-50 bg-opacity-95 border-3 border-purple-400",
                                       tailPosition: "bottom",
                                       maxWidth: "60%",
                                       textStyle:
@@ -1136,7 +1278,7 @@ const Result = () => {
                                         : "성격 유형의 가운데 두글자를 보면 내면을 확인할 수 있어요!",
                                       position: "bottom-[-70px] left-4",
                                       bubbleStyle:
-                                        "bg-purple-50 bg-opacity-95 border-3 border-purple-400 shadow-lg",
+                                        "bg-yellow-50 bg-opacity-95 border-3 border-purple-400 shadow-lg",
                                       tailPosition: "top",
                                       maxWidth: "70%",
                                       textStyle:
@@ -1186,7 +1328,7 @@ const Result = () => {
                                 <WebtoonPanel
                                   backgroundImage="/images/characters/webtoon/ritriber_guitar_fire_space.png"
                                   fitImage={true}
-                                  allowOverflow={false}
+                                  allowOverflow={true}
                                   className=""
                                   borderRadius="rounded-lg"
                                   speechBubbles={[
@@ -1195,7 +1337,7 @@ const Result = () => {
                                         "마지막으로 당신의 기질과 판단 스타일을 분석해보겠어요!",
                                       position: "top-4 left-4",
                                       bubbleStyle:
-                                        "bg-green-50 bg-opacity-95 border-3 border-green-400",
+                                        "bg-yellow-50 bg-opacity-95 border-3 border-purple-400",
                                       tailPosition: "bottom",
                                       maxWidth: "60%",
                                       textStyle:
@@ -1274,7 +1416,7 @@ const Result = () => {
                   <WebtoonPanel
                     backgroundImage="/images/characters/ritriber/ritriber_bye.jpeg"
                     fitImage={true}
-                    allowOverflow={false}
+                    allowOverflow={true}
                     className=""
                     borderRadius="rounded-lg"
                     speechBubbles={[
@@ -1283,7 +1425,7 @@ const Result = () => {
                           "당신의 성격 유형을 좀더 깊게 알 수 있는 시간이 되었길 바라요! 🎵",
                         position: "top-4 right-4",
                         bubbleStyle:
-                          "bg-gradient-to-r from-purple-50 to-pink-50 bg-opacity-95 border-3 border-purple-400",
+                          "bg-yellow-50 bg-opacity-95 border-3 border-purple-400",
                         tailPosition: "bottom",
                         maxWidth: "65%",
                         textStyle:
@@ -1341,7 +1483,7 @@ const Result = () => {
                   <WebtoonPanel
                     backgroundImage="/images/characters/webtoon/desert_fox_taro.png"
                     fitImage={true}
-                    allowOverflow={false}
+                    allowOverflow={true}
                     className=""
                     borderRadius="rounded-lg"
                     speechBubbles={[
@@ -1350,7 +1492,7 @@ const Result = () => {
                           "돌아왔구마! 리트리버의 내용은 도움이 되었냐마?",
                         position: "top-4 right-4",
                         bubbleStyle:
-                          "bg-white bg-opacity-95 border-3 border-amber-400",
+                          "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
                         tailPosition: "bottom",
                         maxWidth: "60%",
                         textStyle:
@@ -1388,7 +1530,7 @@ const Result = () => {
                           <WebtoonPanel
                             backgroundImage="/images/characters/webtoon/desert_fox_taro.png"
                             fitImage={true}
-                            allowOverflow={false}
+                            allowOverflow={true}
                             className=""
                             borderRadius="rounded-lg"
                             speechBubbles={[
@@ -1397,7 +1539,7 @@ const Result = () => {
                                   "이제 네 성격 유형에 맞는 특별한 조언을 해주겠다마!",
                                 position: "top-4 right-4",
                                 bubbleStyle:
-                                  "bg-white bg-opacity-95 border-3 border-blue-400",
+                                  "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
                                 tailPosition: "bottom",
                                 maxWidth: "60%",
                                 textStyle:
@@ -1418,33 +1560,11 @@ const Result = () => {
                           조언
                         </h4>
                         <div className="text-sm text-gray-700 leading-relaxed space-y-3">
-                          {/* 첫 문장 (공개) */}
+                          {/* 전체 조언 내용 (모두 공개) */}
                           <div className="bg-white p-3 rounded border-l-4 border-green-400">
                             <p className="whitespace-pre-line">
-                              {formatBoldText(
-                                getFirstSentence(cardData[userAdviceKey])
-                              )}
+                              {formatBoldText(cardData[userAdviceKey])}
                             </p>
-                          </div>
-
-                          {/* 블러 처리된 나머지 내용 */}
-                          <div className="relative bg-white p-3 rounded border-l-4 border-gray-300">
-                            <div className="filter blur-sm">
-                              <p className="whitespace-pre-line text-gray-600">
-                                {formatBoldText(
-                                  cardData[userAdviceKey]
-                                    ?.split(".")
-                                    .slice(1)
-                                    .join(".")
-                                    .trim()
-                                )}
-                              </p>
-                            </div>
-
-                            {/* 중앙 오버레이 자물쇠 */}
-                            <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80 rounded">
-                              <div className="text-4xl">🔒</div>
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -1455,7 +1575,7 @@ const Result = () => {
                           <WebtoonPanel
                             backgroundImage="/images/characters/webtoon/desert_fox_watching_card.jpeg"
                             fitImage={true}
-                            allowOverflow={false}
+                            allowOverflow={true}
                             className=""
                             borderRadius="rounded-lg"
                             speechBubbles={[
@@ -1464,7 +1584,7 @@ const Result = () => {
                                   "이 조언대로면 분명 연인과의 관계에 도움이 될것이다마..",
                                 position: "top-4 left-2",
                                 bubbleStyle:
-                                  "bg-gradient-to-r from-yellow-50 to-amber-50 bg-opacity-95 border-3 border-amber-400",
+                                  "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
                                 tailPosition: "bottom",
                                 maxWidth: "75%",
                                 textStyle:
@@ -1490,7 +1610,7 @@ const Result = () => {
                           <WebtoonPanel
                             backgroundImage="/images/characters/webtoon/desert_fox_anger_hilighting.png"
                             fitImage={true}
-                            allowOverflow={false}
+                            allowOverflow={true}
                             className="h-64"
                             borderRadius="rounded-lg"
                             speechBubbles={[]}
@@ -1503,7 +1623,7 @@ const Result = () => {
                           <WebtoonPanel
                             backgroundImage="/images/characters/webtoon/desert_fox_angry.jpg"
                             fitImage={true}
-                            allowOverflow={false}
+                            allowOverflow={true}
                             className=""
                             borderRadius="rounded-lg"
                             speechBubbles={[
@@ -1512,7 +1632,7 @@ const Result = () => {
                                   "하지만, 서로 다른 사람이 항상 잘 맞을수는 없는 법이다마!",
                                 position: "bottom-4 right-2",
                                 bubbleStyle:
-                                  "bg-gradient-to-r from-yellow-50 to-amber-50 bg-opacity-95 border-3 border-amber-400",
+                                  "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
                                 tailPosition: "top",
                                 maxWidth: "75%",
                                 textStyle:
@@ -1537,40 +1657,97 @@ const Result = () => {
                   ) : null;
                 })()}
 
+              {/* 프로모션 섹션 진입 전 웹툰 패널 */}
+              <div
+                ref={promotionTriggerRef}
+                className="flex justify-center w-full py-8"
+              >
+                <div className="w-full max-w-lg">
+                  <WebtoonPanel
+                    backgroundImage="/images/characters/webtoon/desert_fox_watching_card.jpeg"
+                    fitImage={true}
+                    allowOverflow={true}
+                    className=""
+                    borderRadius="rounded-lg"
+                    speechBubbles={[
+                      {
+                        content:
+                          "약간의 복채로.. 당신의 미래에 대한 보고서를 받아볼 수 있다마!",
+                        position: "top-4 left-4",
+                        bubbleStyle:
+                          "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
+                        tailPosition: "bottom",
+                        maxWidth: "75%",
+                        textStyle:
+                          "text-sm text-gray-800 font-bold leading-relaxed",
+                        zIndex: 20,
+                      },
+                    ]}
+                  />
+                </div>
+              </div>
+
               {/* 프로모션 섹션 */}
-              <PromotionSection />
+              <div className="mt-[1500px] pt-32 promotion-section">
+                <PromotionSection />
+              </div>
             </>
           )}
         </div>
 
         {/* Fixed Bottom Purchase Section */}
         <div
-          className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full min-w-[320px] max-w-[500px] bg-white border-t border-gray-200 p-4 shadow-lg"
-          style={{ zIndex: 9999 }}
+          className={`fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full min-w-[320px] max-w-[500px] bg-black bg-opacity-85 backdrop-blur-sm border-t border-gray-600 p-4 shadow-2xl transition-transform duration-300 ease-in-out ${
+            isBottomBarVisible ? 'translate-y-0' : 'translate-y-full'
+          }`}
+          style={{ zIndex: 9999, transform: `translateX(-50%) ${isBottomBarVisible ? 'translateY(0)' : 'translateY(100%)'}` }}
         >
           {/* Navigation and Purchase Buttons */}
           {currentSection === 1 ? (
             <button
               onClick={handleNextSection}
-              className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors"
+              className="w-full bg-white text-black py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors shadow-lg"
             >
               다음 →
             </button>
           ) : (
-            <div className="flex gap-2">
-              <button
-                onClick={handlePreviousSection}
-                className="flex-1 bg-gray-500 text-white py-3 rounded-lg font-medium hover:bg-gray-600 transition-colors"
-              >
-                ← 이전
-              </button>
-              <button
-                onClick={handlePurchaseClick}
-                className="flex-1 bg-charcoal text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
-              >
-                구매하기
-              </button>
-            </div>
+            <>
+              {isPromotionVisible ? (
+                <div className="flex flex-col w-full">
+                  <div className="flex flex-col gap-1 mb-3">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-gray-400 line-through text-sm">₩7,900</span>
+                      <span className="text-2xl font-bold text-red-400">₩3,900</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-xs text-gray-300">할인 종료까지:</span>
+                      <div className="bg-gray-800 bg-opacity-60 text-white px-2 py-1 rounded flex items-center gap-1 text-sm font-mono border border-gray-500">
+                        <span className="font-bold">{String(timeRemaining.hours).padStart(2, '0')}</span>
+                        <span>:</span>
+                        <span className="font-bold">{String(timeRemaining.minutes).padStart(2, '0')}</span>
+                        <span>:</span>
+                        <span className="font-bold text-red-400">{String(timeRemaining.seconds).padStart(2, '0')}</span>
+                        <span className="text-red-400">.</span>
+                        <span className="font-bold text-red-400">{String(timeRemaining.hundredths).padStart(2, '0')}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handlePurchaseClick}
+                    className="w-full bg-white text-black py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors shadow-lg"
+                  >
+                    지금 구매하기
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handlePreviousSection}
+                  className="w-full bg-white text-black py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors shadow-lg"
+                >
+                  ← 이전
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
