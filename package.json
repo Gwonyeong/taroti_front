@@ -1,7 +1,11 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "taroti-frontend",
+  "version": "1.0.0",
   "private": true,
+  "description": "TaroTI - 타로카드와 MBTI를 결합한 개인 맞춤형 연애 조언 서비스",
+  "author": "TaroTI Team",
+  "keywords": ["타로", "MBTI", "연애", "타로카드", "성격검사", "연애조언", "TaroTI"],
+  "homepage": ".",
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
     "@testing-library/dom": "^10.4.1",
