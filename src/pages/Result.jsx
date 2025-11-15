@@ -406,14 +406,14 @@ const Result = () => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set("section", "2");
     setSearchParams(newParams);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
   };
 
   const handlePreviousSection = () => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set("section", "1");
     setSearchParams(newParams);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
   };
 
   const handlePurchaseClick = async () => {
