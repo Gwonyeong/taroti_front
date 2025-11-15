@@ -290,7 +290,7 @@ const Landing = () => {
       7: "TheChariot",
       8: "Strength",
       9: "TheHermit",
-      10: "WheelOfFortune"
+      10: "WheelOfFortune",
     };
     return cardNames[cardNumber] || "TheFool";
   };
@@ -308,7 +308,7 @@ const Landing = () => {
       7: "THE CHARIOT (전차)",
       8: "STRENGTH (힘)",
       9: "THE HERMIT (은둔자)",
-      10: "WHEEL OF FORTUNE (운명의 수레바퀴)"
+      10: "WHEEL OF FORTUNE (운명의 수레바퀴)",
     };
     return displayNames[cardNumber] || "THE FOOL (바보)";
   };
@@ -344,7 +344,7 @@ const Landing = () => {
       // 사용자 정보에 선택된 카드 번호 추가
       const userDataWithCard = {
         ...userInfo,
-        selectedCardNumber
+        selectedCardNumber,
       };
 
       console.log("Sending user data:", userDataWithCard);
@@ -372,8 +372,13 @@ const Landing = () => {
           "taroTI_landingUserIdV2",
           data.landingUserId.toString()
         );
-        localStorage.setItem("taroTI_selectedCardNumber", selectedCardNumber.toString());
-        navigate(`/result/${data.landingUserId}?cardNumber=${selectedCardNumber}&version=2`);
+        localStorage.setItem(
+          "taroTI_selectedCardNumber",
+          selectedCardNumber.toString()
+        );
+        navigate(
+          `/result/${data.landingUserId}?cardNumber=${selectedCardNumber}&version=2`
+        );
       } else {
         const errorText = await response.text();
         console.error(
@@ -412,7 +417,7 @@ const Landing = () => {
               message={message}
               displayImage={message.image}
               imageAlt="페넥 이미지"
-              imageClassName="w-64 h-auto rounded-lg"
+              imageClassName="w-64 h-auto rounded-lg mt-4"
             />
           ))}
 
@@ -673,7 +678,9 @@ const Landing = () => {
               <div className="flex justify-center">
                 <div className="bg-white p-4 rounded-lg shadow-lg">
                   <img
-                    src={`/documents/illustrator/${String(selectedCardNumber).padStart(2, '0')}-${getCardName(selectedCardNumber)}.jpg`}
+                    src={`/documents/illustrator/${String(
+                      selectedCardNumber
+                    ).padStart(2, "0")}-${getCardName(selectedCardNumber)}.jpg`}
                     alt={`${getCardName(selectedCardNumber)} 카드`}
                     className="w-32 h-48 object-cover rounded-lg"
                     onError={(e) => {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 const ChatMessage = ({
   message,
@@ -9,18 +9,18 @@ const ChatMessage = ({
   maxWidth = "70%",
   displayImage = null,
   imageAlt = "",
-  imageClassName = "w-48 h-48 object-cover rounded-lg"
+  imageClassName = "w-48 h-48 object-cover rounded-2xl",
 }) => {
   // 타이핑 인디케이터 렌더링
   if (showTypingIndicator) {
     return (
       <div className="flex justify-start">
-        <div className="flex flex-col items-center mr-3">
-          <div className="w-10 h-10 bg-white border-2 border-charcoal rounded-full overflow-hidden">
+        <div className="flex flex-col items-center mr-3 ">
+          <div className="w-10 h-10 bg-white border border-charcoal border-opacity-20 rounded-2xl overflow-hidden">
             <img
               src={characterImageSrc}
               alt={characterName}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover mt-[2px]"
             />
           </div>
           {showCharacterName && (
@@ -29,9 +29,18 @@ const ChatMessage = ({
         </div>
         <div className="bg-gray-100 text-charcoal px-4 py-3 rounded-2xl rounded-bl-none">
           <div className="flex space-x-1">
-            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            <div
+              className="w-2 h-2 bg-gray-500 rounded-2xl animate-bounce"
+              style={{ animationDelay: "0ms" }}
+            ></div>
+            <div
+              className="w-2 h-2 bg-gray-500 rounded-2xl animate-bounce"
+              style={{ animationDelay: "150ms" }}
+            ></div>
+            <div
+              className="w-2 h-2 bg-gray-500 rounded-2xl animate-bounce"
+              style={{ animationDelay: "300ms" }}
+            ></div>
           </div>
         </div>
       </div>
@@ -43,15 +52,17 @@ const ChatMessage = ({
 
   return (
     <div
-      className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+      className={`flex ${
+        message.sender === "user" ? "justify-end" : "justify-start"
+      }`}
     >
-      {message.sender === 'bot' && (
-        <div className="flex flex-col items-center mr-3">
-          <div className="w-10 h-10 bg-white border-2 border-charcoal rounded-full overflow-hidden">
+      {message.sender === "bot" && (
+        <div className="flex flex-col items-center mr-3 ">
+          <div className="w-10 h-10 bg-white border border-charcoal border-opacity-10 rounded-2xl overflow-hidden">
             <img
               src={characterImageSrc}
               alt={characterName}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover mt-[2px]"
             />
           </div>
           {showCharacterName && (
@@ -62,18 +73,14 @@ const ChatMessage = ({
 
       {displayImage ? (
         <div className={`max-w-[${maxWidth}]`}>
-          <img
-            src={displayImage}
-            alt={imageAlt}
-            className={imageClassName}
-          />
+          <img src={displayImage} alt={imageAlt} className={imageClassName} />
         </div>
       ) : (
         <div
           className={`max-w-[${maxWidth}] px-4 py-3 rounded-2xl ${
-            message.sender === 'user'
-              ? 'bg-charcoal text-white rounded-br-none'
-              : 'bg-gray-100 text-charcoal rounded-bl-none'
+            message.sender === "user"
+              ? "bg-charcoal text-white rounded-br-none"
+              : "bg-gray-100 text-charcoal rounded-bl-none"
           }`}
         >
           <p className="text-sm whitespace-pre-wrap">{message.text}</p>
