@@ -431,6 +431,9 @@ const Result = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
+          const documentHeight = document.documentElement.scrollHeight;
+          const windowHeight = window.innerHeight;
+          const scrollPercentage = (currentScrollY + windowHeight) / documentHeight;
 
           // 프로모션 섹션 체크 (실시간으로)
           const promotionElement = document.querySelector('.promotion-section');
@@ -438,7 +441,6 @@ const Result = () => {
 
           if (currentSection === 2 && promotionElement) {
             const rect = promotionElement.getBoundingClientRect();
-            const windowHeight = window.innerHeight;
             isCurrentlyInPromotion = rect.top < windowHeight && rect.bottom > 0;
           }
 
@@ -446,8 +448,12 @@ const Result = () => {
           if (isCurrentlyInPromotion) {
             setIsBottomBarVisible(true);
           } else {
+            // 스크롤이 95% 이상이면 하단바 표시
+            if (scrollPercentage >= 0.95) {
+              setIsBottomBarVisible(true);
+            }
             // 스크롤을 아래로 내릴 때 (스크롤 값이 증가)
-            if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+            else if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
               setIsBottomBarVisible(false);
             }
             // 스크롤을 위로 올릴 때 (스크롤 값이 감소)
