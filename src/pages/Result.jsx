@@ -1160,7 +1160,7 @@ const Result = () => {
                       },
                       {
                         content:
-                          "성격에 따라 애인에게 더 좋은 행동을 해줄 수 있을거예요!",
+                          "성격유형 조언으로 그 사람과 더 좋은 관계로 발전할 수 있을거에요!",
                         position: " right-[-20px] bottom-[-50px]",
                         bubbleStyle:
                           "bg-yellow-50 bg-opacity-95 border-3 border-purple-400",
