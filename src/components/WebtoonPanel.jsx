@@ -27,9 +27,11 @@ const WebtoonPanel = ({
         className={`relative ${
           allowOverflow ? "overflow-visible" : "overflow-hidden"
         } ${borderRadius} ${className}`}
-        style={{ padding: allowOverflow ? "20px" : "0" }}
+        // style={{ padding: allowOverflow ? "20px" : "0" }}
       >
-        <div className={`relative flex justify-center overflow-hidden ${borderRadius}`}>
+        <div
+          className={`relative flex justify-center overflow-hidden ${borderRadius}`}
+        >
           <img
             src={backgroundImage}
             alt="Background"
@@ -108,7 +110,7 @@ const WebtoonPanel = ({
                     className={`${
                       bubble.textStyle || "text-sm text-gray-800 font-medium"
                     } break-keep`}
-                    style={{ wordBreak: 'keep-all' }}
+                    style={{ wordBreak: "keep-all" }}
                   >
                     {typeof bubble.content === "string" ? (
                       <p className="whitespace-pre-line">{bubble.content}</p>
@@ -134,7 +136,9 @@ const WebtoonPanel = ({
                 className={`absolute ${effect.position || "top-1/2 left-1/2"}`}
                 style={{
                   zIndex: effect.zIndex || 15,
-                  transform: `translate(-50%, -50%) rotate(${effect.rotation || 0}deg) ${effect.transform || ""}`,
+                  transform: `translate(-50%, -50%) rotate(${
+                    effect.rotation || 0
+                  }deg) ${effect.transform || ""}`,
                   ...effect.customStyle,
                 }}
               >
@@ -144,7 +148,9 @@ const WebtoonPanel = ({
                   }
                   style={{
                     fontFamily: "'WebtoonSound', sans-serif",
-                    textShadow: effect.textShadow || "2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000",
+                    textShadow:
+                      effect.textShadow ||
+                      "2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000",
                     WebkitTextStroke: effect.stroke || "2px #000",
                     ...effect.textCustomStyle,
                   }}
@@ -242,7 +248,7 @@ const WebtoonPanel = ({
               className={`${
                 bubble.textStyle || "text-sm text-gray-800 font-medium"
               } break-keep`}
-              style={{ wordBreak: 'keep-all' }}
+              style={{ wordBreak: "keep-all" }}
             >
               {typeof bubble.content === "string" ? (
                 <p className="whitespace-pre-line">{bubble.content}</p>
@@ -268,17 +274,19 @@ const WebtoonPanel = ({
           className={`absolute ${effect.position || "top-1/2 left-1/2"}`}
           style={{
             zIndex: effect.zIndex || 15,
-            transform: `translate(-50%, -50%) rotate(${effect.rotation || 0}deg) ${effect.transform || ""}`,
+            transform: `translate(-50%, -50%) rotate(${
+              effect.rotation || 0
+            }deg) ${effect.transform || ""}`,
             ...effect.customStyle,
           }}
         >
           <div
-            className={
-              effect.textStyle || "text-6xl font-black text-white"
-            }
+            className={effect.textStyle || "text-6xl font-black text-white"}
             style={{
               fontFamily: "'WebtoonSound', sans-serif",
-              textShadow: effect.textShadow || "2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000",
+              textShadow:
+                effect.textShadow ||
+                "2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000",
               WebkitTextStroke: effect.stroke || "2px #000",
               ...effect.textCustomStyle,
             }}

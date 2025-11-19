@@ -40,7 +40,7 @@ const Landing = () => {
   // 메시지 시나리오 정의
   const messageScenario = [
     { text: "반갑다마, 나는 페넥이다마.", sender: "bot" },
-    { text: "애인이 당신을 어떻게 바라보는지 궁금하지 않냐마?", sender: "bot" },
+    { text: "그 사람의 속마음이 궁금하냐마!?", sender: "bot" },
     {
       text: "타로 카드로 한 번 알아보자마!",
       sender: "bot",
@@ -50,7 +50,7 @@ const Landing = () => {
       sender: "bot",
     },
     {
-      text: "애인과의 소통에 큰 도움이 될거다마.",
+      text: "그 사람과의 관계가 깊어지는데 도움이 될거다마!",
       sender: "bot",
     },
     {

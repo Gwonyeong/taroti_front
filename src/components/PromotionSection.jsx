@@ -115,42 +115,35 @@ const PromotionSection = () => {
               </div>
               <div>
                 <h3 className="text-base font-bold mb-1">
-                  0. 애인은 나를 어떻게 생각할까?
+                  0. 그 사람은 나를 어떻게 생각할까?
                 </h3>
               </div>
 
               <div>
                 <h3 className="text-base font-bold mb-1">
-                  1. 애인과 나의 궁합 보기
+                  1. 현재의 그 사람과 관계
                 </h3>
                 <p className="text-xs ml-3 mb-1">
-                  1-1. 내가 만나는 애인.. 운명의 상대일까?
+                  1-1. 그 사람과 더 가까워지는 법
+                </p>
+                <p className="text-xs ml-3">1-2. 관계의 위기, 미리 극복하기</p>
+              </div>
+
+              <div>
+                <h3 className="text-base font-bold mb-1">2. 미래의 관계</h3>
+                <p className="text-xs ml-3 mb-1">
+                  2-1. 미래에 이 관계는 어떻게 되어있을까?
                 </p>
                 <p className="text-xs ml-3">
-                  1-2. 애인과의 미래는 어떻게 될까?
+                  2-2. 더 좋은 관계가 되려면 어떻게 해야할까?
                 </p>
               </div>
-
               <div>
                 <h3 className="text-base font-bold mb-1">
-                  2. 애인과의 위기, 미리 극복하기
+                  보너스! 그 사람과의 궁합
                 </h3>
-                <p className="text-xs ml-3 mb-1">
-                  2-1. 우리는 어떤 위기를 만나게 될까?
-                </p>
-                <p className="text-xs ml-3">
-                  2-2. 각자의 성격 유형에 따라 효과적인 극복 방안 제시
-                </p>
-              </div>
-
-              <div>
-                <h3 className="text-base font-bold mb-1">
-                  3. 이 관계가 나를 성장시켜줄까?
-                </h3>
-                <p className="text-xs ml-3 mb-1">
-                  3-1. 나의 성격 유형은 어떤 연애를 하면 좋을까?
-                </p>
-                <p className="text-xs ml-3">3-2. 내 연애 성향은 뭘까?</p>
+                <p className="text-xs ml-3 mb-1">- 성격유형 궁합</p>
+                <p className="text-xs ml-3">- 타로카드 궁합</p>
               </div>
             </div>
           </div>
@@ -335,7 +328,10 @@ const PromotionSection = () => {
 
         {/* 지금 구매해야 하는 이유 섹션 */}
         <div className="w-full max-w-lg mt-16 mb-20 space-y-8">
-          <h2 className="text-2xl font-bold text-center text-white mb-8" style={{ wordBreak: 'keep-all' }}>
+          <h2
+            className="text-2xl font-bold text-center text-white mb-8"
+            style={{ wordBreak: "keep-all" }}
+          >
             지금 구매해야 하는 이유
           </h2>
 
@@ -347,10 +343,16 @@ const PromotionSection = () => {
                   1
                 </div>
               </div>
-              <h3 className="font-bold text-lg text-gray-900 mb-3" style={{ wordBreak: 'keep-all' }}>
+              <h3
+                className="font-bold text-lg text-gray-900 mb-3"
+                style={{ wordBreak: "keep-all" }}
+              >
                 귀여운 타마들의 지루할 틈 없는 웹툰형 해설
               </h3>
-              <p className="text-sm text-gray-700 mb-4" style={{ wordBreak: 'keep-all' }}>
+              <p
+                className="text-sm text-gray-700 mb-4"
+                style={{ wordBreak: "keep-all" }}
+              >
                 타마들이 해설해주는 당신의 이야기! 웹툰을 보다보면 어느새 내
                 미래를 확인할 수 있어요!
               </p>
@@ -364,7 +366,10 @@ const PromotionSection = () => {
                   }}
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                  <p className="text-white text-xs font-medium" style={{ wordBreak: 'keep-all' }}>
+                  <p
+                    className="text-white text-xs font-medium"
+                    style={{ wordBreak: "keep-all" }}
+                  >
                     지루한 텍스트가 아닌, 캐릭터와 함께하는 즐거운 타로 리딩
                   </p>
                 </div>
@@ -380,7 +385,10 @@ const PromotionSection = () => {
                   2
                 </div>
               </div>
-              <h3 className="font-bold text-lg text-gray-900 mb-3" style={{ wordBreak: 'keep-all' }}>
+              <h3
+                className="font-bold text-lg text-gray-900 mb-3"
+                style={{ wordBreak: "keep-all" }}
+              >
                 그럴듯한 조언이 아닌 '나의 성격유형'을 이용한 나에게 맞는
                 구체적인 조언
               </h3>
@@ -441,7 +449,7 @@ const PromotionSection = () => {
                 <div className="flex items-center space-x-2">
                   <span className="text-blue-600">✓</span>
                   <p className="text-sm text-gray-700">
-                    개인별 연애 상황에 최적화된 카드 의미 제공
+                    개인별 상황에 최적화된 카드 의미 제공
                   </p>
                 </div>
               </div>
@@ -511,7 +519,10 @@ const PromotionSection = () => {
 
         {/* 리뷰 섹션 */}
         <div className="w-full max-w-lg mt-16 mb-20 space-y-6">
-          <h2 className="text-2xl font-bold text-center text-white mb-8" style={{ wordBreak: 'keep-all' }}>
+          <h2
+            className="text-2xl font-bold text-center text-white mb-8"
+            style={{ wordBreak: "keep-all" }}
+          >
             조언을 듣고간 사람들의 이야기
           </h2>
 
@@ -660,14 +671,17 @@ const PromotionSection = () => {
             {/* 하단 검정 박스 - 이미지와 자연스럽게 연결 */}
             <div className="bg-black -mt-1 p-8">
               <div className="bg-gray-900 rounded-lg p-6 border-2 border-amber-400/20">
-                <h3 className="text-xl font-bold text-white mb-6 text-center" style={{ wordBreak: 'keep-all' }}>
+                <h3
+                  className="text-xl font-bold text-white mb-6 text-center"
+                  style={{ wordBreak: "keep-all" }}
+                >
                   이런 분들에게 추천합니다!
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
                     <span className="text-amber-400 text-lg">✓</span>
                     <p className="text-sm text-white">
-                      연인의 마음을 정확히 알고 싶은 분
+                      타인의 마음을 정확히 알고 싶은 분
                     </p>
                   </div>
                   <div className="flex items-center space-x-3">
@@ -685,7 +699,7 @@ const PromotionSection = () => {
                   <div className="flex items-center space-x-3">
                     <span className="text-amber-400 text-lg">✓</span>
                     <p className="text-sm text-white">
-                      연애 위기를 미리 예방하고 싶은 분
+                      위기를 미리 예방하고 싶은 분
                     </p>
                   </div>
                   <div className="flex items-center space-x-3">
@@ -723,7 +737,10 @@ const PromotionSection = () => {
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black"></div>
               {/* 이미지 위 제목 텍스트 */}
               <div className="absolute top-4 left-4 right-4">
-                <h2 className="text-white text-xl font-bold text-center drop-shadow-lg" style={{ wordBreak: 'keep-all' }}>
+                <h2
+                  className="text-white text-xl font-bold text-center drop-shadow-lg"
+                  style={{ wordBreak: "keep-all" }}
+                >
                   페넥의 편지
                 </h2>
               </div>

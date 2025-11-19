@@ -25,7 +25,12 @@ const Result = () => {
   const [mbtiGroupData, setMbtiGroupData] = useState(null);
   const [isBottomBarVisible, setIsBottomBarVisible] = useState(true);
   const lastScrollY = useRef(0);
-  const [timeRemaining, setTimeRemaining] = useState({ hours: 0, minutes: 0, seconds: 0, hundredths: 0 });
+  const [timeRemaining, setTimeRemaining] = useState({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    hundredths: 0,
+  });
   const [isPromotionVisible, setIsPromotionVisible] = useState(false);
 
   // 카드명 매핑 함수
@@ -81,6 +86,40 @@ const Result = () => {
         );
       }
       return part;
+    });
+  };
+
+  // 마침표 후 줄바꿈을 추가하고 볼드 처리도 하는 함수
+  const formatBoldTextWithLineBreaks = (text) => {
+    if (!text) return null;
+
+    // 먼저 마침표 후에 줄바꿈 추가 (마침표 다음에 공백이 있고 문자가 오는 경우)
+    const textWithBreaks = text.replace(/\.\s+(?=[가-힣A-Za-z])/g, ".\n");
+
+    // **텍스트** 패턴을 찾아서 <strong> 태그로 변환
+    const parts = textWithBreaks.split(/\*\*(.*?)\*\*/g);
+
+    return parts.map((part, index) => {
+      // 홀수 인덱스는 **로 감싸진 텍스트
+      if (index % 2 === 1) {
+        return (
+          <strong key={index} className="font-bold">
+            {part}
+          </strong>
+        );
+      }
+      // 줄바꿈 문자를 <br> 태그로 변환 (한 줄의 빈 줄을 위해 <br><br> 사용)
+      return part.split("\n").map((line, lineIndex, arr) => (
+        <React.Fragment key={`${index}-${lineIndex}`}>
+          {line}
+          {lineIndex < arr.length - 1 && (
+            <>
+              <br />
+              <br />
+            </>
+          )}
+        </React.Fragment>
+      ));
     });
   };
 
@@ -433,10 +472,11 @@ const Result = () => {
           const currentScrollY = window.scrollY;
           const documentHeight = document.documentElement.scrollHeight;
           const windowHeight = window.innerHeight;
-          const scrollPercentage = (currentScrollY + windowHeight) / documentHeight;
+          const scrollPercentage =
+            (currentScrollY + windowHeight) / documentHeight;
 
           // 프로모션 섹션 체크 (실시간으로)
-          const promotionElement = document.querySelector('.promotion-section');
+          const promotionElement = document.querySelector(".promotion-section");
           let isCurrentlyInPromotion = false;
 
           if (currentSection === 2 && promotionElement) {
@@ -453,7 +493,10 @@ const Result = () => {
               setIsBottomBarVisible(true);
             }
             // 스크롤을 아래로 내릴 때 (스크롤 값이 증가)
-            else if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+            else if (
+              currentScrollY > lastScrollY.current &&
+              currentScrollY > 100
+            ) {
               setIsBottomBarVisible(false);
             }
             // 스크롤을 위로 올릴 때 (스크롤 값이 감소)
@@ -469,10 +512,10 @@ const Result = () => {
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, [currentSection]);
 
@@ -525,7 +568,7 @@ const Result = () => {
         return;
       }
 
-      const promotionElement = document.querySelector('.promotion-section');
+      const promotionElement = document.querySelector(".promotion-section");
       if (promotionElement) {
         const rect = promotionElement.getBoundingClientRect();
         const windowHeight = window.innerHeight;
@@ -536,11 +579,13 @@ const Result = () => {
       }
     };
 
-    window.addEventListener('scroll', checkPromotionVisibility, { passive: true });
+    window.addEventListener("scroll", checkPromotionVisibility, {
+      passive: true,
+    });
     checkPromotionVisibility(); // 초기 체크
 
     return () => {
-      window.removeEventListener('scroll', checkPromotionVisibility);
+      window.removeEventListener("scroll", checkPromotionVisibility);
     };
   }, [currentSection]);
 
@@ -657,12 +702,6 @@ const Result = () => {
           className="flex-1 p-6 space-y-6 pb-40"
           style={{ position: "relative", zIndex: 20 }}
         >
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-charcoal mb-2">
-              결과 : 페넥의 연애조언 {currentSection === 2 && "(세부 분석)"}
-            </h2>
-          </div>
-
           {/* 섹션 1 컨텐츠 */}
           {currentSection === 1 && (
             <>
@@ -919,7 +958,7 @@ const Result = () => {
                   {/* 애인이 나를 어떻게 생각하는지 */}
                   <div className="bg-purple-50 p-4 rounded-lg">
                     <h4 className="font-semibold text-charcoal mb-3">
-                      애인이 나를 어떻게 생각하는지
+                      그 사람이 나를 어떻게 생각하는지
                     </h4>
                     <div className="text-sm text-gray-700 leading-relaxed">
                       <p className="whitespace-pre-line">
@@ -1520,6 +1559,89 @@ const Result = () => {
                 </div>
               </div>
 
+              {/* 카드 재소개 섹션 */}
+              {selectedCardNumber !== null && cardData && (
+                <>
+                  {/* 웹툰 패널 - 카드 재소개 시작 */}
+                  <div className="flex justify-center w-full py-8">
+                    <div className="w-full max-w-lg">
+                      <WebtoonPanel
+                        backgroundImage="/images/characters/webtoon/desert_fox_taro.png"
+                        fitImage={true}
+                        allowOverflow={true}
+                        className=""
+                        borderRadius="rounded-lg"
+                        speechBubbles={[
+                          {
+                            content:
+                              "아, 그전에 네가 뽑은 카드를 다시 한번 살펴보겠다마!",
+                            position: "top-4 right-4",
+                            bubbleStyle:
+                              "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
+                            tailPosition: "bottom",
+                            maxWidth: "60%",
+                            textStyle:
+                              "text-sm text-gray-800 font-bold leading-relaxed",
+                            zIndex: 20,
+                          },
+                        ]}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 카드 재소개 박스 */}
+                  <div className="flex justify-center pt-8">
+                    <div className="relative bg-gradient-to-br from-amber-50 to-orange-50 p-6 rounded-lg shadow-lg border-2 border-amber-200">
+                      <img
+                        src={`/documents/illustrator/${String(
+                          selectedCardNumber
+                        ).padStart(2, "0")}-${getCardName(
+                          selectedCardNumber
+                        )}.jpg`}
+                        alt={`${getCardName(selectedCardNumber)} 카드`}
+                        className="w-32 h-48 object-cover rounded-lg mx-auto mb-4"
+                        onError={(e) => {
+                          e.target.src = "/images/cards/back/camp_band.jpeg";
+                        }}
+                      />
+                      <h3 className="text-center text-lg font-bold text-amber-900 mb-2">
+                        {getCardDisplayName(selectedCardNumber)}
+                      </h3>
+
+                      {/* CardFeature/Concept 키워드들 */}
+                      {cardData?.["CardFeature/Concept"] && (
+                        <div className="text-center mb-3">
+                          <h4 className="text-sm font-semibold text-amber-800 mb-2">
+                            카드의 핵심 키워드
+                          </h4>
+                          <div className="flex flex-wrap justify-center gap-2">
+                            {cardData["CardFeature/Concept"].map(
+                              (keyword, index) => (
+                                <span
+                                  key={index}
+                                  className="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-xs font-medium border border-amber-300"
+                                >
+                                  {keyword}
+                                </span>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 간단한 카드 설명 */}
+                      <div className="bg-white p-3 rounded border border-amber-200">
+                        <p className="text-xs text-gray-700 text-center leading-relaxed">
+                          {formatBoldText(
+                            getFirstSentence(cardData["Lover'sPerception"])
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
               {/* 성격 유형별 조언 섹션 */}
               {cardData &&
                 userData?.mbti &&
@@ -1568,8 +1690,10 @@ const Result = () => {
                         <div className="text-sm text-gray-700 leading-relaxed space-y-3">
                           {/* 전체 조언 내용 (모두 공개) */}
                           <div className="bg-white p-3 rounded border-l-4 border-green-400">
-                            <p className="whitespace-pre-line">
-                              {formatBoldText(cardData[userAdviceKey])}
+                            <p className="leading-relaxed">
+                              {formatBoldTextWithLineBreaks(
+                                cardData[userAdviceKey]
+                              )}
                             </p>
                           </div>
                         </div>
@@ -1659,6 +1783,263 @@ const Result = () => {
                           />
                         </div>
                       </div>
+
+                      {/* 방해되는 요소 설명 박스 */}
+                      <div className="bg-red-50 p-4 rounded-lg border-2 border-red-200 shadow-md mt-8">
+                        <h4 className="font-bold text-red-900 mb-3 text-lg flex items-center">
+                          <span className="mr-2"></span>그 사람과 당신이
+                          가까워지는데 방해되는 요소
+                        </h4>
+                        <div className="text-sm text-gray-700 leading-relaxed">
+                          <p className="text-red-800 mb-3 font-medium">
+                            이런 점들이 관계 발전에 걸림돌이 될 수 있어요:
+                          </p>
+                          {cardData?.NegativeKeywords && (
+                            <ul className="space-y-2">
+                              {cardData.NegativeKeywords.map(
+                                (keyword, index) => (
+                                  <li
+                                    key={index}
+                                    className="flex items-start bg-white p-3 rounded border border-red-200"
+                                  >
+                                    <span className="text-red-600 mr-3 mt-0.5">
+                                      •
+                                    </span>
+                                    <span className="text-gray-800 leading-relaxed">
+                                      {keyword}
+                                    </span>
+                                  </li>
+                                )
+                              )}
+
+                              {/* 블러 처리된 추가 항목들 */}
+                              <li className="flex items-start bg-white p-3 rounded border border-red-200 relative">
+                                <span className="text-red-600 mr-3 mt-0.5">
+                                  •
+                                </span>
+                                <span className="text-gray-800 leading-relaxed blur-sm select-none">
+                                  상대방이 당신에게 느끼는 숨겨진 불안감과 관계
+                                  지속에 대한 의구심
+                                </span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                              </li>
+
+                              <li className="flex items-start bg-white p-3 rounded border border-red-200 relative">
+                                <span className="text-red-600 mr-3 mt-0.5">
+                                  •
+                                </span>
+                                <span className="text-gray-800 leading-relaxed blur-sm select-none">
+                                  당신의 성격 유형이 가진 연애 패턴상 발생할 수
+                                  있는 근본적 문제점
+                                </span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                              </li>
+
+                              <li className="flex items-start bg-white p-3 rounded border border-red-200 relative">
+                                <span className="text-red-600 mr-3 mt-0.5">
+                                  •
+                                </span>
+                                <span className="text-gray-800 leading-relaxed blur-sm select-none">
+                                  두 사람의 궁합에서 나타나는 핵심적인 갈등
+                                  요소와 해결 방안
+                                </span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                              </li>
+                            </ul>
+                          )}
+
+                          {/* 결제 후 확인 가능 메시지 */}
+
+                          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded">
+                            <p className="text-amber-800 text-xs font-medium">
+                              💡 하지만 걱정하지 마세요! 위의 조언을 참고하여
+                              이런 요소들을 극복할 수 있어요.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 단독 말풍선 - 카드 두 장 더 뽑기 예고 */}
+                      <div className="flex justify-center w-full py-12">
+                        <div className="relative">
+                          <SpeechBubble
+                            content="지금 뽑은 카드를 봤을 때, 미래가 나쁘지만은 않아보인다마!"
+                            position="relative"
+                            borderStyle="solid"
+                            borderType="oval"
+                            backgroundColor="bg-amber-50"
+                            borderColor="border-amber-400"
+                            borderWidth="border-3"
+                            textStyle="text-lg font-bold text-gray-800"
+                            padding="p-8"
+                            maxWidth="380px"
+                            zIndex={30}
+                            showTail={false}
+                            edgeImage="/images/characters/desert_fox/desert_fox_non_bg_watch_card.jpeg"
+                            edgeImagePosition="bottom-left"
+                            edgeImageSize="w-16 h-16"
+                            customStyle={{
+                              boxShadow: "0 8px 25px rgba(245, 158, 11, 0.3)",
+                              background:
+                                "linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%)",
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* 첫 번째 추가 웹툰 패널 - 페넥의 반응 */}
+                      <div className="flex justify-center w-full py-8">
+                        <div className="w-full max-w-lg mb-32">
+                          <WebtoonPanel
+                            backgroundImage="/images/characters/webtoon/desert_fox_taro.png"
+                            fitImage={true}
+                            allowOverflow={true}
+                            className=""
+                            borderRadius="rounded-lg"
+                            speechBubbles={[
+                              {
+                                content: "우리는 카드를 두장 더 뽑을거다마!",
+                                position: "top-4 right-4",
+                                bubbleStyle:
+                                  "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
+                                tailPosition: "bottom",
+                                maxWidth: "70%",
+                                textStyle:
+                                  "text-sm text-gray-800 font-bold leading-relaxed",
+                                zIndex: 20,
+                              },
+                            ]}
+                            soundEffects={[
+                              {
+                                content: "더 남았어!",
+                                position: "bottom-16 left-16",
+                                rotation: -15,
+                                textStyle: "text-xl font-black text-amber-600",
+                                stroke: "2px #fff",
+                                zIndex: 25,
+                              },
+                            ]}
+                          />
+                        </div>
+                      </div>
+                      <WebtoonPanel
+                        backgroundImage="/images/characters/webtoon/desert_fox_watching_card.jpeg"
+                        fitImage={true}
+                        allowOverflow={true}
+                        className=""
+                        borderRadius="rounded-lg"
+                        speechBubbles={[
+                          {
+                            content:
+                              "지금까지 그 사람이 당신을 어떻게 생각하는지 알아봤다면..",
+                            position: "top-2 left-4",
+                            bubbleStyle:
+                              "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
+                            tailPosition: "bottom",
+                            maxWidth: "75%",
+                            textStyle:
+                              "text-sm text-gray-800 font-bold leading-relaxed",
+                            zIndex: 20,
+                          },
+                          {
+                            content:
+                              "남은 카드는 그 사람과의 미래를 볼 것이다마!",
+                            position: "bottom-2 right-4",
+                            bubbleStyle:
+                              "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
+                            tailPosition: "top",
+                            maxWidth: "75%",
+                            textStyle:
+                              "text-sm text-gray-800 font-bold leading-relaxed",
+                            zIndex: 20,
+                          },
+                        ]}
+                      />
+                      <div className="flex justify-center w-full py-12">
+                        <div className="relative">
+                          <SpeechBubble
+                            content="약간의 복채가 필요하지만... 지금 구매하면 그 사람과의 궁합을 추가로 봐주겠다마!"
+                            position="relative"
+                            borderStyle="solid"
+                            borderType="oval"
+                            backgroundColor="bg-blue-100"
+                            borderColor="border-blue-500"
+                            borderWidth="border-3"
+                            textStyle="text-lg font-bold text-blue-900"
+                            padding="p-8"
+                            maxWidth="350px"
+                            zIndex={30}
+                            showTail={false}
+                            edgeImage="/images/characters/desert_fox/desert_fox_non_bg_watch_card.jpeg"
+                            edgeImagePosition="bottom-right"
+                            edgeImageSize="w-16 h-16"
+                            customStyle={{
+                              boxShadow: "0 8px 25px rgba(59, 130, 246, 0.3)",
+                              background:
+                                "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)",
+                            }}
+                          />
+                        </div>
+                      </div>
+                      {/* 두 번째 추가 웹툰 패널 - 토끼의 등장 */}
+                      <div className="flex justify-center w-full py-8">
+                        <div className="w-full max-w-lg">
+                          <WebtoonPanel
+                            backgroundImage="/images/characters/webtoon/rabbit_watching_desert_fox.png"
+                            fitImage={true}
+                            allowOverflow={true}
+                            className=""
+                            borderRadius="rounded-lg"
+                            speechBubbles={[
+                              {
+                                content: "그 사람과 제가 잘 맞을까요..?",
+                                position: "top-4 left-4",
+                                bubbleStyle:
+                                  "bg-pink-50 bg-opacity-95 border-3 border-pink-400",
+                                tailPosition: "bottom",
+                                maxWidth: "65%",
+                                textStyle:
+                                  "text-sm text-gray-800 font-bold leading-relaxed",
+                                zIndex: 20,
+                              },
+                            ]}
+                            soundEffects={[
+                              {
+                                content: "확인해줄게!",
+                                position: "bottom-12 right-6",
+                                rotation: 0,
+                                textStyle: "text-xl font-black text-pink-600",
+                                stroke: "2px #fff",
+                                zIndex: 25,
+                              },
+                            ]}
+                          />
+                        </div>
+                      </div>
+
+                      <SpeechBubble
+                        content="아직 확신이 없냐마? 앞으로 진행할 이야기를 아래에서 확인해보라마!"
+                        position="relative"
+                        borderStyle="solid"
+                        borderType="oval"
+                        backgroundColor="bg-blue-100"
+                        borderColor="border-blue-500"
+                        borderWidth="border-3"
+                        textStyle="text-lg font-bold text-blue-900"
+                        padding="p-8"
+                        maxWidth="350px"
+                        zIndex={30}
+                        showTail={false}
+                        edgeImage="/images/characters/desert_fox/desert_fox_non_bg_watch_card.jpeg"
+                        edgeImagePosition="bottom-right"
+                        edgeImageSize="w-16 h-16"
+                        customStyle={{
+                          boxShadow: "0 8px 25px rgba(59, 130, 246, 0.3)",
+                          background:
+                            "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)",
+                        }}
+                      />
+                      {/* 단독 말풍선 - 페넥의 궁합 제안 */}
                     </>
                   ) : null;
                 })()}
@@ -1677,8 +2058,7 @@ const Result = () => {
                     borderRadius="rounded-lg"
                     speechBubbles={[
                       {
-                        content:
-                          "약간의 복채로.. 당신의 미래에 대한 보고서를 받아볼 수 있다마!",
+                        content: "설명을 들어보라마..",
                         position: "top-4 left-4",
                         bubbleStyle:
                           "bg-blue-50 bg-opacity-95 border-3 border-blue-400",
@@ -1704,9 +2084,14 @@ const Result = () => {
         {/* Fixed Bottom Purchase Section */}
         <div
           className={`fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full min-w-[320px] max-w-[500px] bg-black bg-opacity-85 backdrop-blur-sm border-t border-gray-600 p-4 shadow-2xl transition-transform duration-300 ease-in-out ${
-            isBottomBarVisible ? 'translate-y-0' : 'translate-y-full'
+            isBottomBarVisible ? "translate-y-0" : "translate-y-full"
           }`}
-          style={{ zIndex: 9999, transform: `translateX(-50%) ${isBottomBarVisible ? 'translateY(0)' : 'translateY(100%)'}` }}
+          style={{
+            zIndex: 9999,
+            transform: `translateX(-50%) ${
+              isBottomBarVisible ? "translateY(0)" : "translateY(100%)"
+            }`,
+          }}
         >
           {/* Navigation and Purchase Buttons */}
           {currentSection === 1 ? (
@@ -1722,19 +2107,33 @@ const Result = () => {
                 <div className="flex flex-col w-full">
                   <div className="flex flex-col gap-1 mb-3">
                     <div className="flex items-center justify-center gap-2">
-                      <span className="text-gray-400 line-through text-sm">₩7,900</span>
-                      <span className="text-2xl font-bold text-red-400">₩3,900</span>
+                      <span className="text-gray-400 line-through text-sm">
+                        ₩7,900
+                      </span>
+                      <span className="text-2xl font-bold text-red-400">
+                        ₩3,900
+                      </span>
                     </div>
                     <div className="flex items-center justify-center gap-1">
-                      <span className="text-xs text-gray-300">할인 종료까지:</span>
+                      <span className="text-xs text-gray-300">
+                        할인 종료까지:
+                      </span>
                       <div className="bg-gray-800 bg-opacity-60 text-white px-2 py-1 rounded flex items-center gap-1 text-sm font-mono border border-gray-500">
-                        <span className="font-bold">{String(timeRemaining.hours).padStart(2, '0')}</span>
+                        <span className="font-bold">
+                          {String(timeRemaining.hours).padStart(2, "0")}
+                        </span>
                         <span>:</span>
-                        <span className="font-bold">{String(timeRemaining.minutes).padStart(2, '0')}</span>
+                        <span className="font-bold">
+                          {String(timeRemaining.minutes).padStart(2, "0")}
+                        </span>
                         <span>:</span>
-                        <span className="font-bold text-red-400">{String(timeRemaining.seconds).padStart(2, '0')}</span>
+                        <span className="font-bold text-red-400">
+                          {String(timeRemaining.seconds).padStart(2, "0")}
+                        </span>
                         <span className="text-red-400">.</span>
-                        <span className="font-bold text-red-400">{String(timeRemaining.hundredths).padStart(2, '0')}</span>
+                        <span className="font-bold text-red-400">
+                          {String(timeRemaining.hundredths).padStart(2, "0")}
+                        </span>
                       </div>
                     </div>
                   </div>
