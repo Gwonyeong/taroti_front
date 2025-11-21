@@ -2108,10 +2108,10 @@ const Result = () => {
                   <div className="flex flex-col gap-1 mb-3">
                     <div className="flex items-center justify-center gap-2">
                       <span className="text-gray-400 line-through text-sm">
-                        ₩7,900
+                        ₩6,900
                       </span>
                       <span className="text-2xl font-bold text-red-400">
-                        ₩3,900
+                        ₩2,900
                       </span>
                     </div>
                     <div className="flex items-center justify-center gap-1">
