@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const BannerSlider = () => {
   const [currentSlide, setCurrentSlide] = useState(1);
@@ -6,7 +6,8 @@ const BannerSlider = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [currentX, setCurrentX] = useState(0);
-  const [translateX, setTranslateX] = useState(0);
+  const [translateX, setTranslateX] = useState(-100);
+  const sliderRef = useRef(null);
 
   const originalSlides = [
     {
@@ -41,56 +42,69 @@ const BannerSlider = () => {
     }
   ];
 
+  // 무한 루프를 위한 복제 슬라이드
   const slides = [
-    originalSlides[originalSlides.length - 1],
+    originalSlides[originalSlides.length - 1], // 마지막 슬라이드 복제
     ...originalSlides,
-    originalSlides[0]
+    originalSlides[0] // 첫 번째 슬라이드 복제
   ];
 
   const showSlide = (index) => {
     setIsTransitioning(true);
-    setCurrentSlide(index + 1);
+    setCurrentSlide(index + 1); // 복제된 슬라이드를 고려하여 +1
   };
 
-  const nextSlide = () => {
-    if (!isTransitioning) return;
+  const nextSlide = useCallback(() => {
     setCurrentSlide(prev => prev + 1);
-  };
+  }, []);
 
-  const prevSlide = () => {
-    if (!isTransitioning) return;
+  const prevSlide = useCallback(() => {
     setCurrentSlide(prev => prev - 1);
-  };
+  }, []);
 
-  const handleTransitionEnd = () => {
-    if (currentSlide === slides.length - 1) {
+  // 트랜지션 종료 후 무한 루프 처리
+  const handleTransitionEnd = useCallback(() => {
+    if (currentSlide >= slides.length - 1) {
+      // 마지막 복제 슬라이드에서 실제 첫 번째로 이동
       setIsTransitioning(false);
       setCurrentSlide(1);
-      setTimeout(() => setIsTransitioning(true), 50);
-    } else if (currentSlide === 0) {
+      setTranslateX(-100);
+    } else if (currentSlide <= 0) {
+      // 첫 번째 복제 슬라이드에서 실제 마지막으로 이동
       setIsTransitioning(false);
       setCurrentSlide(originalSlides.length);
-      setTimeout(() => setIsTransitioning(true), 50);
+      setTranslateX(-originalSlides.length * 100);
     }
-  };
+  }, [currentSlide, slides.length, originalSlides.length]);
 
-  const handleStart = (clientX) => {
+  // 트랜지션 재활성화
+  useEffect(() => {
+    if (!isTransitioning) {
+      const timeoutId = setTimeout(() => {
+        setIsTransitioning(true);
+      }, 50);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isTransitioning]);
+
+  const handleStart = useCallback((clientX) => {
     setIsDragging(true);
     setStartX(clientX);
     setCurrentX(clientX);
-    setTranslateX(-currentSlide * 100);
-  };
+  }, []);
 
-  const handleMove = (clientX) => {
+  const handleMove = useCallback((clientX) => {
     if (!isDragging) return;
 
     const diff = clientX - startX;
     const dragPercentage = (diff / window.innerWidth) * 100;
-    setCurrentX(clientX);
-    setTranslateX(-currentSlide * 100 + dragPercentage);
-  };
+    const newTranslateX = -currentSlide * 100 + dragPercentage;
 
-  const handleEnd = () => {
+    setCurrentX(clientX);
+    setTranslateX(newTranslateX);
+  }, [isDragging, startX, currentSlide]);
+
+  const handleEnd = useCallback(() => {
     if (!isDragging) return;
 
     const diff = currentX - startX;
@@ -102,27 +116,13 @@ const BannerSlider = () => {
       } else {
         nextSlide();
       }
-    } else {
-      setTranslateX(-currentSlide * 100);
     }
 
     setIsDragging(false);
     setStartX(0);
     setCurrentX(0);
-  };
+  }, [isDragging, currentX, startX, prevSlide, nextSlide]);
 
-  const handleTouchStart = (e) => {
-    handleStart(e.touches[0].clientX);
-  };
-
-  const handleTouchMove = (e) => {
-    e.preventDefault();
-    handleMove(e.touches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    handleEnd();
-  };
 
   const handleMouseDown = (e) => {
     e.preventDefault();
@@ -150,8 +150,8 @@ const BannerSlider = () => {
 
   useEffect(() => {
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mousemove', handleMouseMove, { passive: false });
+      document.addEventListener('mouseup', handleMouseUp, { passive: false });
     }
 
     return () => {
@@ -167,15 +167,46 @@ const BannerSlider = () => {
   }, [currentSlide, isDragging]);
 
   useEffect(() => {
+    const slider = sliderRef.current;
+    if (!slider) return;
+
+    const handleTouchMoveNative = (e) => {
+      if (isDragging) {
+        e.preventDefault();
+        handleMove(e.touches[0].clientX);
+      }
+    };
+
+    const handleTouchStartNative = (e) => {
+      handleStart(e.touches[0].clientX);
+    };
+
+    const handleTouchEndNative = () => {
+      handleEnd();
+    };
+
+    slider.addEventListener('touchstart', handleTouchStartNative, { passive: true });
+    slider.addEventListener('touchmove', handleTouchMoveNative, { passive: false });
+    slider.addEventListener('touchend', handleTouchEndNative, { passive: true });
+
+    return () => {
+      slider.removeEventListener('touchstart', handleTouchStartNative);
+      slider.removeEventListener('touchmove', handleTouchMoveNative);
+      slider.removeEventListener('touchend', handleTouchEndNative);
+    };
+  }, [isDragging, handleStart, handleMove, handleEnd]);
+
+  useEffect(() => {
     if (!isDragging) {
       const interval = setInterval(nextSlide, 5000);
       return () => clearInterval(interval);
     }
-  }, [isDragging]);
+  }, [isDragging, nextSlide]);
 
   return (
-    <section className="relative w-full h-72 md:h-96 lg:h-[500px] overflow-hidden">
+    <section className="relative w-full h-72 md:h-96 lg:h-[500px] overflow-hidden touch-pan-y">
       <div
+        ref={sliderRef}
         className={`flex w-full h-full ${
           isTransitioning && !isDragging ? 'transition-transform duration-500 ease-in-out' : ''
         }`}
@@ -184,16 +215,14 @@ const BannerSlider = () => {
           userSelect: 'none',
           cursor: isDragging ? 'grabbing' : 'grab'
         }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        onContextMenu={(e) => e.preventDefault()}
         onMouseDown={handleMouseDown}
         onMouseLeave={handleMouseLeave}
         onTransitionEnd={handleTransitionEnd}
       >
         {slides.map((slide, index) => (
           <div
-            key={`slide-${index}`}
+            key={`${slide.id}-${index}`}
             className="flex-shrink-0 w-full h-full"
           >
             <a href={slide.link} className="block w-full h-full">
@@ -201,6 +230,8 @@ const BannerSlider = () => {
                 src={slide.image}
                 alt={slide.alt}
                 className="w-full h-full object-cover"
+                loading="lazy"
+                draggable="false"
               />
             </a>
           </div>
@@ -213,10 +244,7 @@ const BannerSlider = () => {
             key={index}
             onClick={() => showSlide(index)}
             className={`w-3 h-3 rounded-full transition-all duration-200 ${
-              (currentSlide === index + 1 ||
-               (currentSlide === 0 && index === originalSlides.length - 1) ||
-               (currentSlide === slides.length - 1 && index === 0))
-                ? 'bg-white' : 'bg-white/50'
+              currentSlide === index + 1 ? 'bg-white' : 'bg-white/50'
             }`}
             aria-label={`슬라이드 ${index + 1}로 이동`}
           />

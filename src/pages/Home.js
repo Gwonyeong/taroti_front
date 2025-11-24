@@ -51,7 +51,7 @@ const Home = () => {
   }, [isMenuOpen]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       <Header onMenuClick={toggleMenu} />
       <SideMenu isOpen={isMenuOpen} onClose={closeMenu} />
       <BannerSlider />
