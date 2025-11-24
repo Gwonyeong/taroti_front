@@ -1,16 +1,22 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Home from './pages/Home';
 import Landing from './pages/Landing';
 import Result from './pages/Result';
 import Feedback from './pages/Feedback';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/home" element={<Home />} />
         <Route path="/landing" element={<Landing />} />
         <Route path="/result/:landingUserId" element={<Result />} />
         <Route path="/feedback/:landingUserId" element={<Feedback />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
