@@ -5,6 +5,7 @@ import Result from './pages/Result';
 import Feedback from './pages/Feedback';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
+import Admin from './pages/Admin';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/feedback/:landingUserId" element={<Feedback />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
