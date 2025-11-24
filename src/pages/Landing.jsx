@@ -716,6 +716,25 @@ const Landing = () => {
             </button>
           </div>
         )}
+
+        {/* 사업자 정보 푸터 */}
+        <div className="bg-gray-50 border-t border-gray-200 px-4 py-6 pb-20">
+          <div className="max-w-lg mx-auto text-center">
+            <p className="text-xs text-gray-500 mb-2">
+              사업자등록번호: 467-15-02791
+            </p>
+            <p className="text-xs text-gray-500 mb-2">
+              통신판매업 신고번호: 2025-서울마포-2857
+            </p>
+            <p className="text-xs text-gray-500 mb-2">
+              상호명: 파드켓 | 대표자명: 조권영
+            </p>
+            <p className="text-xs text-gray-500 mb-2">
+              주소: 서울특별시 마포구 월드컵북로 6길 19-10
+            </p>
+            <p className="text-xs text-gray-500 mb-4">전화번호: 010-5418-3486</p>
+          </div>
+        </div>
       </div>
     </div>
   );

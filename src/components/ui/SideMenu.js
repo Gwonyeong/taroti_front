@@ -3,13 +3,19 @@ import { Link } from 'react-router-dom';
 
 const SideMenu = ({ isOpen, onClose }) => {
   return (
-    <nav className={`fixed top-0 right-0 w-full h-screen z-50 transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+    <>
+      {/* 딤드 오버레이 - 고정 */}
       <div
-        className="absolute w-full h-full bg-black/50 backdrop-blur-sm"
+        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300 ease-in-out ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
         onClick={onClose}
-      ></div>
+      />
 
-      <div className="absolute right-0 w-80 max-w-[85vw] h-full bg-white shadow-2xl">
+      {/* 메뉴 패널 - 슬라이드 */}
+      <nav className={`fixed top-0 right-0 w-64 max-w-[65vw] h-screen z-50 bg-white shadow-2xl rounded-l-2xl transition-transform duration-300 ease-in-out ${
+        isOpen ? 'translate-x-0' : 'translate-x-full'
+      }`}>
         <div className="p-6">
           <button
             onClick={onClose}
@@ -60,8 +66,8 @@ const SideMenu = ({ isOpen, onClose }) => {
             </ul>
           </nav>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 };
 

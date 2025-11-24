@@ -2,10 +2,14 @@ import React from 'react';
 
 const Header = ({ onMenuClick }) => {
   return (
-    <header className="absolute top-0 left-0 right-0 z-50">
+    <header className="absolute top-0 left-0 right-0 z-30">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
-          <h1 className="text-2xl font-bold text-black">TaroTI</h1>
+          <img
+            src="/logo.png"
+            alt="TaroTI"
+            className="h-10 w-auto"
+          />
 
           <button
             onClick={onMenuClick}

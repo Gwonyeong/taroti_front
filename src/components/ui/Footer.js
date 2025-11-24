@@ -9,12 +9,11 @@ const Footer = () => {
           <div className="mb-8 md:mb-0 md:flex-1">
             <h4 className="text-lg font-semibold text-black mb-4">사업자 정보</h4>
             <div className="space-y-1 text-sm text-gray-600">
-              <p>상호명: TaroTI</p>
-              <p>사업자등록번호: 000-00-00000</p>
-              <p>대표: 홍길동</p>
-              <p>주소: 서울특별시 강남구 테헤란로</p>
-              <p>전화: 02-1234-5678</p>
-              <p>이메일: contact@taroti.com</p>
+              <p>사업자등록번호: 467-15-02791</p>
+              <p>통신판매업 신고번호: 2025-서울마포-2857</p>
+              <p>상호명: 파드켓 | 대표자명: 조권영</p>
+              <p>주소: 서울특별시 마포구 월드컵북로 6길 19-10</p>
+              <p>전화번호: 010-5418-3486</p>
             </div>
           </div>
 
