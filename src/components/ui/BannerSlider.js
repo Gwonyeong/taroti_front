@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { getBanners } from '../../lib/api';
 
 const BannerSlider = () => {
   const [currentSlide, setCurrentSlide] = useState(1);
@@ -7,47 +8,75 @@ const BannerSlider = () => {
   const [startX, setStartX] = useState(0);
   const [currentX, setCurrentX] = useState(0);
   const [translateX, setTranslateX] = useState(-100);
+  const [originalSlides, setOriginalSlides] = useState([]);
+  const [loading, setLoading] = useState(true);
   const sliderRef = useRef(null);
 
-  const originalSlides = [
-    {
-      id: 1,
-      image: '/images/promotions/1.jpg',
-      link: '#event1',
-      alt: 'TaroTI 이벤트 1'
-    },
-    {
-      id: 2,
-      image: '/images/promotions/2.jpg',
-      link: '#event2',
-      alt: 'TaroTI 이벤트 2'
-    },
-    {
-      id: 3,
-      image: '/images/promotions/3.jpg',
-      link: '#event3',
-      alt: 'TaroTI 이벤트 3'
-    },
-    {
-      id: 4,
-      image: '/images/promotions/4.jpg',
-      link: '#event4',
-      alt: 'TaroTI 이벤트 4'
-    },
-    {
-      id: 5,
-      image: '/images/promotions/5.jpg',
-      link: '#event5',
-      alt: 'TaroTI 이벤트 5'
+  // 디바이스 감지 함수
+  const isMobile = () => {
+    return window.innerWidth <= 768;
+  };
+
+  // DB에서 배너 데이터 가져오기
+  const fetchBanners = async () => {
+    try {
+      setLoading(true);
+      const banners = await getBanners(true); // 활성화된 배너만 가져오기
+
+      if (banners && banners.length > 0) {
+        const formattedBanners = banners.map(banner => ({
+          id: banner.id,
+          image: isMobile() ? (banner.mobile_image_url || banner.pc_image_url) : banner.pc_image_url,
+          link: banner.link_url || '#',
+          alt: banner.title || banner.description || 'TaroTI 배너'
+        }));
+        setOriginalSlides(formattedBanners);
+      } else {
+        // 기본 배너 데이터 (fallback)
+        setOriginalSlides([
+          {
+            id: 1,
+            image: '/images/promotions/1.jpg',
+            link: '#event1',
+            alt: 'TaroTI 이벤트 1'
+          }
+        ]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch banners:', error);
+      // 에러 시 기본 배너 사용
+      setOriginalSlides([
+        {
+          id: 1,
+          image: '/images/promotions/1.jpg',
+          link: '#event1',
+          alt: 'TaroTI 이벤트 1'
+        }
+      ]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  // 컴포넌트 마운트 시 배너 데이터 가져오기
+  useEffect(() => {
+    fetchBanners();
+
+    // 윈도우 리사이즈 시 이미지 다시 로드 (모바일/PC 이미지 전환)
+    const handleResize = () => {
+      fetchBanners();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // 무한 루프를 위한 복제 슬라이드
-  const slides = [
+  const slides = originalSlides.length > 0 ? [
     originalSlides[originalSlides.length - 1], // 마지막 슬라이드 복제
     ...originalSlides,
     originalSlides[0] // 첫 번째 슬라이드 복제
-  ];
+  ] : [];
 
   const showSlide = (index) => {
     setIsTransitioning(true);
@@ -202,6 +231,27 @@ const BannerSlider = () => {
       return () => clearInterval(interval);
     }
   }, [isDragging, nextSlide]);
+
+  // 로딩 중이거나 배너가 없는 경우
+  if (loading) {
+    return (
+      <section className="relative w-full h-72 md:h-96 lg:h-[500px] overflow-hidden touch-pan-y bg-gray-100">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-gray-500">배너를 불러오는 중...</div>
+        </div>
+      </section>
+    );
+  }
+
+  if (originalSlides.length === 0) {
+    return (
+      <section className="relative w-full h-72 md:h-96 lg:h-[500px] overflow-hidden touch-pan-y bg-gray-100">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-gray-500">표시할 배너가 없습니다</div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="relative w-full h-72 md:h-96 lg:h-[500px] overflow-hidden touch-pan-y">

@@ -1,136 +1,202 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
+import { getBanners, createBanner, updateBanner, deleteBanner, updateBannerOrder } from '../../lib/api';
+import { uploadBannerImage, deleteFile } from '../../lib/storage';
 
 const BannerManager = () => {
-  const [banners, setBanners] = useState([
-    {
-      id: 1,
-      image: '/images/promotions/1.jpg',
-      link: '#event1',
-      alt: 'TaroTI 이벤트 1',
-      active: true
-    },
-    {
-      id: 2,
-      image: '/images/promotions/2.jpg',
-      link: '#event2',
-      alt: 'TaroTI 이벤트 2',
-      active: true
-    },
-    {
-      id: 3,
-      image: '/images/promotions/3.jpg',
-      link: '#event3',
-      alt: 'TaroTI 이벤트 3',
-      active: true
-    },
-    {
-      id: 4,
-      image: '/images/promotions/4.jpg',
-      link: '#event4',
-      alt: 'TaroTI 이벤트 4',
-      active: true
-    },
-    {
-      id: 5,
-      image: '/images/promotions/5.jpg',
-      link: '#event5',
-      alt: 'TaroTI 이벤트 5',
-      active: true
-    }
-  ]);
-
+  const [banners, setBanners] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(null);
   const [editForm, setEditForm] = useState({
-    image: '',
-    link: '',
-    alt: '',
+    title: '',
+    description: '',
+    pc_image_url: '',
+    mobile_image_url: '',
+    link_url: '',
     active: true
   });
   const [showAddForm, setShowAddForm] = useState(false);
+  const [uploading, setUploading] = useState({ pc: false, mobile: false });
+
+  // 배너 목록 조회
+  const fetchBanners = async () => {
+    try {
+      setLoading(true);
+      const data = await getBanners();
+      setBanners(data || []);
+    } catch (error) {
+      console.error('Failed to fetch banners:', error);
+      alert('배너 목록을 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBanners();
+  }, []);
 
   const handleEdit = (banner) => {
     setIsEditing(banner.id);
     setEditForm({
-      image: banner.image,
-      link: banner.link,
-      alt: banner.alt,
+      title: banner.title || '',
+      description: banner.description || '',
+      pc_image_url: banner.pc_image_url || '',
+      mobile_image_url: banner.mobile_image_url || '',
+      link_url: banner.link_url || '',
       active: banner.active
     });
   };
 
-  const handleSave = (id) => {
-    setBanners(banners.map(banner =>
-      banner.id === id
-        ? { ...banner, ...editForm }
-        : banner
-    ));
-    setIsEditing(null);
-    setEditForm({ image: '', link: '', alt: '', active: true });
+  const handleSave = async (id) => {
+    try {
+      if (!editForm.title || !editForm.pc_image_url) {
+        alert('제목과 PC 이미지는 필수입니다.');
+        return;
+      }
+
+      await updateBanner(id, editForm);
+      setIsEditing(null);
+      setEditForm({ title: '', description: '', pc_image_url: '', mobile_image_url: '', link_url: '', active: true });
+      fetchBanners();
+      alert('배너가 수정되었습니다.');
+    } catch (error) {
+      console.error('Failed to update banner:', error);
+      alert('배너 수정에 실패했습니다.');
+    }
   };
 
   const handleCancel = () => {
     setIsEditing(null);
-    setEditForm({ image: '', link: '', alt: '', active: true });
+    setEditForm({ title: '', description: '', pc_image_url: '', mobile_image_url: '', link_url: '', active: true });
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('정말로 이 배너를 삭제하시겠습니까?')) {
-      setBanners(banners.filter(banner => banner.id !== id));
-    }
-  };
-
-  const handleAdd = () => {
-    if (!editForm.image || !editForm.alt) {
-      alert('이미지 경로와 설명은 필수입니다.');
+  const handleDelete = async (id) => {
+    if (!window.confirm('정말로 이 배너를 삭제하시겠습니까?')) {
       return;
     }
 
-    const newBanner = {
-      id: Math.max(...banners.map(b => b.id), 0) + 1,
-      ...editForm
-    };
+    try {
+      const banner = banners.find(b => b.id === id);
 
-    setBanners([...banners, newBanner]);
-    setShowAddForm(false);
-    setEditForm({ image: '', link: '', alt: '', active: true });
+      // 이미지 파일 삭제 (백엔드에서 처리)
+      if (banner.pc_image_url) {
+        await deleteFile(banner.pc_image_url);
+      }
+
+      if (banner.mobile_image_url) {
+        await deleteFile(banner.mobile_image_url);
+      }
+
+      await deleteBanner(id);
+      fetchBanners();
+      alert('배너가 삭제되었습니다.');
+    } catch (error) {
+      console.error('Failed to delete banner:', error);
+      alert('배너 삭제에 실패했습니다.');
+    }
   };
 
-  const handleToggleActive = (id) => {
-    setBanners(banners.map(banner =>
-      banner.id === id
-        ? { ...banner, active: !banner.active }
-        : banner
-    ));
+  const handleAdd = async () => {
+    try {
+      if (!editForm.title || !editForm.pc_image_url) {
+        alert('제목과 PC 이미지는 필수입니다.');
+        return;
+      }
+
+      await createBanner(editForm);
+      setShowAddForm(false);
+      setEditForm({ title: '', description: '', pc_image_url: '', mobile_image_url: '', link_url: '', active: true });
+      fetchBanners();
+      alert('배너가 추가되었습니다.');
+    } catch (error) {
+      console.error('Failed to create banner:', error);
+      alert('배너 추가에 실패했습니다.');
+    }
   };
 
-  const handleFileUpload = (e, bannerId = null) => {
+  const handleToggleActive = async (id) => {
+    try {
+      const banner = banners.find(b => b.id === id);
+      await updateBanner(id, { active: !banner.active });
+      fetchBanners();
+    } catch (error) {
+      console.error('Failed to toggle banner active state:', error);
+      alert('배너 상태 변경에 실패했습니다.');
+    }
+  };
+
+  const handleFileUpload = async (e, type, bannerId = null) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // 실제 구현에서는 서버로 파일을 업로드하고 URL을 받아와야 합니다
-    // 여기서는 임시로 URL.createObjectURL을 사용합니다
-    const fileURL = URL.createObjectURL(file);
+    try {
+      setUploading({ ...uploading, [type]: true });
+      const result = await uploadBannerImage(file, type);
 
-    if (bannerId) {
-      // 기존 배너 이미지 업데이트
-      setBanners(banners.map(banner =>
-        banner.id === bannerId
-          ? { ...banner, image: fileURL }
-          : banner
-      ));
-    } else {
-      // 새 배너용 이미지
-      setEditForm({ ...editForm, image: fileURL });
+      if (bannerId) {
+        // 기존 배너 이미지 업데이트
+        const updateData = type === 'mobile'
+          ? { mobile_image_url: result.publicUrl }
+          : { pc_image_url: result.publicUrl };
+
+        await updateBanner(bannerId, updateData);
+        fetchBanners();
+      } else {
+        // 새 배너용 이미지
+        const fieldName = type === 'mobile' ? 'mobile_image_url' : 'pc_image_url';
+        setEditForm({ ...editForm, [fieldName]: result.publicUrl });
+      }
+
+      alert('이미지가 업로드되었습니다.');
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      alert('이미지 업로드에 실패했습니다.');
+    } finally {
+      setUploading({ ...uploading, [type]: false });
     }
-
-    alert('이미지가 업로드되었습니다. 실제 서비스에서는 서버에 업로드됩니다.');
   };
+
+  const moveItem = async (fromIndex, toIndex) => {
+    try {
+      const newBanners = [...banners];
+      const [removed] = newBanners.splice(fromIndex, 1);
+      newBanners.splice(toIndex, 0, removed);
+
+      // 새로운 순서로 sort_order 업데이트
+      const updates = newBanners.map((banner, index) => ({
+        id: banner.id,
+        sort_order: index + 1
+      }));
+
+      await updateBannerOrder(updates);
+      fetchBanners();
+    } catch (error) {
+      console.error('Failed to update banner order:', error);
+      alert('배너 순서 변경에 실패했습니다.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="text-gray-500">배너 목록을 불러오는 중...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-black">배너 관리</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-black">배너 관리</h2>
+          <p className="text-sm text-gray-600 mt-2">
+            📱 추천 이미지 크기: PC 1920x600px, 모바일 768x400px
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            • PC 이미지는 필수입니다 • 모바일 이미지가 없으면 PC 이미지가 사용됩니다
+          </p>
+        </div>
         <Button
           onClick={() => setShowAddForm(true)}
           className="bg-black hover:bg-gray-800 text-white"
@@ -144,25 +210,69 @@ const BannerManager = () => {
         <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
           <h3 className="text-lg font-semibold mb-4">새 배너 추가</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                이미지 경로 *
+                제목 *
               </label>
               <input
                 type="text"
-                value={editForm.image}
-                onChange={(e) => setEditForm({ ...editForm, image: e.target.value })}
+                value={editForm.title}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                placeholder="/images/promotions/new-banner.jpg"
+                placeholder="배너 제목"
               />
-              <div className="mt-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileUpload(e)}
-                  className="text-sm text-gray-500"
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                설명
+              </label>
+              <textarea
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                placeholder="배너에 대한 설명"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                PC 이미지 * (1920x600px)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileUpload(e, 'pc')}
+                className="w-full text-sm text-gray-500 mb-2"
+                disabled={uploading.pc}
+              />
+              {uploading.pc && <p className="text-xs text-blue-600">PC 이미지 업로드 중...</p>}
+              {editForm.pc_image_url && (
+                <img
+                  src={editForm.pc_image_url}
+                  alt="PC 미리보기"
+                  className="w-full h-24 object-cover rounded border mt-2"
                 />
-              </div>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                모바일 이미지 (768x400px)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileUpload(e, 'mobile')}
+                className="w-full text-sm text-gray-500 mb-2"
+                disabled={uploading.mobile}
+              />
+              {uploading.mobile && <p className="text-xs text-blue-600">모바일 이미지 업로드 중...</p>}
+              {editForm.mobile_image_url && (
+                <img
+                  src={editForm.mobile_image_url}
+                  alt="모바일 미리보기"
+                  className="w-full h-24 object-cover rounded border mt-2"
+                />
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -170,22 +280,10 @@ const BannerManager = () => {
               </label>
               <input
                 type="text"
-                value={editForm.link}
-                onChange={(e) => setEditForm({ ...editForm, link: e.target.value })}
+                value={editForm.link_url}
+                onChange={(e) => setEditForm({ ...editForm, link_url: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="#new-event"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                설명 (Alt Text) *
-              </label>
-              <input
-                type="text"
-                value={editForm.alt}
-                onChange={(e) => setEditForm({ ...editForm, alt: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                placeholder="배너 설명"
               />
             </div>
             <div className="flex items-center">
@@ -205,13 +303,14 @@ const BannerManager = () => {
             <Button
               onClick={handleAdd}
               className="bg-black hover:bg-gray-800 text-white"
+              disabled={!editForm.title || !editForm.pc_image_url}
             >
               추가
             </Button>
             <Button
               onClick={() => {
                 setShowAddForm(false);
-                setEditForm({ image: '', link: '', alt: '', active: true });
+                setEditForm({ title: '', description: '', pc_image_url: '', mobile_image_url: '', link_url: '', active: true });
               }}
               className="bg-gray-300 hover:bg-gray-400 text-black"
             >
@@ -223,24 +322,42 @@ const BannerManager = () => {
 
       {/* Banner List */}
       <div className="space-y-4">
-        {banners.map(banner => (
+        {banners.map((banner, index) => (
           <div key={banner.id} className="border border-gray-200 rounded-lg p-4 bg-white">
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-center">
               {/* Image Preview */}
               <div className="lg:col-span-1">
-                <img
-                  src={banner.image}
-                  alt={banner.alt}
-                  className="w-full h-32 object-cover rounded border"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'block';
-                  }}
-                />
-                <div
-                  className="hidden w-full h-32 bg-gray-200 rounded border flex items-center justify-center text-gray-500"
-                >
-                  이미지를 불러올 수 없습니다
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 mb-1">PC 이미지</p>
+                    <img
+                      src={banner.pc_image_url}
+                      alt={`${banner.title} PC`}
+                      className="w-full h-20 object-cover rounded border"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                    />
+                    <div className="hidden w-full h-20 bg-gray-200 rounded border flex items-center justify-center text-gray-500 text-xs">
+                      PC 이미지 없음
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 mb-1">모바일 이미지</p>
+                    <img
+                      src={banner.mobile_image_url || banner.pc_image_url}
+                      alt={`${banner.title} Mobile`}
+                      className="w-full h-20 object-cover rounded border"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                    />
+                    <div className="hidden w-full h-20 bg-gray-200 rounded border flex items-center justify-center text-gray-500 text-xs">
+                      {banner.mobile_image_url ? '모바일 이미지 없음' : 'PC 이미지 사용'}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -249,57 +366,70 @@ const BannerManager = () => {
                 {isEditing === banner.id ? (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        이미지 경로
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
                       <input
                         type="text"
-                        value={editForm.image}
-                        onChange={(e) => setEditForm({ ...editForm, image: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-sm"
-                      />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleFileUpload(e)}
-                        className="mt-1 text-xs text-gray-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        링크 URL
-                      </label>
-                      <input
-                        type="text"
-                        value={editForm.link}
-                        onChange={(e) => setEditForm({ ...editForm, link: e.target.value })}
+                        value={editForm.title}
+                        onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-sm"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        설명
-                      </label>
-                      <input
-                        type="text"
-                        value={editForm.alt}
-                        onChange={(e) => setEditForm({ ...editForm, alt: e.target.value })}
+                      <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
+                      <textarea
+                        value={editForm.description}
+                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                        rows={2}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-sm"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">링크 URL</label>
+                      <input
+                        type="text"
+                        value={editForm.link_url}
+                        onChange={(e) => setEditForm({ ...editForm, link_url: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-sm"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">PC 이미지 변경</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleFileUpload(e, 'pc', banner.id)}
+                          className="w-full text-xs text-gray-500"
+                          disabled={uploading.pc}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">모바일 이미지 변경</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleFileUpload(e, 'mobile', banner.id)}
+                          className="w-full text-xs text-gray-500"
+                          disabled={uploading.mobile}
+                        />
+                      </div>
                     </div>
                   </div>
                 ) : (
                   <div>
-                    <h3 className="font-semibold text-gray-900">{banner.alt}</h3>
-                    <p className="text-sm text-gray-600 mt-1">이미지: {banner.image}</p>
-                    <p className="text-sm text-gray-600">링크: {banner.link || '없음'}</p>
-                    <span className={`inline-block mt-2 px-2 py-1 rounded-full text-xs font-medium ${
-                      banner.active
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {banner.active ? '활성화' : '비활성화'}
-                    </span>
+                    <h3 className="font-semibold text-gray-900">{banner.title}</h3>
+                    <p className="text-sm text-gray-600 mt-1">{banner.description}</p>
+                    <p className="text-sm text-gray-600">링크: {banner.link_url || '없음'}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                        banner.active
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {banner.active ? '활성화' : '비활성화'}
+                      </span>
+                      <span className="text-xs text-gray-500">순서: {banner.sort_order}</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -339,6 +469,24 @@ const BannerManager = () => {
                     >
                       {banner.active ? '비활성화' : '활성화'}
                     </Button>
+                    <div className="flex space-x-1">
+                      {index > 0 && (
+                        <Button
+                          onClick={() => moveItem(index, index - 1)}
+                          className="bg-gray-500 hover:bg-gray-600 text-white text-xs px-2 py-1"
+                        >
+                          ↑
+                        </Button>
+                      )}
+                      {index < banners.length - 1 && (
+                        <Button
+                          onClick={() => moveItem(index, index + 1)}
+                          className="bg-gray-500 hover:bg-gray-600 text-white text-xs px-2 py-1"
+                        >
+                          ↓
+                        </Button>
+                      )}
+                    </div>
                     <Button
                       onClick={() => handleDelete(banner.id)}
                       className="bg-red-600 hover:bg-red-700 text-white text-sm"

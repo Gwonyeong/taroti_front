@@ -1,50 +1,85 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getContents } from '../../lib/api';
 
 const ContentGrid = () => {
-  const contentItems = [
-    {
-      id: 1,
-      image: '/images/characters/webtoon/desert_fox_card_on_hands.jpeg',
-      title: '타로 연애 운세',
-      description: '타로카드와 MBTI를 결합한 개인 맞춤형 연애 운세',
-      link: '/service/love-tarot'
-    },
-    {
-      id: 2,
-      image: '/images/characters/webtoon/desert_fox_taro.png',
-      title: 'MBTI 궁합 분석',
-      description: 'MBTI 기반 커플 궁합 분석 및 관계 발전 가이드',
-      link: '/service/mbti-compatibility'
-    },
-    {
-      id: 3,
-      image: '/images/characters/webtoon/desert_fox_watching_card.jpeg',
-      title: '일일 타로 운세',
-      description: '매일 새로운 타로카드로 확인하는 오늘의 운세',
-      link: '/service/daily-tarot'
-    },
-    {
-      id: 4,
-      image: '/images/cards/0_THE_FOOL.png',
-      title: '성격 유형 분석',
-      description: 'MBTI와 타로의 융합으로 발견하는 나의 숨은 성격',
-      link: '/service/personality-analysis'
-    },
-    {
-      id: 5,
-      image: '/images/characters/webtoon/desert_fox_light_hands.jpeg',
-      title: '연애 조언 상담',
-      description: '전문가의 타로와 MBTI 기반 맞춤형 연애 상담',
-      link: '/service/love-consultation'
-    },
-    {
-      id: 6,
-      image: '/images/characters/webtoon/rabbit_watching_desert_fox.png',
-      title: '미래 연인 예측',
-      description: '타로카드가 예측하는 당신의 운명적인 미래 연인',
-      link: '/service/future-love'
+  const [contentItems, setContentItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // DB에서 콘텐츠 데이터 가져오기
+  const fetchContents = async () => {
+    try {
+      setLoading(true);
+      const contents = await getContents(true); // 활성화된 콘텐츠만 가져오기
+
+      if (contents && contents.length > 0) {
+        const formattedContents = contents.map(content => ({
+          id: content.id,
+          image: content.image_url,
+          title: content.title,
+          description: content.description,
+          link: content.link_url || '#'
+        }));
+        setContentItems(formattedContents);
+      } else {
+        // 기본 콘텐츠 데이터 (fallback)
+        setContentItems([
+          {
+            id: 1,
+            image: '/images/characters/webtoon/desert_fox_card_on_hands.jpeg',
+            title: '타로 연애 운세',
+            description: '타로카드와 MBTI를 결합한 개인 맞춤형 연애 운세',
+            link: '/service/love-tarot'
+          },
+          {
+            id: 2,
+            image: '/images/characters/webtoon/desert_fox_taro.png',
+            title: 'MBTI 궁합 분석',
+            description: 'MBTI 기반 커플 궁합 분석 및 관계 발전 가이드',
+            link: '/service/mbti-compatibility'
+          }
+        ]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch contents:', error);
+      // 에러 시 기본 콘텐츠 사용
+      setContentItems([
+        {
+          id: 1,
+          image: '/images/characters/webtoon/desert_fox_card_on_hands.jpeg',
+          title: '타로 연애 운세',
+          description: '타로카드와 MBTI를 결합한 개인 맞춤형 연애 운세',
+          link: '/service/love-tarot'
+        }
+      ]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  // 컴포넌트 마운트 시 콘텐츠 데이터 가져오기
+  useEffect(() => {
+    fetchContents();
+  }, []);
+
+  if (loading) {
+    return (
+      <main className="max-w-7xl mx-auto px-8 sm:px-12 lg:px-16 py-8 lg:py-12">
+        <div className="flex justify-center items-center py-12">
+          <div className="text-gray-500">콘텐츠를 불러오는 중...</div>
+        </div>
+      </main>
+    );
+  }
+
+  if (contentItems.length === 0) {
+    return (
+      <main className="max-w-7xl mx-auto px-8 sm:px-12 lg:px-16 py-8 lg:py-12">
+        <div className="flex justify-center items-center py-12">
+          <div className="text-gray-500">표시할 콘텐츠가 없습니다</div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="max-w-7xl mx-auto px-8 sm:px-12 lg:px-16 py-8 lg:py-12">
@@ -60,6 +95,9 @@ const ContentGrid = () => {
                   src={item.image}
                   alt={item.title}
                   className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                  onError={(e) => {
+                    e.target.src = '/images/characters/webtoon/desert_fox_card_on_hands.jpeg';
+                  }}
                 />
               </div>
 
