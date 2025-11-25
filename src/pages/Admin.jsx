@@ -36,12 +36,20 @@ const Admin = () => {
       <header className="bg-black text-white p-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">TaroTI Admin</h1>
-          <Button
-            onClick={handleLogout}
-            className="bg-white text-black hover:bg-gray-200"
-          >
-            로그아웃
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => window.location.href = '/'}
+              className="bg-gray-700 text-white hover:bg-gray-600"
+            >
+              메인페이지
+            </Button>
+            <Button
+              onClick={handleLogout}
+              className="bg-white text-black hover:bg-gray-200"
+            >
+              로그아웃
+            </Button>
+          </div>
         </div>
       </header>
 

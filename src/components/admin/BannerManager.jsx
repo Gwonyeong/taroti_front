@@ -2,8 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { getBanners, createBanner, updateBanner, deleteBanner, updateBannerOrder } from '../../lib/api';
 import { uploadBannerImage, deleteFile } from '../../lib/storage';
+import { toast } from 'sonner';
 
 const BannerManager = () => {
+  // URL에서 파일명 추출 함수
+  const getFileNameFromUrl = (url) => {
+    if (!url) return null;
+    const urlParts = url.split('/');
+    return urlParts[urlParts.length - 1];
+  };
+
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(null);
@@ -26,7 +34,7 @@ const BannerManager = () => {
       setBanners(data || []);
     } catch (error) {
       console.error('Failed to fetch banners:', error);
-      alert('배너 목록을 불러오는데 실패했습니다.');
+      toast.error('배너 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -51,7 +59,7 @@ const BannerManager = () => {
   const handleSave = async (id) => {
     try {
       if (!editForm.title || !editForm.pc_image_url) {
-        alert('제목과 PC 이미지는 필수입니다.');
+        toast.error('제목과 PC 이미지는 필수입니다.');
         return;
       }
 
@@ -59,10 +67,10 @@ const BannerManager = () => {
       setIsEditing(null);
       setEditForm({ title: '', description: '', pc_image_url: '', mobile_image_url: '', link_url: '', active: true });
       fetchBanners();
-      alert('배너가 수정되었습니다.');
+      toast.success('배너가 수정되었습니다.');
     } catch (error) {
       console.error('Failed to update banner:', error);
-      alert('배너 수정에 실패했습니다.');
+      toast.error('배너 수정에 실패했습니다.');
     }
   };
 
@@ -90,17 +98,22 @@ const BannerManager = () => {
 
       await deleteBanner(id);
       fetchBanners();
-      alert('배너가 삭제되었습니다.');
+      toast.success('배너가 삭제되었습니다.');
     } catch (error) {
       console.error('Failed to delete banner:', error);
-      alert('배너 삭제에 실패했습니다.');
+      toast.error('배너 삭제에 실패했습니다.');
     }
   };
 
   const handleAdd = async () => {
     try {
-      if (!editForm.title || !editForm.pc_image_url) {
-        alert('제목과 PC 이미지는 필수입니다.');
+      if (!editForm.title) {
+        toast.error('제목은 필수입니다.');
+        return;
+      }
+
+      if (!editForm.pc_image_url) {
+        toast.error('PC 이미지를 업로드해주세요.');
         return;
       }
 
@@ -108,10 +121,10 @@ const BannerManager = () => {
       setShowAddForm(false);
       setEditForm({ title: '', description: '', pc_image_url: '', mobile_image_url: '', link_url: '', active: true });
       fetchBanners();
-      alert('배너가 추가되었습니다.');
+      toast.success('배너가 추가되었습니다.');
     } catch (error) {
       console.error('Failed to create banner:', error);
-      alert('배너 추가에 실패했습니다.');
+      toast.error('배너 추가에 실패했습니다.');
     }
   };
 
@@ -122,7 +135,7 @@ const BannerManager = () => {
       fetchBanners();
     } catch (error) {
       console.error('Failed to toggle banner active state:', error);
-      alert('배너 상태 변경에 실패했습니다.');
+      toast.error('배너 상태 변경에 실패했습니다.');
     }
   };
 
@@ -137,21 +150,21 @@ const BannerManager = () => {
       if (bannerId) {
         // 기존 배너 이미지 업데이트
         const updateData = type === 'mobile'
-          ? { mobile_image_url: result.publicUrl }
-          : { pc_image_url: result.publicUrl };
+          ? { mobile_image_url: result.data.publicUrl }
+          : { pc_image_url: result.data.publicUrl };
 
         await updateBanner(bannerId, updateData);
         fetchBanners();
       } else {
         // 새 배너용 이미지
         const fieldName = type === 'mobile' ? 'mobile_image_url' : 'pc_image_url';
-        setEditForm({ ...editForm, [fieldName]: result.publicUrl });
+        setEditForm({ ...editForm, [fieldName]: result.data.publicUrl });
       }
 
-      alert('이미지가 업로드되었습니다.');
+      toast.success('이미지가 업로드되었습니다.');
     } catch (error) {
       console.error('Failed to upload image:', error);
-      alert('이미지 업로드에 실패했습니다.');
+      toast.error('이미지 업로드에 실패했습니다.');
     } finally {
       setUploading({ ...uploading, [type]: false });
     }
@@ -173,7 +186,7 @@ const BannerManager = () => {
       fetchBanners();
     } catch (error) {
       console.error('Failed to update banner order:', error);
-      alert('배너 순서 변경에 실패했습니다.');
+      toast.error('배너 순서 변경에 실패했습니다.');
     }
   };
 
@@ -247,11 +260,24 @@ const BannerManager = () => {
               />
               {uploading.pc && <p className="text-xs text-blue-600">PC 이미지 업로드 중...</p>}
               {editForm.pc_image_url && (
-                <img
-                  src={editForm.pc_image_url}
-                  alt="PC 미리보기"
-                  className="w-full h-24 object-cover rounded border mt-2"
-                />
+                <div className="mt-2">
+                  <p className="text-xs text-gray-500 mb-1">메인페이지 PC 미리보기:</p>
+                  <div className="w-full relative rounded-lg overflow-hidden shadow-md" style={{ paddingBottom: '31.25%' }}>
+                    <img
+                      src={editForm.pc_image_url}
+                      alt="PC 미리보기"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                    {editForm.title && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                        <p className="text-white text-sm font-semibold">{editForm.title}</p>
+                        {editForm.description && (
+                          <p className="text-white/90 text-xs mt-1">{editForm.description}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
             <div>
@@ -267,11 +293,24 @@ const BannerManager = () => {
               />
               {uploading.mobile && <p className="text-xs text-blue-600">모바일 이미지 업로드 중...</p>}
               {editForm.mobile_image_url && (
-                <img
-                  src={editForm.mobile_image_url}
-                  alt="모바일 미리보기"
-                  className="w-full h-24 object-cover rounded border mt-2"
-                />
+                <div className="mt-2">
+                  <p className="text-xs text-gray-500 mb-1">메인페이지 모바일 미리보기:</p>
+                  <div className="w-full relative rounded-lg overflow-hidden shadow-md" style={{ paddingBottom: '52.08%' }}>
+                    <img
+                      src={editForm.mobile_image_url}
+                      alt="모바일 미리보기"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                    {editForm.title && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+                        <p className="text-white text-xs font-semibold">{editForm.title}</p>
+                        {editForm.description && (
+                          <p className="text-white/90 text-xs mt-0.5 line-clamp-1">{editForm.description}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
             <div>
@@ -303,7 +342,7 @@ const BannerManager = () => {
             <Button
               onClick={handleAdd}
               className="bg-black hover:bg-gray-800 text-white"
-              disabled={!editForm.title || !editForm.pc_image_url}
+              disabled={!editForm.title}
             >
               추가
             </Button>
@@ -329,33 +368,47 @@ const BannerManager = () => {
               <div className="lg:col-span-1">
                 <div className="space-y-2">
                   <div>
-                    <p className="text-xs font-medium text-gray-600 mb-1">PC 이미지</p>
-                    <img
-                      src={banner.pc_image_url}
-                      alt={`${banner.title} PC`}
-                      className="w-full h-20 object-cover rounded border"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'block';
-                      }}
-                    />
-                    <div className="hidden w-full h-20 bg-gray-200 rounded border flex items-center justify-center text-gray-500 text-xs">
-                      PC 이미지 없음
+                    <p className="text-xs font-medium text-gray-600 mb-1">PC 미리보기</p>
+                    <div className="w-full relative rounded-lg overflow-hidden shadow-sm" style={{ paddingBottom: '31.25%' }}>
+                      <img
+                        src={banner.pc_image_url}
+                        alt={`${banner.title} PC`}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                      <div className="hidden absolute inset-0 w-full h-full bg-gray-200 items-center justify-center text-gray-500 text-xs">
+                        PC 이미지 없음
+                      </div>
+                      {banner.title && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-2">
+                          <p className="text-white text-xs font-semibold truncate">{banner.title}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-600 mb-1">모바일 이미지</p>
-                    <img
-                      src={banner.mobile_image_url || banner.pc_image_url}
-                      alt={`${banner.title} Mobile`}
-                      className="w-full h-20 object-cover rounded border"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'block';
-                      }}
-                    />
-                    <div className="hidden w-full h-20 bg-gray-200 rounded border flex items-center justify-center text-gray-500 text-xs">
-                      {banner.mobile_image_url ? '모바일 이미지 없음' : 'PC 이미지 사용'}
+                    <p className="text-xs font-medium text-gray-600 mb-1">모바일 미리보기</p>
+                    <div className="w-full relative rounded-lg overflow-hidden shadow-sm" style={{ paddingBottom: '52.08%' }}>
+                      <img
+                        src={banner.mobile_image_url || banner.pc_image_url}
+                        alt={`${banner.title} Mobile`}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                      <div className="hidden absolute inset-0 w-full h-full bg-gray-200 items-center justify-center text-gray-500 text-xs">
+                        {banner.mobile_image_url ? '모바일 이미지 없음' : 'PC 이미지 사용'}
+                      </div>
+                      {banner.title && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-2">
+                          <p className="text-white text-xs font-semibold truncate">{banner.title}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -395,6 +448,9 @@ const BannerManager = () => {
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">PC 이미지 변경</label>
+                        {banner.pc_image_url && (
+                          <p className="text-xs text-gray-600 mb-1">현재: {getFileNameFromUrl(banner.pc_image_url)}</p>
+                        )}
                         <input
                           type="file"
                           accept="image/*"
@@ -405,6 +461,11 @@ const BannerManager = () => {
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">모바일 이미지 변경</label>
+                        {banner.mobile_image_url ? (
+                          <p className="text-xs text-gray-600 mb-1">현재: {getFileNameFromUrl(banner.mobile_image_url)}</p>
+                        ) : (
+                          <p className="text-xs text-gray-500 mb-1">PC 이미지 사용 중</p>
+                        )}
                         <input
                           type="file"
                           accept="image/*"

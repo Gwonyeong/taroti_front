@@ -21,36 +21,11 @@ const ContentGrid = () => {
         }));
         setContentItems(formattedContents);
       } else {
-        // 기본 콘텐츠 데이터 (fallback)
-        setContentItems([
-          {
-            id: 1,
-            image: '/images/characters/webtoon/desert_fox_card_on_hands.jpeg',
-            title: '타로 연애 운세',
-            description: '타로카드와 MBTI를 결합한 개인 맞춤형 연애 운세',
-            link: '/service/love-tarot'
-          },
-          {
-            id: 2,
-            image: '/images/characters/webtoon/desert_fox_taro.png',
-            title: 'MBTI 궁합 분석',
-            description: 'MBTI 기반 커플 궁합 분석 및 관계 발전 가이드',
-            link: '/service/mbti-compatibility'
-          }
-        ]);
+        setContentItems([]);
       }
     } catch (error) {
       console.error('Failed to fetch contents:', error);
-      // 에러 시 기본 콘텐츠 사용
-      setContentItems([
-        {
-          id: 1,
-          image: '/images/characters/webtoon/desert_fox_card_on_hands.jpeg',
-          title: '타로 연애 운세',
-          description: '타로카드와 MBTI를 결합한 개인 맞춤형 연애 운세',
-          link: '/service/love-tarot'
-        }
-      ]);
+      setContentItems([]);
     } finally {
       setLoading(false);
     }

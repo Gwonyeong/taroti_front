@@ -2,8 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { getContents, createContent, updateContent, deleteContent, updateContentOrder } from '../../lib/api';
 import { uploadContentImage, deleteFile } from '../../lib/storage';
+import { toast } from 'sonner';
 
 const ContentManager = () => {
+  // URL에서 파일명 추출 함수
+  const getFileNameFromUrl = (url) => {
+    if (!url) return null;
+    const urlParts = url.split('/');
+    return urlParts[urlParts.length - 1];
+  };
+
   const [contents, setContents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(null);
@@ -25,7 +33,7 @@ const ContentManager = () => {
       setContents(data || []);
     } catch (error) {
       console.error('Failed to fetch contents:', error);
-      alert('콘텐츠 목록을 불러오는데 실패했습니다.');
+      toast.error('콘텐츠 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -49,7 +57,7 @@ const ContentManager = () => {
   const handleSave = async (id) => {
     try {
       if (!editForm.title || !editForm.description || !editForm.image_url) {
-        alert('제목, 설명, 이미지는 필수입니다.');
+        toast.error('제목, 설명, 이미지는 필수입니다.');
         return;
       }
 
@@ -57,10 +65,10 @@ const ContentManager = () => {
       setIsEditing(null);
       setEditForm({ title: '', description: '', image_url: '', link_url: '', active: true });
       fetchContents();
-      alert('콘텐츠가 수정되었습니다.');
+      toast.success('콘텐츠가 수정되었습니다.');
     } catch (error) {
       console.error('Failed to update content:', error);
-      alert('콘텐츠 수정에 실패했습니다.');
+      toast.error('콘텐츠 수정에 실패했습니다.');
     }
   };
 
@@ -84,17 +92,22 @@ const ContentManager = () => {
 
       await deleteContent(id);
       fetchContents();
-      alert('콘텐츠가 삭제되었습니다.');
+      toast.success('콘텐츠가 삭제되었습니다.');
     } catch (error) {
       console.error('Failed to delete content:', error);
-      alert('콘텐츠 삭제에 실패했습니다.');
+      toast.error('콘텐츠 삭제에 실패했습니다.');
     }
   };
 
   const handleAdd = async () => {
     try {
-      if (!editForm.title || !editForm.description || !editForm.image_url) {
-        alert('제목, 설명, 이미지는 필수입니다.');
+      if (!editForm.title || !editForm.description) {
+        toast.error('제목과 설명은 필수입니다.');
+        return;
+      }
+
+      if (!editForm.image_url) {
+        toast.error('이미지를 업로드해주세요.');
         return;
       }
 
@@ -102,10 +115,10 @@ const ContentManager = () => {
       setShowAddForm(false);
       setEditForm({ title: '', description: '', image_url: '', link_url: '', active: true });
       fetchContents();
-      alert('콘텐츠가 추가되었습니다.');
+      toast.success('콘텐츠가 추가되었습니다.');
     } catch (error) {
       console.error('Failed to create content:', error);
-      alert('콘텐츠 추가에 실패했습니다.');
+      toast.error('콘텐츠 추가에 실패했습니다.');
     }
   };
 
@@ -116,7 +129,7 @@ const ContentManager = () => {
       fetchContents();
     } catch (error) {
       console.error('Failed to toggle content active state:', error);
-      alert('콘텐츠 상태 변경에 실패했습니다.');
+      toast.error('콘텐츠 상태 변경에 실패했습니다.');
     }
   };
 
@@ -130,17 +143,17 @@ const ContentManager = () => {
 
       if (contentId) {
         // 기존 콘텐츠 이미지 업데이트
-        await updateContent(contentId, { image_url: result.publicUrl });
+        await updateContent(contentId, { image_url: result.data.publicUrl });
         fetchContents();
       } else {
         // 새 콘텐츠용 이미지
-        setEditForm({ ...editForm, image_url: result.publicUrl });
+        setEditForm({ ...editForm, image_url: result.data.publicUrl });
       }
 
-      alert('이미지가 업로드되었습니다.');
+      toast.success('이미지가 업로드되었습니다.');
     } catch (error) {
       console.error('Failed to upload image:', error);
-      alert('이미지 업로드에 실패했습니다.');
+      toast.error('이미지 업로드에 실패했습니다.');
     } finally {
       setUploading(false);
     }
@@ -162,7 +175,7 @@ const ContentManager = () => {
       fetchContents();
     } catch (error) {
       console.error('Failed to update content order:', error);
-      alert('콘텐츠 순서 변경에 실패했습니다.');
+      toast.error('콘텐츠 순서 변경에 실패했습니다.');
     }
   };
 
@@ -248,11 +261,26 @@ const ContentManager = () => {
               />
               {uploading && <p className="text-xs text-blue-600">이미지 업로드 중...</p>}
               {editForm.image_url && (
-                <img
-                  src={editForm.image_url}
-                  alt="미리보기"
-                  className="w-32 h-48 object-cover rounded border mt-2"
-                />
+                <div className="mt-4">
+                  <p className="text-xs font-medium text-gray-600 mb-2">메인페이지 미리보기:</p>
+                  <div className="w-48 bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div className="relative w-full" style={{ paddingBottom: '158.33%' }}>
+                      <img
+                        src={editForm.image_url}
+                        alt="미리보기"
+                        className="absolute inset-0 w-full h-full object-cover rounded-t-lg"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <h3 className="text-sm font-semibold text-black mb-1">
+                        {editForm.title || '제목'}
+                      </h3>
+                      <p className="text-xs text-gray-600 leading-relaxed truncate">
+                        {editForm.description || '설명'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
             <div className="flex items-center">
@@ -272,7 +300,7 @@ const ContentManager = () => {
             <Button
               onClick={handleAdd}
               className="bg-black hover:bg-gray-800 text-white"
-              disabled={!editForm.title || !editForm.description || !editForm.image_url}
+              disabled={!editForm.title || !editForm.description}
             >
               추가
             </Button>
@@ -296,19 +324,32 @@ const ContentManager = () => {
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
               {/* Image Preview */}
               <div className="lg:col-span-1">
-                <img
-                  src={content.image_url}
-                  alt={content.title}
-                  className="w-full h-40 object-cover rounded border"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'block';
-                  }}
-                />
-                <div
-                  className="hidden w-full h-40 bg-gray-200 rounded border flex items-center justify-center text-gray-500"
-                >
-                  이미지를 불러올 수 없습니다
+                <p className="text-xs font-medium text-gray-600 mb-2">메인페이지 미리보기:</p>
+                <div className="w-full max-w-[180px] bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="relative w-full" style={{ paddingBottom: '158.33%' }}>
+                    <img
+                      src={content.image_url}
+                      alt={content.title}
+                      className="absolute inset-0 w-full h-full object-cover rounded-t-lg"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <div
+                      className="hidden absolute inset-0 w-full h-full bg-gray-200 rounded-t-lg items-center justify-center text-gray-500 text-xs"
+                    >
+                      이미지 오류
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    <h3 className="text-sm font-semibold text-black mb-1 truncate">
+                      {content.title}
+                    </h3>
+                    <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
+                      {content.description}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -347,6 +388,9 @@ const ContentManager = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">이미지 변경</label>
+                      {content.image_url && (
+                        <p className="text-xs text-gray-600 mb-1">현재: {getFileNameFromUrl(content.image_url)}</p>
+                      )}
                       <input
                         type="file"
                         accept="image/*"

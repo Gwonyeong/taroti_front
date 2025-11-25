@@ -6,6 +6,7 @@ import Feedback from './pages/Feedback';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Admin from './pages/Admin';
+import { Toaster } from 'sonner';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <Toaster position="top-center" />
     </Router>
   );
 }

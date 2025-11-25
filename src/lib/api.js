@@ -5,7 +5,7 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:500
 // 배너 목록 조회
 export const getBanners = async (activeOnly = false) => {
   try {
-    const url = `${API_BASE_URL}/api/banners${activeOnly ? '?activeOnly=true' : ''}`;
+    const url = `${API_BASE_URL}/api/banners${activeOnly ? '?active=true' : ''}`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -108,7 +108,7 @@ export const updateBannerOrder = async (bannerUpdates) => {
 // 콘텐츠 목록 조회
 export const getContents = async (activeOnly = false) => {
   try {
-    const url = `${API_BASE_URL}/api/contents${activeOnly ? '?activeOnly=true' : ''}`;
+    const url = `${API_BASE_URL}/api/contents${activeOnly ? '?active=true' : ''}`;
     const response = await fetch(url);
 
     if (!response.ok) {
