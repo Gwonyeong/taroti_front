@@ -146,19 +146,16 @@ const BannerManager = () => {
     try {
       setUploading({ ...uploading, [type]: true });
       const result = await uploadBannerImage(file, type);
+      const newImageUrl = result.data.publicUrl;
 
       if (bannerId) {
-        // 기존 배너 이미지 업데이트
-        const updateData = type === 'mobile'
-          ? { mobile_image_url: result.data.publicUrl }
-          : { pc_image_url: result.data.publicUrl };
-
-        await updateBanner(bannerId, updateData);
-        fetchBanners();
+        // 기존 배너 이미지 업데이트 - editForm도 함께 업데이트
+        const fieldName = type === 'mobile' ? 'mobile_image_url' : 'pc_image_url';
+        setEditForm({ ...editForm, [fieldName]: newImageUrl });
       } else {
         // 새 배너용 이미지
         const fieldName = type === 'mobile' ? 'mobile_image_url' : 'pc_image_url';
-        setEditForm({ ...editForm, [fieldName]: result.data.publicUrl });
+        setEditForm({ ...editForm, [fieldName]: newImageUrl });
       }
 
       toast.success('이미지가 업로드되었습니다.');
@@ -204,10 +201,13 @@ const BannerManager = () => {
         <div>
           <h2 className="text-2xl font-bold text-black">배너 관리</h2>
           <p className="text-sm text-gray-600 mt-2">
-            📱 추천 이미지 크기: PC 1920x600px, 모바일 768x400px
+            📱 추천 이미지 크기: PC 1920x500px (16:10), 모바일 768x384px (2:1)
           </p>
           <p className="text-xs text-gray-500 mt-1">
             • PC 이미지는 필수입니다 • 모바일 이미지가 없으면 PC 이미지가 사용됩니다
+          </p>
+          <p className="text-xs text-blue-600 mt-1">
+            ℹ️ 실제 표시 높이 - PC: 500px, 태블릿: 384px, 모바일: 288px (object-cover로 비율 유지)
           </p>
         </div>
         <Button
@@ -249,7 +249,7 @@ const BannerManager = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                PC 이미지 * (1920x600px)
+                PC 이미지 * (1920x500px)
               </label>
               <input
                 type="file"
@@ -282,7 +282,7 @@ const BannerManager = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                모바일 이미지 (768x400px)
+                모바일 이미지 (768x384px)
               </label>
               <input
                 type="file"

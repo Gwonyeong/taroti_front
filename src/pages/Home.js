@@ -52,11 +52,13 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
-      <Header onMenuClick={toggleMenu} />
-      <SideMenu isOpen={isMenuOpen} onClose={closeMenu} />
-      <BannerSlider />
-      <ContentGrid />
-      <Footer />
+      <div className="max-w-[1920px] mx-auto">
+        <Header onMenuClick={toggleMenu} />
+        <SideMenu isOpen={isMenuOpen} onClose={closeMenu} />
+        <BannerSlider />
+        <ContentGrid />
+        <Footer />
+      </div>
     </div>
   );
 };

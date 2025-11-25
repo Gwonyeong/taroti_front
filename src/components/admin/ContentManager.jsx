@@ -142,9 +142,9 @@ const ContentManager = () => {
       const result = await uploadContentImage(file);
 
       if (contentId) {
-        // 기존 콘텐츠 이미지 업데이트
-        await updateContent(contentId, { image_url: result.data.publicUrl });
-        fetchContents();
+        // 편집 중인 콘텐츠의 이미지 업데이트
+        // editForm의 image_url도 함께 업데이트하여 저장 시 올바른 URL이 사용되도록 함
+        setEditForm({ ...editForm, image_url: result.data.publicUrl });
       } else {
         // 새 콘텐츠용 이미지
         setEditForm({ ...editForm, image_url: result.data.publicUrl });
@@ -193,10 +193,13 @@ const ContentManager = () => {
         <div>
           <h2 className="text-2xl font-bold text-black">콘텐츠 관리</h2>
           <p className="text-sm text-gray-600 mt-2">
-            🖼️ 추천 이미지 크기: 400x600px (세로형 카드 형태)
+            🖼️ 추천 이미지 크기: 400x633px (19:30 비율, 세로형 카드)
           </p>
           <p className="text-xs text-gray-500 mt-1">
             • 모든 필드는 필수입니다 • 이미지는 카드 형태로 표시됩니다
+          </p>
+          <p className="text-xs text-blue-600 mt-1">
+            ℹ️ 그리드 레이아웃: 2열(모바일) → 3열(태블릿) → 4열(PC), object-cover로 비율 유지
           </p>
         </div>
         <Button
@@ -328,8 +331,8 @@ const ContentManager = () => {
                 <div className="w-full max-w-[180px] bg-white rounded-lg shadow-sm border border-gray-200">
                   <div className="relative w-full" style={{ paddingBottom: '158.33%' }}>
                     <img
-                      src={content.image_url}
-                      alt={content.title}
+                      src={isEditing === content.id ? editForm.image_url || content.image_url : content.image_url}
+                      alt={isEditing === content.id ? editForm.title || content.title : content.title}
                       className="absolute inset-0 w-full h-full object-cover rounded-t-lg"
                       onError={(e) => {
                         e.target.style.display = 'none';
@@ -344,10 +347,10 @@ const ContentManager = () => {
                   </div>
                   <div className="p-3">
                     <h3 className="text-sm font-semibold text-black mb-1 truncate">
-                      {content.title}
+                      {isEditing === content.id ? editForm.title || content.title : content.title}
                     </h3>
                     <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
-                      {content.description}
+                      {isEditing === content.id ? editForm.description || content.description : content.description}
                     </p>
                   </div>
                 </div>
