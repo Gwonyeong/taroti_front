@@ -16,8 +16,10 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
-          <Route path="/landing" element={<Landing />} />
+          <Route path="/mind-reading" element={<Landing />} />
+          <Route path="/landing" element={<Navigate to="/mind-reading" replace />} />
           <Route path="/result/:landingUserId" element={<Result />} />
+          <Route path="/mind-reading-result/:mindReadingId" element={<Result />} />
           <Route path="/feedback/:landingUserId" element={<Feedback />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />

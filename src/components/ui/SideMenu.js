@@ -3,8 +3,13 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
 
-const SideMenu = ({ isOpen, onClose }) => {
+const SideMenu = ({ isOpen, onClose, constrained = false }) => {
   const { user, isAuthenticated, login, logout, isLoading } = useAuth();
+
+  // constrained 모드에서 메뉴가 닫혀있으면 렌더링하지 않음
+  if (constrained && !isOpen) {
+    return null;
+  }
 
   const handleLogin = async () => {
     try {
@@ -27,16 +32,16 @@ const SideMenu = ({ isOpen, onClose }) => {
   };
   return (
     <>
-      {/* 딤드 오버레이 - 고정 */}
+      {/* 딤드 오버레이 */}
       <div
-        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300 ease-in-out ${
+        className={`${constrained ? 'absolute' : 'fixed'} ${constrained ? 'top-0 left-0 right-0 bottom-0' : 'inset-0'} bg-black/50 backdrop-blur-sm ${constrained ? 'z-[110]' : 'z-40'} transition-opacity duration-300 ease-in-out ${
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         onClick={onClose}
       />
 
       {/* 메뉴 패널 - 슬라이드 */}
-      <nav className={`fixed top-0 right-0 w-64 max-w-[65vw] h-screen z-50 bg-white shadow-2xl rounded-l-2xl transition-transform duration-300 ease-in-out ${
+      <nav className={`${constrained ? 'absolute' : 'fixed'} ${constrained ? 'top-0' : 'top-0'} right-0 w-64 max-w-[65vw] ${constrained ? 'h-full' : 'h-screen'} ${constrained ? 'z-[120]' : 'z-50'} bg-white shadow-2xl ${constrained ? 'rounded-l-lg' : 'rounded-l-2xl'} transition-transform duration-300 ease-in-out ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       }`}>
         <div className="p-6">

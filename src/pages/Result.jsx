@@ -4,9 +4,10 @@ import WebtoonPanel from "../components/WebtoonPanel";
 import SpeechBubble from "../components/SpeechBubble";
 import KeywordsBox from "../components/KeywordsBox";
 import PromotionSection from "../components/PromotionSection";
+import Navigation from "../components/ui/Navigation";
 
 const Result = () => {
-  const { landingUserId } = useParams();
+  const { landingUserId, mindReadingId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [currentSection, setCurrentSection] = useState(1);
@@ -149,6 +150,7 @@ const Result = () => {
   // 카드 데이터 로드 함수
   const loadCardData = async (cardNumber) => {
     try {
+      console.log('📥 카드 데이터 로딩 시작, 카드 번호:', cardNumber);
       const response = await fetch(
         "/documents/cardDescription/3cardSpread/1.current.json"
       );
@@ -157,6 +159,7 @@ const Result = () => {
         const cardInfo = data.TarotInterpretations.find(
           (card) => card.CardNumber === cardNumber.toString()
         );
+        console.log('📥 카드 데이터 로딩 완료:', cardInfo ? '성공' : '실패');
         setCardData(cardInfo);
       }
     } catch (error) {
@@ -171,28 +174,50 @@ const Result = () => {
   }, [searchParams]);
 
   useEffect(() => {
+    // 페이지 진입 시 스크롤 위치와 배경 상태 초기화
+    window.scrollTo(0, 0);
+    setBackgroundOpacity(0);
+
     const fetchUserData = async () => {
       // 버전 확인
       const version = searchParams.get("version");
       const isVersion2 = version === "2";
       setIsV2(isVersion2);
 
-      // 카드 번호 가져오기 (URL 파라미터 또는 로컬스토리지)
-      let cardNumber = searchParams.get("cardNumber");
-      if (!cardNumber) {
-        cardNumber = localStorage.getItem("taroTI_selectedCardNumber");
-      }
-      if (cardNumber) {
-        setSelectedCardNumber(parseInt(cardNumber));
-        await loadCardData(parseInt(cardNumber));
-      } else {
-        // 기본값으로 0번 카드 설정
-        setSelectedCardNumber(0);
-        await loadCardData(0);
-      }
-
       try {
-        if (landingUserId === "temp") {
+        if (mindReadingId) {
+          // Mind Reading 데이터 가져오기
+          const response = await fetch(
+            `${
+              process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
+            }/api/mind-reading/${mindReadingId}`
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            setUserData(data);
+
+            // 카드 번호가 있다면 설정, 없다면 기본값 사용
+            if (data.selectedCard !== null && data.selectedCard !== undefined) {
+              console.log('🃏 mind-reading: selectedCard 있음:', data.selectedCard);
+              setSelectedCardNumber(data.selectedCard);
+              await loadCardData(data.selectedCard);
+            } else {
+              // mind-reading에서도 기본 카드 데이터를 로딩하도록 보장
+              console.log('🃏 mind-reading: selectedCard 없음, 기본 카드 로딩');
+              setSelectedCardNumber(0);
+              await loadCardData(0);
+            }
+
+            // 성격 유형 정보 로드
+            await loadMbtiDetailFiles(data.mbti);
+            // MBTI 그룹 데이터 로드
+            await loadMbtiGroupData(data.mbti);
+            setLoading(false);
+          } else {
+            setError("마인드 리딩 데이터를 불러올 수 없습니다.");
+          }
+        } else if (landingUserId === "temp") {
           // 임시 데이터
           const tempData = {
             birthDate: "951225",
@@ -203,29 +228,46 @@ const Result = () => {
           await loadMbtiDetailFiles(tempData.mbti);
           setLoading(false);
           return;
-        }
+        } else if (landingUserId) {
+          // 카드 번호 가져오기 (URL 파라미터 또는 로컬스토리지)
+          let cardNumber = searchParams.get("cardNumber");
+          if (!cardNumber) {
+            cardNumber = localStorage.getItem("taroTI_selectedCardNumber");
+          }
+          if (cardNumber) {
+            setSelectedCardNumber(parseInt(cardNumber));
+            await loadCardData(parseInt(cardNumber));
+          } else {
+            // 기본값으로 0번 카드 설정
+            setSelectedCardNumber(0);
+            await loadCardData(0);
+          }
 
-        // V2와 V1 API 구분하여 호출
-        const apiUrl = isVersion2
-          ? `/api/landing-user-v2/${landingUserId}`
-          : `/api/landing-user/${landingUserId}`;
+          // V2와 V1 API 구분하여 호출 (기존 로직 유지)
+          const apiUrl = isVersion2
+            ? `/api/landing-user-v2/${landingUserId}`
+            : `/api/landing-user/${landingUserId}`;
 
-        const response = await fetch(
-          `${
-            process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
-          }${apiUrl}`
-        );
+          const response = await fetch(
+            `${
+              process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
+            }${apiUrl}`
+          );
 
-        if (response.ok) {
-          const data = await response.json();
-          setUserData(data);
+          if (response.ok) {
+            const data = await response.json();
+            setUserData(data);
 
-          // 성격 유형 정보 로드
-          await loadMbtiDetailFiles(data.mbti);
-          // MBTI 그룹 데이터 로드
-          await loadMbtiGroupData(data.mbti);
+            // 성격 유형 정보 로드
+            await loadMbtiDetailFiles(data.mbti);
+            // MBTI 그룹 데이터 로드
+            await loadMbtiGroupData(data.mbti);
+            setLoading(false);
+          } else {
+            setError("사용자 데이터를 불러올 수 없습니다.");
+          }
         } else {
-          setError("사용자 데이터를 불러올 수 없습니다.");
+          setError("유효하지 않은 요청입니다.");
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -403,13 +445,20 @@ const Result = () => {
     };
 
     fetchUserData();
-  }, [landingUserId, searchParams]);
+  }, [landingUserId, mindReadingId, searchParams]);
+
 
   // 스크롤 기반 배경색 변경 효과
   useEffect(() => {
     const handleScroll = () => {
       const windowHeight = window.innerHeight;
       const triggerPoint = windowHeight * 0.5;
+
+      // 로딩 중이면 배경 투명도만 0으로 설정
+      if (loading) {
+        setBackgroundOpacity(0);
+        return;
+      }
 
       if (currentSection === 1) {
         // 섹션 1: 기존 로직
@@ -449,6 +498,9 @@ const Result = () => {
         } else {
           setBackgroundOpacity(0);
         }
+      } else {
+        // 다른 섹션에서는 배경 투명도 0으로 설정
+        setBackgroundOpacity(0);
       }
     };
 
@@ -459,8 +511,9 @@ const Result = () => {
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
+      setBackgroundOpacity(0);
     };
-  }, [currentSection]);
+  }, [currentSection, loading]);
 
   // 스크롤 방향에 따른 하단바 표시/숨김
   useEffect(() => {
@@ -639,10 +692,9 @@ const Result = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-offWhite flex justify-center items-center">
+        <Navigation fixed />
         <div className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col h-screen">
-          <div className="bg-white text-black p-4 shadow-md">
-            <h1 className="text-xl font-bold text-left">TaroTI</h1>
-          </div>
+          <div className="h-16"></div>
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-charcoal mx-auto mb-4"></div>
@@ -657,17 +709,16 @@ const Result = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-offWhite flex justify-center">
+        <Navigation fixed />
         <div className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col h-screen">
-          <div className="bg-white text-black p-4 shadow-md">
-            <h1 className="text-xl font-bold text-left">TaroTI</h1>
-          </div>
+          <div className="h-16"></div>
           <div className="flex-1 flex items-center justify-center p-4">
             <div className="text-center">
               <p className="text-red-500 mb-4">{error}</p>
               <button
                 onClick={() => {
                   localStorage.removeItem("taroTI_landingUserId");
-                  window.location.href = "/landing";
+                  window.location.href = "/mind-reading";
                 }}
                 className="bg-charcoal text-white px-6 py-2 rounded-lg hover:bg-gray-800"
               >
@@ -681,25 +732,32 @@ const Result = () => {
   }
 
   return (
-    <div className="min-h-screen bg-offWhite flex justify-center relative">
-      {/* 스크롤 기반 배경 오버레이 */}
+    <div
+      className="min-h-screen flex justify-center relative"
+      style={{
+        backgroundColor: backgroundOpacity > 0
+          ? `rgb(${Math.round(255 - (255 - 31) * backgroundOpacity)}, ${Math.round(255 - (255 - 41) * backgroundOpacity)}, ${Math.round(255 - (255 - 55) * backgroundOpacity)})`
+          : '#fafafa', // offWhite와 동일한 색상
+        transition: 'background-color 300ms ease-out'
+      }}
+    >
+      <Navigation fixed />
       <div
-        className="fixed inset-0 bg-gray-950 pointer-events-none transition-opacity duration-300 ease-out"
-        style={{ opacity: backgroundOpacity, zIndex: 1 }}
-      />
-
-      <div
-        className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col h-screen relative"
-        style={{ zIndex: 10 }}
+        className="w-full min-w-[320px] max-w-[500px] flex flex-col min-h-screen relative"
+        style={{
+          zIndex: 10,
+          backgroundColor: backgroundOpacity > 0
+            ? `rgb(${Math.round(255 - (255 - 31) * backgroundOpacity)}, ${Math.round(255 - (255 - 41) * backgroundOpacity)}, ${Math.round(255 - (255 - 55) * backgroundOpacity)})`
+            : 'white',
+          transition: 'background-color 300ms ease-out'
+        }}
       >
-        {/* Header */}
-        <div className="bg-white text-black p-4 shadow-md">
-          <h1 className="text-xl font-bold text-left">TaroTI</h1>
-        </div>
+        {/* 고정 네비게이션을 위한 여백 */}
+        <div className="h-16"></div>
 
         {/* Content */}
         <div
-          className="flex-1 p-6 space-y-6 pb-40"
+          className="flex-1 p-6 space-y-6 pb-40 bg-inherit"
           style={{ position: "relative", zIndex: 20 }}
         >
           {/* 섹션 1 컨텐츠 */}

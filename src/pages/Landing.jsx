@@ -3,9 +3,21 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import ChatMessage from "../components/ChatMessage";
 import CardBack from "../components/CardBack";
+import { useAuth } from "../context/AuthContext";
+import MindReadingChat from "../components/MindReadingChat";
+import LoginModal from "../components/LoginModal";
+import Navigation from "../components/ui/Navigation";
+import { toast } from "sonner";
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated, updateProfile, isLoading } = useAuth();
+
+  // 페이지 상태: 'loading', 'profile-setup', 'chat'
+  const [pageState, setPageState] = useState('loading');
+  const [isNavigatingToResult, setIsNavigatingToResult] = useState(false);
+
+  // 기존 states
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -28,6 +40,9 @@ const Landing = () => {
   const [selectedCardNumber, setSelectedCardNumber] = useState(null);
   const messagesEndRef = useRef(null);
   const hasInitialized = useRef(false);
+
+  // 로그인 모달 상태
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -60,18 +75,35 @@ const Landing = () => {
     { text: "나이를 알려달라마", sender: "bot", showDateInput: true },
   ];
 
+  // 페이지 상태 결정
   useEffect(() => {
-    // 자동 리다이렉트 제거 - 항상 랜딩 페이지에서 시작
+    if (isLoading) {
+      setPageState('loading');
+      return;
+    }
 
-    // 첫 번째 메시지 자동 시작 (useRef로 중복 방지)
-    if (!hasInitialized.current) {
-      hasInitialized.current = true;
-      setTimeout(() => {
-        showNextMessage();
-      }, 300);
+    // 결과 페이지로 이동 중인 경우 상태 변경 방지
+    if (isNavigatingToResult) {
+      return;
+    }
+
+    // 로그인하지 않았거나 프로필이 완성되지 않은 경우
+    if (!isAuthenticated || !user?.hasCompleteProfile) {
+      setPageState('profile-setup');
+
+      // 프로필 설정 페이지에서는 기존 로직 실행
+      if (!hasInitialized.current) {
+        hasInitialized.current = true;
+        setTimeout(() => {
+          showNextMessage();
+        }, 300);
+      }
+    } else {
+      // 로그인했고 프로필이 완성된 경우 - 새로운 채팅 페이지
+      setPageState('chat');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isLoading, isAuthenticated, user, isNavigatingToResult]);
 
   const addMessage = (text, sender = "bot", imageUrl = null) => {
     const messageId = Date.now() + Math.random();
@@ -221,7 +253,7 @@ const Landing = () => {
       setShowMbtiInput(false);
       setIsTyping(true);
 
-      // 사용자 정보 저장
+      // 사용자 정보 저장 (로컬 상태에만 저장, 서버에는 저장하지 않음)
       const userData = {
         birthDate,
         gender: selectedGender,
@@ -341,76 +373,152 @@ const Landing = () => {
     }, 800);
   };
 
-  // 결과 페이지로 이동
-  const handleNavigateToResult = async () => {
-    setShowNavigateButton(false);
-    setIsTyping(true);
+  // 로컬 스토리지에 프로필 정보 저장
+  const saveProfileToLocalStorage = () => {
+    localStorage.setItem("tempProfile", JSON.stringify({
+      birthDate,
+      gender: selectedGender,
+      mbti: Object.values(mbtiSelections).join(""),
+      selectedCardNumber,
+    }));
+  };
 
+  // 로컬 스토리지에서 프로필 정보 불러오기 및 삭제
+  const loadAndClearTempProfile = () => {
+    const tempProfile = localStorage.getItem("tempProfile");
+    if (tempProfile) {
+      localStorage.removeItem("tempProfile");
+      return JSON.parse(tempProfile);
+    }
+    return null;
+  };
+
+  // Mind Reading 세션 생성
+  const createMindReadingSession = async (profileData) => {
     try {
-      // 항상 새로운 사용자로 처리
-
-      // 사용자 정보에 선택된 카드 번호 추가
-      const userDataWithCard = {
-        ...userInfo,
-        selectedCardNumber,
-      };
-
-      console.log("Sending user data:", userDataWithCard);
-
+      const token = localStorage.getItem('authToken');
       const response = await fetch(
-        `${
-          process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
-        }/api/landing-user-v2`,
+        `${process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"}/api/mind-reading`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
           },
-          body: JSON.stringify(userDataWithCard),
+          body: JSON.stringify(profileData),
         }
       );
 
-      console.log("Response status:", response.status);
-
       if (response.ok) {
         const data = await response.json();
-        console.log("Response data:", data);
-        // 로컬스토리지에 사용자 ID와 카드 번호 저장
-        localStorage.setItem(
-          "taroTI_landingUserIdV2",
-          data.landingUserId.toString()
-        );
-        localStorage.setItem(
-          "taroTI_selectedCardNumber",
-          selectedCardNumber.toString()
-        );
-        navigate(
-          `/result/${data.landingUserId}?cardNumber=${selectedCardNumber}&version=2`
-        );
+        return data.mindReadingId;
       } else {
-        const errorText = await response.text();
-        console.error(
-          "Failed to save user data. Status:",
-          response.status,
-          "Error:",
-          errorText
-        );
-        // 에러 시에도 임시 ID로 이동
-        navigate(`/result/temp?cardNumber=${selectedCardNumber}`);
+        throw new Error('Failed to create mind reading session');
       }
     } catch (error) {
-      console.error("Error saving user data:", error);
-      navigate(`/result/temp?cardNumber=${selectedCardNumber}`);
+      console.error("Error creating mind reading session:", error);
+      throw error;
     }
   };
 
+  // 결과 페이지로 이동
+  const handleNavigateToResult = async () => {
+    setShowNavigateButton(false);
+    setIsTyping(true);
+    setIsNavigatingToResult(true); // 페이지 상태 변경 방지
+
+    const profileData = {
+      birthDate,
+      gender: selectedGender,
+      mbti: Object.values(mbtiSelections).join(""),
+      selectedCardNumber,
+    };
+
+    try {
+      if (!isAuthenticated) {
+        // 1. 로그인하지 않은 경우: 로컬 스토리지에 저장 후 로그인 모달
+        saveProfileToLocalStorage();
+        setShowLoginModal(true);
+        setIsTyping(false);
+        setIsNavigatingToResult(false);
+        return;
+      }
+
+      if (!user?.hasCompleteProfile) {
+        // 2. 로그인했지만 프로필 미완성: 프로필 업데이트 후 결과 페이지
+        toast.success("입력한 프로필 정보를 저장할게요!");
+        await updateProfile({
+          birthDate: profileData.birthDate,
+          gender: profileData.gender,
+          mbti: profileData.mbti,
+        });
+      }
+
+      // Mind Reading 세션 생성
+      const mindReadingId = await createMindReadingSession(profileData);
+
+      // 새로운 결과 페이지로 이동 (mind-reading 기반)
+      navigate(`/mind-reading-result/${mindReadingId}`);
+
+    } catch (error) {
+      console.error("Error in handleNavigateToResult:", error);
+      setIsTyping(false);
+      setIsNavigatingToResult(false);
+      toast.error("오류가 발생했습니다. 다시 시도해주세요.");
+    }
+  };
+
+  // 로그인 성공 후 처리
+  const handleLoginSuccess = async (userData) => {
+    setIsNavigatingToResult(true); // 페이지 상태 변경 방지
+    try {
+      const tempProfile = loadAndClearTempProfile();
+      if (tempProfile) {
+        // 임시 저장된 프로필로 사용자 프로필 업데이트
+        await updateProfile({
+          birthDate: tempProfile.birthDate,
+          gender: tempProfile.gender,
+          mbti: tempProfile.mbti,
+        });
+
+        toast.success("프로필 정보가 저장되었습니다!");
+
+        // Mind Reading 세션 생성
+        const mindReadingId = await createMindReadingSession(tempProfile);
+
+        // 결과 페이지로 이동
+        navigate(`/mind-reading-result/${mindReadingId}`);
+      }
+    } catch (error) {
+      console.error("Error handling login success:", error);
+      setIsNavigatingToResult(false);
+      toast.error("프로필 저장 중 오류가 발생했습니다.");
+    }
+  };
+
+  // 로딩 상태
+  if (pageState === 'loading') {
+    return (
+      <div className="min-h-screen bg-offWhite flex justify-center items-center">
+        <div className="text-center">
+          <div className="text-lg text-gray-600">로딩 중...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // 새로운 채팅 페이지 (로그인했고 프로필 완성된 경우)
+  if (pageState === 'chat') {
+    return <MindReadingChat user={user} />;
+  }
+
+  // 프로필 설정 페이지 (기존 로직)
   return (
     <div className="min-h-screen bg-offWhite flex justify-center">
+      <Navigation fixed />
       <div className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col h-screen">
-        {/* Header */}
-        <div className="bg-white text-black p-4 shadow-md">
-          <h1 className="text-xl font-bold text-left">TaroTI</h1>
-        </div>
+        {/* 고정 네비게이션을 위한 여백 */}
+        <div className="h-16"></div>
 
         {/* Chat Messages */}
         <div
@@ -735,6 +843,13 @@ const Landing = () => {
             <p className="text-xs text-gray-500 mb-4">전화번호: 010-5418-3486</p>
           </div>
         </div>
+
+        {/* 로그인 모달 */}
+        <LoginModal
+          isOpen={showLoginModal}
+          onClose={() => setShowLoginModal(false)}
+          onLoginSuccess={handleLoginSuccess}
+        />
       </div>
     </div>
   );
