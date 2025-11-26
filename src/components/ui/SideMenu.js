@@ -55,63 +55,45 @@ const SideMenu = ({ isOpen, onClose, constrained = false }) => {
 
           <nav className="mt-16">
             <ul className="space-y-6">
+              {/* 로그인 정보 및 프로필 설정 */}
               <li>
-                <Link
-                  to="/home"
-                  className="block text-lg text-black hover:text-gray-600 transition-colors duration-200"
-                  onClick={onClose}
-                >
-                  홈
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/about"
-                  className="block text-lg text-black hover:text-gray-600 transition-colors duration-200"
-                  onClick={onClose}
-                >
-                  소개
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/services"
-                  className="block text-lg text-black hover:text-gray-600 transition-colors duration-200"
-                  onClick={onClose}
-                >
-                  서비스
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/contact"
-                  className="block text-lg text-black hover:text-gray-600 transition-colors duration-200"
-                  onClick={onClose}
-                >
-                  문의
-                </Link>
-              </li>
-
-              {/* 구분선 */}
-              <li className="border-t border-gray-200 pt-6">
                 {isAuthenticated ? (
                   <div className="space-y-4">
-                    <div className="flex items-center space-x-3 mb-4">
+                    <div className="flex items-center space-x-3 mb-6">
                       {user?.profileImageUrl && (
                         <img
                           src={user.profileImageUrl}
                           alt="프로필"
-                          className="w-8 h-8 rounded-full"
+                          className="w-10 h-10 rounded-full"
                         />
                       )}
-                      <span className="text-sm text-gray-600">{user?.nickname}님</span>
+                      <span className="text-lg text-gray-800 font-medium">{user?.nickname}님</span>
                     </div>
+
+                    {/* 프로필 설정 메뉴 */}
+                    <Link
+                      to="/profile"
+                      className="flex items-center space-x-3 w-full p-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                      onClick={onClose}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span>프로필 설정</span>
+                    </Link>
+
+                    {/* 구분선 */}
+                    <hr className="border-gray-200 my-4" />
+
                     <button
                       onClick={handleLogout}
                       disabled={isLoading}
-                      className="block w-full text-left text-lg text-red-500 hover:text-red-400 transition-colors duration-200 disabled:opacity-50"
+                      className="flex items-center space-x-3 w-full p-3 text-red-500 hover:bg-red-50 rounded-lg transition-colors duration-200 disabled:opacity-50"
                     >
-                      {isLoading ? '로그아웃 중...' : '로그아웃'}
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      <span>{isLoading ? '로그아웃 중...' : '로그아웃'}</span>
                     </button>
                   </div>
                 ) : (

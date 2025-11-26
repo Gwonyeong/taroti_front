@@ -155,41 +155,94 @@ const Landing = () => {
     }
   };
 
+  // 생년월일 유효성 검증 함수
+  const validateBirthDate = (dateString) => {
+    // 1. 기본 형식 검증 (YYMMDD)
+    if (!dateString || dateString.length !== 6 || !/^\d{6}$/.test(dateString)) {
+      return { isValid: false, message: "생년월일은 YYMMDD 형식 6자리로 입력해주세요." };
+    }
+
+    const year = parseInt(dateString.substring(0, 2));
+    const month = parseInt(dateString.substring(2, 4));
+    const day = parseInt(dateString.substring(4, 6));
+
+    // 2. 월 유효성 검증 (01-12)
+    if (month < 1 || month > 12) {
+      return { isValid: false, message: "올바른 월을 입력해주세요 (01-12)." };
+    }
+
+    // 3. 각 월의 일 수 계산 (윤년 고려)
+    const fullYear = year >= 50 ? 1900 + year : 2000 + year; // 50 이상이면 19XX, 미만이면 20XX
+    const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+    // 윤년 계산
+    const isLeapYear = (fullYear % 4 === 0 && fullYear % 100 !== 0) || (fullYear % 400 === 0);
+    if (month === 2 && isLeapYear) {
+      daysInMonth[1] = 29;
+    }
+
+    // 4. 일 유효성 검증
+    if (day < 1 || day > daysInMonth[month - 1]) {
+      return { isValid: false, message: `${month}월은 1일부터 ${daysInMonth[month - 1]}일까지 입력 가능합니다.` };
+    }
+
+    // 5. 미래 날짜 검증
+    const inputDate = new Date(fullYear, month - 1, day);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // 오늘 끝까지를 허용
+
+    if (inputDate > today) {
+      return { isValid: false, message: "미래 날짜는 입력할 수 없습니다." };
+    }
+
+    // 6. 너무 과거 날짜 검증 (1900년 이후)
+    if (fullYear < 1900) {
+      return { isValid: false, message: "1900년 이후 날짜를 입력해주세요." };
+    }
+
+    return { isValid: true, message: "" };
+  };
+
   // 생년월일 입력 처리
   const handleDateSubmit = () => {
-    if (birthDate.length === 6 && /^\d{6}$/.test(birthDate)) {
-      // 사용자 입력 추가
-      const year = birthDate.substring(0, 2);
-      const month = birthDate.substring(2, 4);
-      const day = birthDate.substring(4, 6);
-      const formattedDate = `${year}년 ${month}월 ${day}일`;
+    const validation = validateBirthDate(birthDate);
 
-      addMessage(formattedDate, "user");
-      setShowDateInput(false);
-      // birthDate를 초기화하지 않고 유지
-      setIsTyping(true);
-
-      // 봇 응답
-      setTimeout(() => {
-        setIsTyping(false);
-        addMessage("좋다마!", "bot");
-
-        // 성별 질문
-        setTimeout(() => {
-          setIsTyping(true);
-          setTimeout(() => {
-            setIsTyping(false);
-            addMessage("성별은 뭐다마?", "bot");
-            setTimeout(() => {
-              setShowGenderSelect(true);
-              setTimeout(() => {
-                scrollToBottom();
-              }, 100);
-            }, 300);
-          }, 600);
-        }, 600);
-      }, 800);
+    if (!validation.isValid) {
+      toast.error(validation.message);
+      return;
     }
+
+    // 사용자 입력 추가
+    const year = birthDate.substring(0, 2);
+    const month = birthDate.substring(2, 4);
+    const day = birthDate.substring(4, 6);
+    const formattedDate = `${year}년 ${month}월 ${day}일`;
+
+    addMessage(formattedDate, "user");
+    setShowDateInput(false);
+    // birthDate를 초기화하지 않고 유지
+    setIsTyping(true);
+
+    // 봇 응답
+    setTimeout(() => {
+      setIsTyping(false);
+      addMessage("좋다마!", "bot");
+
+      // 성별 질문
+      setTimeout(() => {
+        setIsTyping(true);
+        setTimeout(() => {
+          setIsTyping(false);
+          addMessage("성별은 뭐다마?", "bot");
+          setTimeout(() => {
+            setShowGenderSelect(true);
+            setTimeout(() => {
+              scrollToBottom();
+            }, 100);
+          }, 300);
+        }, 600);
+      }, 600);
+    }, 800);
   };
 
   // 생년월일 입력값 변경 처리
@@ -568,7 +621,7 @@ const Landing = () => {
                 />
                 <Button
                   onClick={handleDateSubmit}
-                  disabled={birthDate.length !== 6}
+                  disabled={birthDate.length !== 6 || !/^\d{6}$/.test(birthDate)}
                   className="w-full bg-charcoal hover:bg-gray-800 text-white py-3"
                 >
                   입력
