@@ -474,15 +474,18 @@ const Landing = () => {
     }
   };
 
+  // 성별 변환 함수 (남자/여자 -> 남성/여성)
+  const convertGenderForAPI = (gender) => {
+    if (gender === "남자") return "남성";
+    if (gender === "여자") return "여성";
+    return gender;
+  };
+
   // 결과 페이지로 이동
   const handleNavigateToResult = async () => {
-    setShowNavigateButton(false);
-    setIsTyping(true);
-    setIsNavigatingToResult(true); // 페이지 상태 변경 방지
-
     const profileData = {
       birthDate,
-      gender: selectedGender,
+      gender: convertGenderForAPI(selectedGender),
       mbti: Object.values(mbtiSelections).join(""),
       selectedCardNumber,
     };
@@ -492,10 +495,14 @@ const Landing = () => {
         // 1. 로그인하지 않은 경우: 로컬 스토리지에 저장 후 로그인 모달
         saveProfileToLocalStorage();
         setShowLoginModal(true);
-        setIsTyping(false);
-        setIsNavigatingToResult(false);
+        // 버튼은 유지하고 모달만 표시
         return;
       }
+
+      // 로그인된 경우에만 버튼을 숨기고 진행
+      setShowNavigateButton(false);
+      setIsTyping(true);
+      setIsNavigatingToResult(true); // 페이지 상태 변경 방지
 
       if (!user?.hasCompleteProfile) {
         // 2. 로그인했지만 프로필 미완성: 프로필 업데이트 후 결과 페이지
@@ -530,14 +537,18 @@ const Landing = () => {
         // 임시 저장된 프로필로 사용자 프로필 업데이트
         await updateProfile({
           birthDate: tempProfile.birthDate,
-          gender: tempProfile.gender,
+          gender: convertGenderForAPI(tempProfile.gender),
           mbti: tempProfile.mbti,
         });
 
         toast.success("프로필 정보가 저장되었습니다!");
 
-        // Mind Reading 세션 생성
-        const mindReadingId = await createMindReadingSession(tempProfile);
+        // Mind Reading 세션 생성 (성별 변환 적용)
+        const mindReadingData = {
+          ...tempProfile,
+          gender: convertGenderForAPI(tempProfile.gender)
+        };
+        const mindReadingId = await createMindReadingSession(mindReadingData);
 
         // 결과 페이지로 이동
         navigate(`/mind-reading-result/${mindReadingId}`);
@@ -878,29 +889,15 @@ const Landing = () => {
           </div>
         )}
 
-        {/* 사업자 정보 푸터 */}
-        <div className="bg-gray-50 border-t border-gray-200 px-4 py-6 pb-20">
-          <div className="max-w-lg mx-auto text-center">
-            <p className="text-xs text-gray-500 mb-2">
-              사업자등록번호: 467-15-02791
-            </p>
-            <p className="text-xs text-gray-500 mb-2">
-              통신판매업 신고번호: 2025-서울마포-2857
-            </p>
-            <p className="text-xs text-gray-500 mb-2">
-              상호명: 파드켓 | 대표자명: 조권영
-            </p>
-            <p className="text-xs text-gray-500 mb-2">
-              주소: 서울특별시 마포구 월드컵북로 6길 19-10
-            </p>
-            <p className="text-xs text-gray-500 mb-4">전화번호: 010-5418-3486</p>
-          </div>
-        </div>
 
         {/* 로그인 모달 */}
         <LoginModal
           isOpen={showLoginModal}
-          onClose={() => setShowLoginModal(false)}
+          onClose={() => {
+            setShowLoginModal(false);
+            // 모달 닫을 때 결과보기 버튼은 유지
+            setShowNavigateButton(true);
+          }}
           onLoginSuccess={handleLoginSuccess}
         />
       </div>
