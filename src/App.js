@@ -7,6 +7,7 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Admin from './pages/Admin';
 import Profile from './pages/Profile';
+import DecemberFortune from './pages/DecemberFortune';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './context/AuthContext';
 
@@ -26,6 +27,8 @@ function App() {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/december-fortune" element={<DecemberFortune />} />
+          <Route path="/december-fortune-result/:fortuneId" element={<Result />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Toaster position="top-center" />

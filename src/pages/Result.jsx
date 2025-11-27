@@ -7,7 +7,7 @@ import PromotionSection from "../components/PromotionSection";
 import Navigation from "../components/ui/Navigation";
 
 const Result = () => {
-  const { landingUserId, mindReadingId } = useParams();
+  const { landingUserId, mindReadingId, fortuneId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [currentSection, setCurrentSection] = useState(1);
@@ -216,6 +216,32 @@ const Result = () => {
             setLoading(false);
           } else {
             setError("마인드 리딩 데이터를 불러올 수 없습니다.");
+          }
+        } else if (fortuneId) {
+          // December Fortune 데이터 가져오기
+          const response = await fetch(
+            `${
+              process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
+            }/api/december-fortune/${fortuneId}`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            setUserData({
+              ...data,
+              isDecemberFortune: true,
+              resultMessage: `결과페이지입니다! 선택된 카드: ${data.selectedCard}`
+            });
+            // 카드 번호 설정
+            if (data.selectedCard !== null && data.selectedCard !== undefined) {
+              setSelectedCardNumber(data.selectedCard);
+              await loadCardData(data.selectedCard);
+            } else {
+              setSelectedCardNumber(0);
+              await loadCardData(0);
+            }
+            setLoading(false);
+          } else {
+            setError("12월 운세 데이터를 불러올 수 없습니다.");
           }
         } else if (landingUserId === "temp") {
           // 임시 데이터
@@ -445,7 +471,7 @@ const Result = () => {
     };
 
     fetchUserData();
-  }, [landingUserId, mindReadingId, searchParams]);
+  }, [landingUserId, mindReadingId, fortuneId, searchParams]);
 
 
   // 스크롤 기반 배경색 변경 효과
@@ -725,6 +751,67 @@ const Result = () => {
                 다시 시작하기
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // December Fortune 결과 페이지
+  if (userData?.isDecemberFortune) {
+    return (
+      <div className="min-h-screen bg-offWhite flex justify-center">
+        <Navigation fixed />
+        <div className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col min-h-screen">
+          {/* 고정 네비게이션을 위한 여백 */}
+          <div className="h-16"></div>
+
+          {/* 결과 내용 */}
+          <div className="flex-1 p-6">
+            <div className="text-center mb-8">
+              <h1 className="text-2xl font-bold text-charcoal mb-4">12월 운세 결과</h1>
+              <div className="bg-gray-50 rounded-lg p-6">
+                <h2 className="text-lg font-medium text-charcoal mb-4">
+                  {userData.fortuneType} 결과
+                </h2>
+
+                {/* 선택된 카드 표시 */}
+                {selectedCardNumber !== null && (
+                  <div className="mb-6">
+                    <div className="flex justify-center mb-4">
+                      <div className="bg-white p-4 rounded-lg shadow-lg">
+                        <img
+                          src={`/documents/illustrator/${String(
+                            selectedCardNumber
+                          ).padStart(2, "0")}-${getCardName(selectedCardNumber)}.jpg`}
+                          alt={`${getCardName(selectedCardNumber)} 카드`}
+                          className="w-32 h-48 object-cover rounded-lg"
+                          onError={(e) => {
+                            e.target.src = "/images/cards/back/camp_band.jpeg";
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-center font-medium text-charcoal">
+                      {getCardDisplayName(selectedCardNumber)}
+                    </p>
+                  </div>
+                )}
+
+                {/* 결과 메시지 */}
+                <p className="text-charcoal text-center">{userData.resultMessage}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 하단 버튼 */}
+          <div className="p-6 bg-white border-t border-gray-200">
+            <button
+              onClick={() => navigate('/december-fortune')}
+              className="w-full bg-charcoal text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
+            >
+              다시 해보기
+            </button>
           </div>
         </div>
       </div>
