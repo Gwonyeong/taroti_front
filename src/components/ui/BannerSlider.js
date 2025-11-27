@@ -58,17 +58,33 @@ const BannerSlider = () => {
     }
   };
 
+  // 현재 모바일 상태를 추적하기 위한 ref
+  const isMobileRef = useRef(isMobile());
+
   // 컴포넌트 마운트 시 배너 데이터 가져오기
   useEffect(() => {
     fetchBanners();
 
-    // 윈도우 리사이즈 시 이미지 다시 로드 (모바일/PC 이미지 전환)
+    // Debounce function to prevent excessive API calls
+    let timeoutId = null;
     const handleResize = () => {
-      fetchBanners();
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        const currentIsMobileState = isMobile();
+
+        // 모바일/데스크탑 상태가 실제로 변경되었을 때만 API 호출
+        if (currentIsMobileState !== isMobileRef.current) {
+          isMobileRef.current = currentIsMobileState;
+          fetchBanners();
+        }
+      }, 300);
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
 
   // 무한 루프를 위한 복제 슬라이드
