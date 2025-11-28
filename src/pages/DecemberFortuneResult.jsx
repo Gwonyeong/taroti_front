@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Button } from "../components/ui/button";
 import Navigation from "../components/ui/Navigation";
 import { toast } from "sonner";
@@ -116,38 +117,45 @@ const DecemberFortuneResult = () => {
   }, [fortuneId]);
 
   const handleShare = async () => {
-    // 카드 설명 텍스트 준비 (최대 100자, 초과시 ...으로 마무리)
-    const cardDescription = cardInfo?.description || "";
-    const truncatedDescription = cardDescription.length > 100
-      ? cardDescription.substring(0, 97) + "..."
-      : cardDescription;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${fortuneData.nickname || "타로티 친구"}님의 12월 운세 결과`,
-          text: truncatedDescription,
-          url: window.location.href,
-        });
-      } catch (error) {
-        // 사용자가 공유를 취소한 경우 등
-        console.log("Share cancelled");
-      }
-    } else {
-      // 공유 API를 지원하지 않는 경우 클립보드에 복사
-      try {
-        const shareText = `${fortuneData.nickname || "타로티 친구"}님의 12월 운세 결과\n\n${truncatedDescription}\n\n${window.location.href}`;
-        await navigator.clipboard.writeText(shareText);
-        toast.success("운세 결과가 클립보드에 복사되었습니다.");
-      } catch (error) {
-        toast.error("복사에 실패했습니다.");
-      }
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("링크가 클립보드에 복사되었습니다.");
+    } catch (error) {
+      toast.error("링크 복사에 실패했습니다.");
     }
   };
 
   const handleGoHome = () => {
     navigate("/");
   };
+
+  // 동적 메타 태그 데이터 생성
+  const generateMetaTags = () => {
+    if (!fortuneData || !cardInfo) return {};
+
+    const nickname = fortuneData.nickname || "타로티 친구";
+    const title = `${nickname}님의 12월 운세 결과`;
+    const cardDescription = cardInfo.description || "";
+    const truncatedDescription = cardDescription.length > 160
+      ? cardDescription.substring(0, 157) + "..."
+      : cardDescription;
+
+    const cardImageUrl = `${window.location.origin}/documents/illustrator/${String(
+      fortuneData.selectedCard
+    ).padStart(2, "0")}-${getCardName(fortuneData.selectedCard)}.jpg`;
+
+    const currentUrl = window.location.href;
+
+    return {
+      title,
+      description: truncatedDescription,
+      image: cardImageUrl,
+      url: currentUrl,
+      cardName: getCardDisplayName(fortuneData.selectedCard)
+    };
+  };
+
+  const metaTags = generateMetaTags();
 
   if (loading) {
     return (
@@ -177,6 +185,31 @@ const DecemberFortuneResult = () => {
 
   return (
     <div className="min-h-screen bg-offWhite flex justify-center">
+      <Helmet>
+        <title>{metaTags.title || "TaroTI - 12월 운세 결과"}</title>
+        <meta name="description" content={metaTags.description || "타로카드로 알아보는 12월 운세"} />
+
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={metaTags.url || window.location.href} />
+        <meta property="og:title" content={metaTags.title || "TaroTI - 12월 운세 결과"} />
+        <meta property="og:description" content={metaTags.description || "타로카드로 알아보는 12월 운세"} />
+        <meta property="og:image" content={metaTags.image || `${window.location.origin}/logo192.png`} />
+        <meta property="og:locale" content="ko_KR" />
+        <meta property="og:site_name" content="TaroTI" />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={metaTags.url || window.location.href} />
+        <meta name="twitter:title" content={metaTags.title || "TaroTI - 12월 운세 결과"} />
+        <meta name="twitter:description" content={metaTags.description || "타로카드로 알아보는 12월 운세"} />
+        <meta name="twitter:image" content={metaTags.image || `${window.location.origin}/logo192.png`} />
+
+        {/* 카카오톡 공유용 */}
+        <meta property="og:image:width" content="800" />
+        <meta property="og:image:height" content="400" />
+      </Helmet>
+
       <Navigation fixed />
       <div className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col min-h-screen relative">
         {/* 고정 네비게이션을 위한 여백 */}
