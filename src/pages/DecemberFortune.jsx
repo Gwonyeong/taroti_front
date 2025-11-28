@@ -18,11 +18,9 @@ const DecemberFortune = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [waitingForClick, setWaitingForClick] = useState(false);
-  const [showFortuneSelect, setShowFortuneSelect] = useState(false);
   const [showCardSelect, setShowCardSelect] = useState(false);
   const [showSelectedCard, setShowSelectedCard] = useState(false);
   const [showNavigateButton, setShowNavigateButton] = useState(false);
-  const [selectedFortune, setSelectedFortune] = useState("");
   const [selectedCardNumber, setSelectedCardNumber] = useState(null);
   const messagesEndRef = useRef(null);
   const hasInitialized = useRef(false);
@@ -43,11 +41,7 @@ const DecemberFortune = () => {
   // 메시지 시나리오 정의
   const messageScenario = [
     { text: "12월의 운세를 봐줄거래!", sender: "bot" },
-    {
-      text: "어떤 운세가 보고싶거래!?",
-      sender: "bot",
-      showFortuneSelect: true,
-    },
+    { text: "바로 카드를 뽑아보고래!", sender: "bot", showCardSelect: true },
   ];
 
   useEffect(() => {
@@ -83,10 +77,10 @@ const DecemberFortune = () => {
         setIsTyping(false);
         addMessage(currentMessage.text, currentMessage.sender);
 
-        if (currentMessage.showFortuneSelect) {
-          // 운세 선택창 표시
+        if (currentMessage.showCardSelect) {
+          // 카드 선택창 표시
           setTimeout(() => {
-            setShowFortuneSelect(true);
+            setShowCardSelect(true);
             setTimeout(() => {
               scrollToBottom();
             }, 100);
@@ -109,40 +103,6 @@ const DecemberFortune = () => {
     }
   };
 
-  // 운세 선택 처리
-  const handleFortuneClick = (fortune) => {
-    setSelectedFortune(fortune);
-  };
-
-  // 운세 확정 처리
-  const handleFortuneConfirm = () => {
-    if (selectedFortune) {
-      addMessage(selectedFortune, "user");
-      setShowFortuneSelect(false);
-      setIsTyping(true);
-
-      // 봇 응답
-      setTimeout(() => {
-        setIsTyping(false);
-        addMessage(`${selectedFortune}을 보고싶구래!`, "bot");
-
-        // 카드 선택 메시지
-        setTimeout(() => {
-          setIsTyping(true);
-          setTimeout(() => {
-            setIsTyping(false);
-            addMessage("바로 카드를 뽑아보고래!", "bot");
-            setTimeout(() => {
-              setShowCardSelect(true);
-              setTimeout(() => {
-                scrollToBottom();
-              }, 100);
-            }, 300);
-          }, 600);
-        }, 600);
-      }, 800);
-    }
-  };
 
   // 카드명 매핑 함수
   const getCardName = (cardNumber) => {
@@ -158,6 +118,17 @@ const DecemberFortune = () => {
       8: "Strength",
       9: "TheHermit",
       10: "WheelOfFortune",
+      11: "Justice",
+      12: "TheHangedMan",
+      13: "Death",
+      14: "Temperance",
+      15: "TheDevil",
+      16: "TheTower",
+      17: "TheStar",
+      18: "TheMoon",
+      19: "TheSun",
+      20: "Judgement",
+      21: "TheWorld",
     };
     return cardNames[cardNumber] || "TheFool";
   };
@@ -176,14 +147,25 @@ const DecemberFortune = () => {
       8: "STRENGTH (힘)",
       9: "THE HERMIT (은둔자)",
       10: "WHEEL OF FORTUNE (운명의 수레바퀴)",
+      11: "JUSTICE (정의)",
+      12: "THE HANGED MAN (매달린 사람)",
+      13: "DEATH (죽음)",
+      14: "TEMPERANCE (절제)",
+      15: "THE DEVIL (악마)",
+      16: "THE TOWER (탑)",
+      17: "THE STAR (별)",
+      18: "THE MOON (달)",
+      19: "THE SUN (태양)",
+      20: "JUDGEMENT (심판)",
+      21: "THE WORLD (세계)",
     };
     return displayNames[cardNumber] || "THE FOOL (바보)";
   };
 
   // 카드 선택 처리
   const handleCardSelect = async () => {
-    // 0-10번 중 랜덤 선택
-    const randomCardNumber = Math.floor(Math.random() * 11);
+    // 0-21번 중 랜덤 선택
+    const randomCardNumber = Math.floor(Math.random() * 22);
     setSelectedCardNumber(randomCardNumber);
 
     setShowCardSelect(false);
@@ -215,7 +197,7 @@ const DecemberFortune = () => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            fortuneType: selectedFortune,
+            fortuneType: "기본운",
             selectedCardNumber: selectedCardNumber,
           }),
         }
@@ -244,7 +226,7 @@ const DecemberFortune = () => {
         localStorage.setItem(
           "tempDecemberFortune",
           JSON.stringify({
-            fortuneType: selectedFortune,
+            fortuneType: "기본운",
             selectedCardNumber,
           })
         );
@@ -347,51 +329,6 @@ const DecemberFortune = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Fortune Selection */}
-        {showFortuneSelect && (
-          <div className="p-4 bg-gray-50 border-t border-gray-200">
-            <div className="space-y-3">
-              <p className="text-sm text-charcoal text-center">
-                어떤 운세가 보고싶나래?
-              </p>
-              <div className="flex justify-center space-x-4">
-                <button
-                  onClick={() => handleFortuneClick("학업운")}
-                  className={`w-24 h-24 border-2 border-charcoal rounded-lg flex items-center justify-center text-charcoal font-medium transition-colors ${
-                    selectedFortune === "학업운"
-                      ? "bg-charcoal text-white"
-                      : "bg-white hover:bg-gray-100"
-                  }`}
-                >
-                  학업운
-                </button>
-                <button
-                  onClick={() => handleFortuneClick("금전운")}
-                  className={`w-24 h-24 border-2 border-charcoal rounded-lg flex items-center justify-center text-charcoal font-medium transition-colors ${
-                    selectedFortune === "금전운"
-                      ? "bg-charcoal text-white"
-                      : "bg-white hover:bg-gray-100"
-                  }`}
-                >
-                  금전운
-                </button>
-              </div>
-              <div className="flex justify-center">
-                <Button
-                  onClick={handleFortuneConfirm}
-                  disabled={!selectedFortune}
-                  className={`px-6 transition-colors ${
-                    selectedFortune
-                      ? "bg-charcoal hover:bg-gray-800 text-white"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  }`}
-                >
-                  확인
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Card Selection */}
         {showCardSelect && (
