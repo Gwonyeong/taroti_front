@@ -134,11 +134,27 @@ const DecemberFortuneResult = () => {
     if (!fortuneData || !cardInfo) return {};
 
     const nickname = fortuneData.nickname || "타로티 친구";
-    const title = `${nickname}님의 12월 운세 결과`;
+    const cardDisplayName = getCardDisplayName(fortuneData.selectedCard);
+    const fortuneType = fortuneData.fortuneType || "운세";
+
+    const title = `${nickname}님의 12월 ${fortuneType} 결과 - ${cardDisplayName}`;
+
+    // 카드 설명과 월간 운세를 조합하여 더 풍부한 설명 생성
     const cardDescription = cardInfo.description || "";
-    const truncatedDescription = cardDescription.length > 160
-      ? cardDescription.substring(0, 157) + "..."
-      : cardDescription;
+    const monthlyForecast = cardInfo.monthlyForecast || "";
+
+    let description = "";
+    if (monthlyForecast) {
+      description = `${cardDisplayName} 카드가 선택되었습니다. ${monthlyForecast.length > 100
+        ? monthlyForecast.substring(0, 97) + "..."
+        : monthlyForecast}`;
+    } else if (cardDescription) {
+      description = `${cardDisplayName} - ${cardDescription.length > 120
+        ? cardDescription.substring(0, 117) + "..."
+        : cardDescription}`;
+    } else {
+      description = `${nickname}님이 선택한 ${cardDisplayName} 카드의 12월 ${fortuneType} 결과를 확인해보세요.`;
+    }
 
     const cardImageUrl = `${window.location.origin}/documents/illustrator/${String(
       fortuneData.selectedCard
@@ -148,10 +164,12 @@ const DecemberFortuneResult = () => {
 
     return {
       title,
-      description: truncatedDescription,
+      description: description.trim(),
       image: cardImageUrl,
       url: currentUrl,
-      cardName: getCardDisplayName(fortuneData.selectedCard)
+      cardName: cardDisplayName,
+      nickname,
+      fortuneType
     };
   };
 
@@ -307,8 +325,9 @@ const DecemberFortuneResult = () => {
           <div className="w-full max-w-[500px] mx-auto p-4 flex gap-3">
             <Button
               onClick={handleShare}
-              className="flex-1 bg-purple-600 text-white hover:bg-purple-700 py-3"
+              className="flex-1 bg-purple-600 text-white hover:bg-purple-700 py-3 flex items-center justify-center gap-2"
             >
+              <span className="text-lg">📤</span>
               결과 공유하기
             </Button>
             <Button
