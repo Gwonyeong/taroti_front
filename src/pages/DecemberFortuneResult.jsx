@@ -118,7 +118,10 @@ const DecemberFortuneResult = () => {
 
   const handleShare = async () => {
     try {
-      // 공유 링크 생성 API 호출
+      // 메타데이터 생성
+      const metaData = generateMetaTags();
+
+      // 공유 링크 생성 API 호출 (메타데이터 포함)
       const response = await fetch(
         `${
           process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
@@ -127,7 +130,15 @@ const DecemberFortuneResult = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-          }
+          },
+          body: JSON.stringify({
+            title: metaData.title,
+            description: metaData.description,
+            image: metaData.image,
+            cardName: metaData.cardName,
+            nickname: metaData.nickname,
+            fortuneType: metaData.fortuneType
+          })
         }
       );
 
@@ -137,9 +148,9 @@ const DecemberFortuneResult = () => {
 
       const data = await response.json();
 
-      // 프론트엔드 도메인으로 공유 URL 생성
-      const frontendDomain = window.location.origin;
-      const shareUrl = `${frontendDomain}/share/${data.shareId}`;
+      // 백엔드 도메인으로 공유 URL 생성 (SSR을 위해)
+      const backendDomain = process.env.REACT_APP_API_BASE_URL || "http://localhost:5002";
+      const shareUrl = `${backendDomain}/share/${data.shareId}`;
 
       // 클립보드에 복사
       await navigator.clipboard.writeText(shareUrl);
