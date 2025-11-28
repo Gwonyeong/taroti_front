@@ -8,29 +8,63 @@ const Feedback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
   const [feedbackScore, setFeedbackScore] = useState(0);
   const [feedbackText, setFeedbackText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isV2, setIsV2] = useState(false);
+  const [marketingAgree, setMarketingAgree] = useState(false);
+  const [isMindReading, setIsMindReading] = useState(false);
+  const [mindReadingId, setMindReadingId] = useState(null);
 
   useEffect(() => {
     // 버전 확인
     const version = searchParams.get("version");
     setIsV2(version === "2");
-  }, [searchParams]);
 
-  // 이메일 및 피드백 저장
+    // Mind Reading 확인
+    if (landingUserId === "mind-reading") {
+      setIsMindReading(true);
+      const id = searchParams.get("id");
+      setMindReadingId(id);
+    }
+  }, [searchParams, landingUserId]);
+
+  // 피드백 저장
   const handleSubmit = async () => {
-    if (!email.trim()) {
-      alert("이메일을 입력해주세요.");
+    if (!marketingAgree) {
+      alert("마케팅 정보 수신에 동의해주세요.");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      if (landingUserId && landingUserId !== "temp") {
+      // Mind Reading인 경우
+      if (isMindReading && mindReadingId) {
+        const token = localStorage.getItem('authToken');
+        await fetch(
+          `${
+            process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
+          }/api/mind-reading/${mindReadingId}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              interestShown: true,
+              sessionData: {
+                marketingAgree: marketingAgree,
+                feedbackScore: feedbackScore,
+                feedbackText: feedbackText
+              }
+            }),
+          }
+        );
+      }
+      // 기존 Landing User인 경우
+      else if (landingUserId && landingUserId !== "temp") {
         // 이메일 저장 (구매 API 활용)
         const purchaseApiUrl = isV2
           ? `/api/landing-user-v2/${landingUserId}/purchase`
@@ -45,7 +79,7 @@ const Feedback = () => {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ email }),
+            body: JSON.stringify({}),
           }
         );
 
@@ -55,7 +89,6 @@ const Feedback = () => {
             feedback: {
               score: feedbackScore,
               text: feedbackText,
-              email: email,
               timestamp: new Date().toISOString(),
             },
           };
@@ -76,7 +109,7 @@ const Feedback = () => {
       }
 
       alert(
-        "등록이 완료되었습니다! TaroTI 정식 출시 시 가장 먼저 연락드리겠습니다."
+        "관심을 표현해주셔서 감사합니다! 콘텐츠 완성 시 알림을 보내드리겠습니다."
       );
     } catch (error) {
       console.error("Error submitting data:", error);
@@ -116,9 +149,13 @@ const Feedback = () => {
 
   // 결과 페이지로 돌아가기
   const handleGoBack = () => {
-    const cardNumber = searchParams.get("cardNumber");
-    const versionParam = isV2 ? "&version=2" : "&version=1";
-    navigate(`/result/${landingUserId}?cardNumber=${cardNumber}${versionParam}`);
+    if (isMindReading && mindReadingId) {
+      navigate(`/mind-reading-result/${mindReadingId}`);
+    } else {
+      const cardNumber = searchParams.get("cardNumber");
+      const versionParam = isV2 ? "&version=2" : "&version=1";
+      navigate(`/result/${landingUserId}?cardNumber=${cardNumber}${versionParam}`);
+    }
   };
 
   return (
@@ -142,7 +179,7 @@ const Feedback = () => {
               speechBubbles={[
                 {
                   content:
-                    "사실 타로티아이(TaroTI)는 아직 개발중이다마.\n관심을 가져줘서 정말 고맙다마!\n\n이메일을 입력하면 정식 출시되었을 때\n선물을 받을 수 있다마!",
+                    "이 콘텐츠는 아직 개발중이다마!\n관심을 표해준다면 콘텐츠가 완성되었을 때\n알림을 보내주겠다마!",
                   position: "top-4 right-4",
                   bubbleStyle:
                     "bg-yellow-50 bg-opacity-95 border-3 border-amber-400",
@@ -158,20 +195,22 @@ const Feedback = () => {
           {/* 이메일 입력 */}
           <div className="bg-white p-6 rounded-lg shadow-md border">
             <h3 className="text-lg font-bold text-charcoal mb-4">
-              출시 알림 받기
+              관심 표하기
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  이메일 주소 *
+                <label className="flex items-start space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={marketingAgree}
+                    onChange={(e) => setMarketingAgree(e.target.checked)}
+                    className="mt-1"
+                  />
+                  <span className="text-sm text-gray-600">
+                    관심을 표현함으로써, TaroTI의 새로운 콘텐츠 출시 및 이벤트 소식 등
+                    마케팅 정보 수신에 동의합니다.
+                  </span>
                 </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-charcoal focus:border-transparent"
-                />
               </div>
             </div>
           </div>
@@ -235,10 +274,10 @@ const Feedback = () => {
           <div className="space-y-3">
             <Button
               onClick={handleSubmit}
-              disabled={!email.trim() || isSubmitting}
+              disabled={!marketingAgree || isSubmitting}
               className="w-full bg-charcoal hover:bg-gray-800 text-white py-3"
             >
-              {isSubmitting ? "등록 중..." : "알림 신청하기"}
+              {isSubmitting ? "등록 중..." : "관심 표하기"}
             </Button>
           </div>
         </div>

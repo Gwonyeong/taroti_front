@@ -125,7 +125,6 @@ const MindReadingChat = ({ user }) => {
       7: "TheChariot",
       8: "Strength",
       9: "TheHermit",
-      10: "WheelOfFortune",
     };
     return cardNames[cardNumber] || "TheFool";
   };
@@ -143,15 +142,14 @@ const MindReadingChat = ({ user }) => {
       7: "THE CHARIOT (전차)",
       8: "STRENGTH (힘)",
       9: "THE HERMIT (은둔자)",
-      10: "WHEEL OF FORTUNE (운명의 수레바퀴)",
     };
     return displayNames[cardNumber] || "THE FOOL (바보)";
   };
 
   // 카드 선택 처리
   const handleCardSelect = async () => {
-    // 0-10번 중 랜덤 선택
-    const randomCardNumber = Math.floor(Math.random() * 11);
+    // 0-9번 중 랜덤 선택 (10번 이상 카드 제외)
+    const randomCardNumber = Math.floor(Math.random() * 10);
     setSelectedCardNumber(randomCardNumber);
 
     setShowCardSelect(false);
@@ -184,7 +182,7 @@ const MindReadingChat = ({ user }) => {
             birthDate: user.birthDate,
             gender: user.gender,
             mbti: user.mbti,
-            selectedCardNumber,
+            selectedCard: selectedCardNumber,
           }),
         }
       );

@@ -683,7 +683,32 @@ const Result = () => {
   };
 
   const handlePurchaseClick = async () => {
-    if (landingUserId && landingUserId !== "temp") {
+    // Mind Reading 세션인 경우
+    if (mindReadingId) {
+      try {
+        const token = localStorage.getItem('authToken');
+        // 구매 버튼 클릭 추적
+        await fetch(
+          `${
+            process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
+          }/api/mind-reading/${mindReadingId}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ paymentClicked: true }),
+          }
+        );
+      } catch (error) {
+        console.error("Error recording purchase click:", error);
+      }
+      // Feedback 페이지로 이동 (mind-reading용)
+      navigate(`/feedback/mind-reading?id=${mindReadingId}`);
+    }
+    // 기존 Landing User인 경우
+    else if (landingUserId && landingUserId !== "temp") {
       try {
         // 구매 클릭 데이터 저장
         const apiUrl = isV2
@@ -705,14 +730,13 @@ const Result = () => {
       } catch (error) {
         console.error("Error recording purchase click:", error);
       }
+      // Feedback 페이지로 이동
+      const cardNumber = searchParams.get("cardNumber") || selectedCardNumber;
+      const versionParam = isV2 ? "&version=2" : "&version=1";
+      navigate(
+        `/feedback/${landingUserId}?cardNumber=${cardNumber}${versionParam}`
+      );
     }
-
-    // Feedback 페이지로 이동
-    const cardNumber = searchParams.get("cardNumber") || selectedCardNumber;
-    const versionParam = isV2 ? "&version=2" : "&version=1";
-    navigate(
-      `/feedback/${landingUserId}?cardNumber=${cardNumber}${versionParam}`
-    );
   };
 
   if (loading) {
