@@ -2,15 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Button } from "../components/ui/button";
-import Navigation from "../components/ui/Navigation";
 import { toast } from "sonner";
 import decemberFortuneData from "../data/decemberFortune.json";
 
-const DecemberFortuneResult = () => {
-  const { fortuneId } = useParams();
+const ShareFortuneResult = () => {
+  const { shareId } = useParams();
   const navigate = useNavigate();
 
-  const [fortuneData, setFortuneData] = useState(null);
+  const [shareData, setShareData] = useState(null);
   const [cardInfo, setCardInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -74,23 +73,23 @@ const DecemberFortuneResult = () => {
   };
 
   useEffect(() => {
-    const fetchFortuneData = async () => {
+    const fetchShareData = async () => {
       try {
         const response = await fetch(
           `${
             process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
-          }/api/december-fortune/${fortuneId}`
+          }/api/share/${shareId}`
         );
 
         if (!response.ok) {
-          throw new Error("운세 데이터를 불러올 수 없습니다.");
+          throw new Error("공유된 운세 데이터를 불러올 수 없습니다.");
         }
 
         const data = await response.json();
-        setFortuneData(data);
+        setShareData(data);
 
         // JSON 파일에서 해당 카드 정보 가져오기
-        const cardNumber = data.selectedCard;
+        const cardNumber = data.fortuneData.selectedCard;
         const cardInfo = decemberFortuneData[cardNumber.toString()];
 
         if (cardInfo) {
@@ -99,73 +98,40 @@ const DecemberFortuneResult = () => {
           throw new Error("카드 정보를 찾을 수 없습니다.");
         }
 
+        // 3초 후 원본 페이지로 리다이렉트
+        setTimeout(() => {
+          window.location.href = `/december-fortune-result/${data.originalFortuneId}`;
+        }, 3000);
+
       } catch (error) {
-        console.error("Error fetching fortune data:", error);
+        console.error("Error fetching share data:", error);
         setError(error.message);
-        toast.error("운세 데이터를 불러오는 중 오류가 발생했습니다.");
+        toast.error("공유된 운세 데이터를 불러오는 중 오류가 발생했습니다.");
       } finally {
         setLoading(false);
       }
     };
 
-    if (fortuneId) {
-      fetchFortuneData();
+    if (shareId) {
+      fetchShareData();
     } else {
-      setError("잘못된 접근입니다.");
+      setError("잘못된 공유 링크입니다.");
       setLoading(false);
     }
-  }, [fortuneId]);
+  }, [shareId]);
 
-  const handleShare = async () => {
-    try {
-      // 공유 링크 생성 API 호출
-      const response = await fetch(
-        `${
-          process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
-        }/api/december-fortune/${fortuneId}/share`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("공유 링크 생성에 실패했습니다.");
-      }
-
-      const data = await response.json();
-
-      // 프론트엔드 도메인으로 공유 URL 생성
-      const frontendDomain = window.location.origin;
-      const shareUrl = `${frontendDomain}/share/${data.shareId}`;
-
-      // 클립보드에 복사
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success("공유 링크가 클립보드에 복사되었습니다! 🔗\nSNS나 메신저에 붙여넣어 공유해보세요.");
-
-    } catch (error) {
-      console.error("Share error:", error);
-      // 실패 시 기존 방식으로 폴백
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        toast.success("링크가 클립보드에 복사되었습니다.");
-      } catch (fallbackError) {
-        toast.error("링크 복사에 실패했습니다.");
-      }
+  const handleRedirectNow = () => {
+    if (shareData) {
+      window.location.href = `/december-fortune-result/${shareData.originalFortuneId}`;
     }
-  };
-
-  const handleGoHome = () => {
-    navigate("/");
   };
 
   // 동적 메타 태그 데이터 생성
   const generateMetaTags = () => {
-    if (!fortuneData || !cardInfo) return {};
+    if (!shareData || !cardInfo) return {};
 
-    const nickname = fortuneData.nickname || "타로티 친구";
+    const fortuneData = shareData.fortuneData;
+    const nickname = fortuneData.user?.nickname || "타로티 친구";
     const cardDisplayName = getCardDisplayName(fortuneData.selectedCard);
     const fortuneType = fortuneData.fortuneType || "운세";
 
@@ -192,13 +158,13 @@ const DecemberFortuneResult = () => {
       fortuneData.selectedCard
     ).padStart(2, "0")}-${getCardName(fortuneData.selectedCard)}.jpg`;
 
-    const currentUrl = window.location.href;
+    const originalUrl = `${window.location.origin}/december-fortune-result/${shareData.originalFortuneId}`;
 
     return {
       title,
       description: description.trim(),
       image: cardImageUrl,
-      url: currentUrl,
+      url: originalUrl, // 원본 URL을 메타 태그에 설정
       cardName: cardDisplayName,
       nickname,
       fortuneType
@@ -211,7 +177,7 @@ const DecemberFortuneResult = () => {
     return (
       <div className="min-h-screen bg-offWhite flex justify-center items-center">
         <div className="text-center">
-          <div className="text-lg text-gray-600">운세 결과를 불러오는 중...</div>
+          <div className="text-lg text-gray-600">공유된 운세 결과를 불러오는 중...</div>
         </div>
       </div>
     );
@@ -223,7 +189,7 @@ const DecemberFortuneResult = () => {
         <div className="text-center p-6">
           <div className="text-lg text-red-600 mb-4">{error}</div>
           <Button
-            onClick={handleGoHome}
+            onClick={() => navigate("/")}
             className="bg-charcoal text-white hover:bg-gray-800"
           >
             홈으로 돌아가기
@@ -258,116 +224,65 @@ const DecemberFortuneResult = () => {
         {/* 카카오톡 공유용 */}
         <meta property="og:image:width" content="800" />
         <meta property="og:image:height" content="400" />
+
+        {/* 자동 리다이렉트 메타 태그 (3초 후) */}
+        <meta httpEquiv="refresh" content={`3;url=/december-fortune-result/${shareData?.originalFortuneId}`} />
       </Helmet>
 
-      <Navigation fixed />
       <div className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col min-h-screen relative">
-        {/* 고정 네비게이션을 위한 여백 */}
-        <div className="h-16"></div>
-
-        {/* 결과 헤더 */}
-        <div className="p-6 bg-white">
-          <div className="text-center">
+        {/* 공유 페이지 헤더 */}
+        <div className="p-6 bg-white text-center">
+          <div className="mb-6">
             <h1 className="text-2xl font-bold text-charcoal mb-2">
-              12월 {fortuneData?.fortuneType} 결과
+              {metaTags.nickname}님의 12월 운세 결과
             </h1>
             <p className="text-gray-600 text-sm">
-              선택하신 카드의 운세를 확인해보세요
+              선택된 카드: {metaTags.cardName}
             </p>
           </div>
-        </div>
 
-        {/* 카드 이미지 및 기본 정보 */}
-        <div className="p-6 text-center">
+          {/* 카드 이미지 */}
           <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
             <img
-              src={`/documents/illustrator/${String(
-                fortuneData?.selectedCard
-              ).padStart(2, "0")}-${getCardName(fortuneData?.selectedCard)}.jpg`}
-              alt={`${getCardName(fortuneData?.selectedCard)} 카드`}
+              src={metaTags.image}
+              alt={`${metaTags.cardName} 카드`}
               className="w-48 h-72 object-cover rounded-lg mx-auto mb-4"
               onError={(e) => {
                 e.target.src = "/images/cards/back/camp_band.jpeg";
               }}
             />
             <h2 className="text-xl font-bold text-charcoal mb-2">
-              {getCardDisplayName(fortuneData?.selectedCard)}
+              {metaTags.cardName}
             </h2>
-            <div className="text-sm text-gray-500">
-              선택된 카드: {fortuneData?.selectedCard}번
-            </div>
           </div>
-        </div>
 
-        {/* 카드 설명 */}
-        {cardInfo && (
-          <div className="p-6 space-y-6">
-            {/* 카드 의미 */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <h3 className="text-lg font-bold text-charcoal mb-4">
-                카드의 의미
-              </h3>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                {cardInfo.description?.split(/(?<=[.!?])\s+/).map((sentence, index) => (
-                  <span key={index}>
-                    {sentence}
-                    {index < cardInfo.description.split(/(?<=[.!?])\s+/).length - 1 && '\n'}
-                  </span>
-                ))}
-              </p>
+          {/* 리다이렉트 안내 */}
+          <div className="bg-purple-50 p-6 rounded-lg border border-purple-200 mb-6">
+            <div className="text-purple-800 font-semibold mb-2">
+              잠시 후 전체 운세 결과 페이지로 이동합니다...
             </div>
-
-            {/* 12월 운세 */}
-            <div className="bg-purple-50 p-6 rounded-lg border border-purple-200">
-              <h3 className="text-lg font-bold text-purple-800 mb-4">
-                12월 {fortuneData?.fortuneType}
-              </h3>
-              <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-                {cardInfo.monthlyForecast?.split(/(?<=[.!?])\s+/).map((sentence, index) => (
-                  <span key={index}>
-                    {sentence}
-                    {index < cardInfo.monthlyForecast.split(/(?<=[.!?])\s+/).length - 1 && '\n'}
-                  </span>
-                ))}
-              </p>
+            <div className="text-sm text-purple-600 mb-4">
+              자동 이동까지 3초
             </div>
-
-            {/* 행운을 부르는 행동들 */}
-            <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-              <h3 className="text-lg font-bold text-green-800 mb-4">
-                행운을 부르는 행동들
-              </h3>
-              <ul className="space-y-3">
-                {cardInfo.luckyActions.map((action, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-green-600 mr-2">✨</span>
-                    <span className="text-gray-800">{action}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        )}
-
-        {/* 하단 고정 버튼을 위한 여백 */}
-        <div className="h-32"></div>
-
-        {/* 하단 고정 액션 버튼들 */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-40">
-          <div className="w-full max-w-[500px] mx-auto p-4 flex gap-3">
             <Button
-              onClick={handleShare}
-              className="flex-1 bg-purple-600 text-white hover:bg-purple-700 py-3 flex items-center justify-center gap-2"
+              onClick={handleRedirectNow}
+              className="bg-purple-600 text-white hover:bg-purple-700"
             >
-              <span className="text-lg">📤</span>
-              결과 공유하기
+              지금 바로 보기
             </Button>
+          </div>
+
+          {/* TaroTI 브랜딩 */}
+          <div className="text-center">
+            <div className="text-sm text-gray-500 mb-2">
+              🔮 TaroTI에서 제공하는 타로 운세
+            </div>
             <Button
-              onClick={handleGoHome}
+              onClick={() => navigate("/")}
               variant="outline"
-              className="flex-1 border-charcoal text-charcoal hover:bg-charcoal hover:text-white py-3"
+              className="border-charcoal text-charcoal hover:bg-charcoal hover:text-white"
             >
-              홈으로 돌아가기
+              나도 운세 보기
             </Button>
           </div>
         </div>
@@ -376,4 +291,4 @@ const DecemberFortuneResult = () => {
   );
 };
 
-export default DecemberFortuneResult;
+export default ShareFortuneResult;

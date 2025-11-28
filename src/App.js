@@ -10,6 +10,7 @@ import Admin from './pages/Admin';
 import Profile from './pages/Profile';
 import DecemberFortune from './pages/DecemberFortune';
 import DecemberFortuneResult from './pages/DecemberFortuneResult';
+import ShareFortuneResult from './pages/ShareFortuneResult';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './context/AuthContext';
 
@@ -32,6 +33,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/december-fortune" element={<DecemberFortune />} />
             <Route path="/december-fortune-result/:fortuneId" element={<DecemberFortuneResult />} />
+            <Route path="/share/:shareId" element={<ShareFortuneResult />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <Toaster position="top-center" />

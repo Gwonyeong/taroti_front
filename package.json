@@ -2,7 +2,7 @@
   "name": "taroti-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "TaroTI - 타로카드와 MBTI를 결합한 개인 맞춤형 연애 조언 서비스",
+  "description": "TaroTI - 타로카드와 성격유형",
   "author": "TaroTI Team",
   "keywords": [
     "타로",
