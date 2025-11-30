@@ -469,6 +469,9 @@ const Landing = () => {
   // Mind Reading 세션 생성
   const createMindReadingSession = async (profileData) => {
     try {
+      console.log("createMindReadingSession - sending profileData:", profileData);
+      console.log("selectedCard in profileData:", profileData.selectedCard);
+
       const token = localStorage.getItem('authToken');
       const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"}/api/mind-reading`,
@@ -555,6 +558,8 @@ const Landing = () => {
     setIsNavigatingToResult(true); // 페이지 상태 변경 방지
     try {
       const tempProfile = loadAndClearTempProfile();
+      console.log("handleLoginSuccess - tempProfile:", tempProfile);
+
       if (tempProfile) {
         // 임시 저장된 프로필로 사용자 프로필 업데이트
         await updateProfile({
@@ -567,9 +572,12 @@ const Landing = () => {
 
         // Mind Reading 세션 생성 (성별 변환 적용)
         const mindReadingData = {
-          ...tempProfile,
-          gender: convertGenderForAPI(tempProfile.gender)
+          birthDate: tempProfile.birthDate,
+          gender: convertGenderForAPI(tempProfile.gender),
+          mbti: tempProfile.mbti,
+          selectedCard: tempProfile.selectedCardNumber, // 필드명 변경: selectedCardNumber -> selectedCard
         };
+        console.log("Creating MindReading with data:", mindReadingData);
         const mindReadingId = await createMindReadingSession(mindReadingData);
 
         // 결과 페이지로 이동
