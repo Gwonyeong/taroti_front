@@ -6,7 +6,7 @@ import CardBack from "./CardBack";
 import Navigation from "./ui/Navigation";
 import { toast } from "sonner";
 
-const MindReadingChat = ({ user }) => {
+const MindReadingChat = ({ user, preselectedCard }) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -16,7 +16,7 @@ const MindReadingChat = ({ user }) => {
   const [showCardSelect, setShowCardSelect] = useState(false);
   const [showSelectedCard, setShowSelectedCard] = useState(false);
   const [showNavigateButton, setShowNavigateButton] = useState(false);
-  const [selectedCardNumber, setSelectedCardNumber] = useState(null);
+  const [selectedCardNumber, setSelectedCardNumber] = useState(preselectedCard);
   const messagesEndRef = useRef(null);
   const hasInitialized = useRef(false);
 
@@ -101,14 +101,27 @@ const MindReadingChat = ({ user }) => {
 
     setTimeout(() => {
       setIsTyping(false);
-      addMessage("맞다면, 카드를 바로 선택해보자마!", "bot");
 
-      setTimeout(() => {
-        setShowCardSelect(true);
+      // 이미 선택된 카드가 있으면 카드 선택 단계 건너뛰기
+      if (preselectedCard !== null && preselectedCard !== undefined) {
+        console.log("Using preselected card:", preselectedCard);
+        addMessage("이미 선택하신 카드가 있네요! 결과를 확인해보자마.", "bot");
+
         setTimeout(() => {
-          scrollToBottom();
-        }, 100);
-      }, 300);
+          setShowSelectedCard(true);
+          setShowNavigateButton(true);
+        }, 300);
+      } else {
+        // 기존 로직: 카드 선택 진행
+        addMessage("맞다면, 카드를 바로 선택해보자마!", "bot");
+
+        setTimeout(() => {
+          setShowCardSelect(true);
+          setTimeout(() => {
+            scrollToBottom();
+          }, 100);
+        }, 300);
+      }
     }, 800);
   };
 
@@ -150,6 +163,17 @@ const MindReadingChat = ({ user }) => {
   const handleCardSelect = async () => {
     // 0-9번 중 랜덤 선택 (10번 이상 카드 제외)
     const randomCardNumber = Math.floor(Math.random() * 10);
+    console.log("Generated random card number:", randomCardNumber);
+
+    // 테스트: 10번 랜덤 생성해서 분포 확인
+    console.log("=== Random Card Test ===");
+    const testResults = [];
+    for (let i = 0; i < 10; i++) {
+      testResults.push(Math.floor(Math.random() * 10));
+    }
+    console.log("10 random tests:", testResults);
+    console.log("======================");
+
     setSelectedCardNumber(randomCardNumber);
 
     setShowCardSelect(false);
@@ -170,6 +194,9 @@ const MindReadingChat = ({ user }) => {
   const createMindReadingSession = async () => {
     try {
       const token = localStorage.getItem('authToken');
+      console.log("Creating MindReading session with:");
+      console.log("- selectedCardNumber:", selectedCardNumber);
+      console.log("- preselectedCard prop:", preselectedCard);
       const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"}/api/mind-reading`,
         {

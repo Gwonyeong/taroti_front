@@ -573,7 +573,17 @@ const Landing = () => {
 
   // 새로운 채팅 페이지 (로그인했고 프로필 완성된 경우)
   if (pageState === 'chat') {
-    return <MindReadingChat user={user} />;
+    // localStorage에서 저장된 카드 번호 가져오기
+    const tempProfile = localStorage.getItem("tempProfile");
+    let savedCardNumber = null;
+    if (tempProfile) {
+      const profileData = JSON.parse(tempProfile);
+      savedCardNumber = profileData.selectedCardNumber;
+      // 사용 후 삭제
+      localStorage.removeItem("tempProfile");
+    }
+
+    return <MindReadingChat user={user} preselectedCard={savedCardNumber} />;
   }
 
   // 프로필 설정 페이지 (기존 로직)
