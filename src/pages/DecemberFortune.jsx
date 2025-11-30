@@ -217,7 +217,6 @@ const DecemberFortune = () => {
 
   // 결과 페이지로 이동
   const handleNavigateToResult = async () => {
-    setShowNavigateButton(false);
     setIsTyping(true);
 
     try {
@@ -232,6 +231,7 @@ const DecemberFortune = () => {
         );
         setShowLoginModal(true);
         setIsTyping(false);
+        // 버튼은 계속 표시되도록 showNavigateButton(false)를 제거
         return;
       }
 
@@ -266,6 +266,8 @@ const DecemberFortune = () => {
       if (tempFortune) {
         // 로그인 후 광고 모달 표시
         setShowAdModal(true);
+        // 결과 버튼이 계속 표시되도록 보장
+        setShowNavigateButton(true);
       }
     } catch (error) {
       console.error("Error handling login success:", error);
@@ -285,9 +287,9 @@ const DecemberFortune = () => {
   }
 
   return (
-    <div className="min-h-screen bg-offWhite flex justify-center">
+    <div className="min-h-screen bg-offWhite flex justify-center relative">
       <Navigation fixed />
-      <div className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col h-screen">
+      <div className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col h-screen relative z-10">
         {/* 고정 네비게이션을 위한 여백 */}
         <div className="h-16"></div>
 
@@ -395,7 +397,11 @@ const DecemberFortune = () => {
         {/* 로그인 모달 */}
         <LoginModal
           isOpen={showLoginModal}
-          onClose={() => setShowLoginModal(false)}
+          onClose={() => {
+            setShowLoginModal(false);
+            // 로그인 모달 닫힐 때 버튼 다시 표시
+            setShowNavigateButton(true);
+          }}
           onLoginSuccess={handleLoginSuccess}
         />
 

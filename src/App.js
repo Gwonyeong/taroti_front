@@ -8,6 +8,7 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Admin from './pages/Admin';
 import Profile from './pages/Profile';
+import MyPage from './pages/MyPage';
 import DecemberFortune from './pages/DecemberFortune';
 import DecemberFortuneResult from './pages/DecemberFortuneResult';
 import ShareFortuneResult from './pages/ShareFortuneResult';
@@ -31,6 +32,7 @@ function App() {
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/mypage" element={<MyPage />} />
             <Route path="/december-fortune" element={<DecemberFortune />} />
             <Route path="/december-fortune-result/:fortuneId" element={<DecemberFortuneResult />} />
             <Route path="/share/:shareId" element={<ShareFortuneResult />} />

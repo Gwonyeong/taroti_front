@@ -245,7 +245,7 @@ const DecemberFortuneResult = () => {
   }
 
   return (
-    <div className="min-h-screen bg-offWhite flex justify-center">
+    <div className="min-h-screen bg-offWhite flex justify-center relative">
       <Helmet>
         <title>{metaTags.title || "TaroTI - 12월 운세 결과"}</title>
         <meta name="description" content={metaTags.description || "타로카드로 알아보는 12월 운세"} />
@@ -272,7 +272,7 @@ const DecemberFortuneResult = () => {
       </Helmet>
 
       <Navigation fixed />
-      <div className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col min-h-screen relative">
+      <div className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col min-h-screen relative z-10">
         {/* 고정 네비게이션을 위한 여백 */}
         <div className="h-16"></div>
 

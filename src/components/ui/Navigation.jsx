@@ -94,7 +94,7 @@ const Navigation = ({ fixed = false, className = "" }) => {
   // Fixed 네비게이션의 경우 다른 스타일 적용
   const headerProps = fixed ? {
     onMenuClick: toggleMenu,
-    className: `fixed top-0 z-[100] bg-white shadow-sm transition-all duration-300 ease-in-out ${isMenuOpen ? 'opacity-50' : 'opacity-100'}`,
+    className: `fixed top-0 z-[100] bg-white shadow-sm transition-all duration-300 ease-in-out ${isMenuOpen ? 'opacity-100' : 'opacity-100'}`,
     style: {
       left: '50%',
       transform: `translateX(-50%) translateY(${isNavVisible ? '0' : '-100%'})`,
@@ -111,7 +111,7 @@ const Navigation = ({ fixed = false, className = "" }) => {
       <div className={className}>
         <Header {...headerProps} />
         {fixed && (
-          <div className="fixed top-0 left-1/2 transform -translate-x-1/2 w-full min-w-[320px] max-w-[500px] h-screen z-[105] pointer-events-none">
+          <div className={`fixed top-0 left-1/2 transform -translate-x-1/2 w-full min-w-[320px] max-w-[500px] h-screen z-[150] ${isMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
             <div className="relative w-full h-full">
               <SideMenu isOpen={isMenuOpen} onClose={closeMenu} constrained={true} />
             </div>
