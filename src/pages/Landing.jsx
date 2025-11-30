@@ -412,6 +412,26 @@ const Landing = () => {
     const randomCardNumber = Math.floor(Math.random() * 11); // 0부터 10까지
     setSelectedCardNumber(randomCardNumber);
 
+    // 카드 선택 즉시 localStorage 업데이트
+    console.log("Card selected:", randomCardNumber);
+    const existingProfile = localStorage.getItem("tempProfile");
+    if (existingProfile) {
+      const profile = JSON.parse(existingProfile);
+      profile.selectedCardNumber = randomCardNumber;
+      localStorage.setItem("tempProfile", JSON.stringify(profile));
+      console.log("Updated tempProfile with card:", randomCardNumber);
+    } else {
+      // tempProfile이 없으면 새로 생성
+      const profile = {
+        birthDate,
+        gender: selectedGender,
+        mbti: Object.values(mbtiSelections).join(""),
+        selectedCardNumber: randomCardNumber,
+      };
+      localStorage.setItem("tempProfile", JSON.stringify(profile));
+      console.log("Created tempProfile with card:", randomCardNumber);
+    }
+
     setShowCardSelect(false);
     setIsTyping(true);
 
@@ -493,7 +513,9 @@ const Landing = () => {
     try {
       if (!isAuthenticated) {
         // 1. 로그인하지 않은 경우: 로컬 스토리지에 저장 후 로그인 모달
+        // selectedCardNumber가 이미 handleCardSelect에서 저장되었지만, 혹시 모르니 다시 한번 저장
         saveProfileToLocalStorage();
+        console.log("Saved profile to localStorage before login, selectedCard:", selectedCardNumber);
         setShowLoginModal(true);
         // 버튼은 유지하고 모달만 표시
         return;
