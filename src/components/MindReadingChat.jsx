@@ -20,6 +20,8 @@ const MindReadingChat = ({ user, preselectedCard }) => {
   const messagesEndRef = useRef(null);
   const hasInitialized = useRef(false);
 
+  console.log("MindReadingChat component mounted with preselectedCard:", preselectedCard);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -27,6 +29,14 @@ const MindReadingChat = ({ user, preselectedCard }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // preselectedCard가 변경될 때 selectedCardNumber 업데이트
+  useEffect(() => {
+    if (preselectedCard !== null && preselectedCard !== undefined) {
+      console.log("Setting selectedCardNumber from preselectedCard:", preselectedCard);
+      setSelectedCardNumber(preselectedCard);
+    }
+  }, [preselectedCard]);
 
   // 메시지 시나리오 정의
   const messageScenario = [
@@ -197,6 +207,13 @@ const MindReadingChat = ({ user, preselectedCard }) => {
       console.log("Creating MindReading session with:");
       console.log("- selectedCardNumber:", selectedCardNumber);
       console.log("- preselectedCard prop:", preselectedCard);
+
+      // tempProfile 삭제 (이미 사용했으므로)
+      if (localStorage.getItem("tempProfile")) {
+        localStorage.removeItem("tempProfile");
+        console.log("Removed tempProfile from localStorage");
+      }
+
       const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"}/api/mind-reading`,
         {

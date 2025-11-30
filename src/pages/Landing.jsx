@@ -579,8 +579,10 @@ const Landing = () => {
     if (tempProfile) {
       const profileData = JSON.parse(tempProfile);
       savedCardNumber = profileData.selectedCardNumber;
-      // 사용 후 삭제
-      localStorage.removeItem("tempProfile");
+      console.log("Landing: Found tempProfile with selectedCardNumber:", savedCardNumber);
+      // 삭제를 나중에 하도록 변경 - MindReadingChat이 사용한 후에 삭제
+    } else {
+      console.log("Landing: No tempProfile found in localStorage");
     }
 
     return <MindReadingChat user={user} preselectedCard={savedCardNumber} />;
