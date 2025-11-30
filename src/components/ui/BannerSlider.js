@@ -270,7 +270,8 @@ const BannerSlider = () => {
   }
 
   return (
-    <section className="relative w-full h-72 md:h-96 lg:h-[500px] overflow-hidden touch-pan-y">
+    <section className="relative w-full h-72 md:h-96 lg:h-[500px] touch-pan-y mb-6">
+      <div className="w-full h-full overflow-hidden shadow-2xl rounded-lg">
       <div
         ref={sliderRef}
         className={`flex w-full h-full ${
@@ -289,7 +290,7 @@ const BannerSlider = () => {
         {slides.map((slide, index) => (
           <div
             key={`${slide.id}-${index}`}
-            className="flex-shrink-0 w-full h-full"
+            className="flex-shrink-0 w-full h-full relative"
           >
             <a href={slide.link} className="block w-full h-full">
               <img
@@ -300,6 +301,16 @@ const BannerSlider = () => {
                 draggable="false"
               />
             </a>
+            {/* CTA 버튼 */}
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                window.open(slide.link, '_blank');
+              }}
+              className="absolute bottom-6 left-6 bg-black bg-opacity-60 hover:bg-gray-800 hover:bg-opacity-80 text-white px-6 py-3 rounded-lg font-semibold text-sm md:text-base transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-lg backdrop-blur-sm z-10"
+            >
+              지금 보러가기 &gt;
+            </button>
           </div>
         ))}
       </div>
@@ -315,6 +326,7 @@ const BannerSlider = () => {
             aria-label={`슬라이드 ${index + 1}로 이동`}
           />
         ))}
+      </div>
       </div>
     </section>
   );
