@@ -30,9 +30,18 @@ const ContentManager = () => {
     try {
       setLoading(true);
       const data = await getContents();
-      setContents(data || []);
+
+      // 배열인지 확인하고 안전하게 설정
+      if (Array.isArray(data)) {
+        setContents(data);
+      } else {
+        console.warn('Received non-array data:', data);
+        setContents([]);
+        toast.error('콘텐츠 데이터 형식이 올바르지 않습니다.');
+      }
     } catch (error) {
       console.error('Failed to fetch contents:', error);
+      setContents([]); // 에러 시 빈 배열로 설정
       toast.error('콘텐츠 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
@@ -322,7 +331,7 @@ const ContentManager = () => {
 
       {/* Content List */}
       <div className="grid grid-cols-1 gap-4">
-        {contents.map((content, index) => (
+        {Array.isArray(contents) && contents.length > 0 ? contents.map((content, index) => (
           <div key={content.id} className="border border-gray-200 rounded-lg p-4 bg-white">
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
               {/* Image Preview */}
@@ -486,14 +495,12 @@ const ContentManager = () => {
               </div>
             </div>
           </div>
-        ))}
+        )) : (
+          <div className="text-center py-12 text-gray-500">
+            {loading ? '콘텐츠를 불러오는 중...' : '등록된 콘텐츠가 없습니다.'}
+          </div>
+        )}
       </div>
-
-      {contents.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
-          등록된 콘텐츠가 없습니다.
-        </div>
-      )}
     </div>
   );
 };

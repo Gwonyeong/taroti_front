@@ -14,10 +14,10 @@ const ContentGrid = () => {
       if (contents && contents.length > 0) {
         const formattedContents = contents.map(content => ({
           id: content.id,
-          image: content.image_url,
+          image: content.imageUrl || content.image_url, // 새 API와 기존 API 둘 다 지원
           title: content.title,
           description: content.description,
-          link: content.link_url || '#'
+          link: content.linkUrl || content.link_url || '#'
         }));
         setContentItems(formattedContents);
       } else {

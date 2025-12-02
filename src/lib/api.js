@@ -115,7 +115,8 @@ export const getContents = async (activeOnly = false) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    return data.contents || []; // contents 배열만 반환
   } catch (error) {
     console.error('Error fetching contents:', error);
     throw error;

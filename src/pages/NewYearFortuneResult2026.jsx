@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Button } from "../components/ui/button";
 import Navigation from "../components/ui/Navigation";
+import ContentRecommendations from "../components/ContentRecommendations";
 import { toast } from "sonner";
 import newYearFortune2026Data from "../data/newYearFortune2026.json";
 import { getCardInfo, getCardName, getCardDescription } from "../data/tarotCards";
@@ -471,6 +472,11 @@ const NewYearFortuneResult2026 = () => {
             )}
           </div>
         )}
+
+        {/* 콘텐츠 추천 섹션 */}
+        <div className="p-6">
+          <ContentRecommendations pageType="newyear-fortune" limit={6} />
+        </div>
 
         {/* 하단 고정 버튼을 위한 여백 */}
         <div className="h-32"></div>

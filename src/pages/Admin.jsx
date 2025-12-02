@@ -3,6 +3,7 @@ import { Button } from '../components/ui/button';
 import PasswordAuth from '../components/admin/PasswordAuth';
 import BannerManager from '../components/admin/BannerManager';
 import ContentManager from '../components/admin/ContentManager';
+import RecommendationManager from '../components/admin/RecommendationManager';
 
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -77,6 +78,16 @@ const Admin = () => {
             >
               콘텐츠 관리
             </button>
+            <button
+              onClick={() => setActiveTab('recommendations')}
+              className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'recommendations'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-black'
+              }`}
+            >
+              이런 콘텐츠도 있어요!
+            </button>
           </div>
         </div>
       </nav>
@@ -85,6 +96,7 @@ const Admin = () => {
       <div className="max-w-7xl mx-auto p-6">
         {activeTab === 'banners' && <BannerManager />}
         {activeTab === 'contents' && <ContentManager />}
+        {activeTab === 'recommendations' && <RecommendationManager />}
       </div>
     </div>
   );
