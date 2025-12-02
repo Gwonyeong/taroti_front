@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaroTI - 오늘의 별자리 운세</title>
+    <style>
+        @font-face {
+            font-family: 'GowunDodum';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2108@1.1/GowunDodum-Regular.woff') format('woff');
+            font-weight: normal;
+            font-display: swap;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'GowunDodum', sans-serif;
+            width: 1080px;
+            height: 1080px;
+            overflow: hidden;
+            position: relative;
+            background: {{BACKGROUND_COLOR}};
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 60px;
+        }
+
+        .main-text {
+            text-align: center;
+            color: {{TEXT_COLOR}};
+            font-size: 90px;
+            font-weight: bold;
+            line-height: 1.2;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .date-part {
+            font-size: 110px;
+            margin-bottom: 30px;
+        }
+
+        .theme-part {
+            font-size: 90px;
+            color: #FFFFFF;
+            position: relative;
+            display: inline-block;
+            padding: 20px 40px;
+            z-index: 2;
+        }
+
+        .theme-part::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: {{THEME_BACKGROUND_COLOR}};
+            z-index: -1;
+            border-radius: 50px;
+            clip-path: polygon(
+                5% 15%,
+                15% 5%,
+                30% 8%,
+                45% 3%,
+                65% 7%,
+                80% 2%,
+                95% 12%,
+                98% 25%,
+                96% 40%,
+                99% 55%,
+                95% 70%,
+                88% 82%,
+                75% 95%,
+                60% 97%,
+                45% 95%,
+                30% 98%,
+                15% 92%,
+                8% 85%,
+                2% 70%,
+                5% 55%,
+                1% 40%,
+                3% 25%
+            );
+            transform: rotate(-1deg);
+        }
+
+        .theme-part::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            background: {{THEME_BACKGROUND_COLOR}};
+            z-index: -1;
+            border-radius: 45px;
+            clip-path: polygon(
+                8% 12%,
+                18% 6%,
+                32% 9%,
+                48% 4%,
+                68% 8%,
+                83% 3%,
+                96% 15%,
+                97% 28%,
+                94% 43%,
+                98% 58%,
+                93% 73%,
+                86% 85%,
+                73% 96%,
+                58% 98%,
+                43% 96%,
+                28% 97%,
+                13% 90%,
+                6% 82%,
+                4% 67%,
+                7% 52%,
+                3% 37%,
+                6% 22%
+            );
+            transform: rotate(1deg);
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-text">
+            <div class="date-part">{{DATE_SIMPLE}}</div>
+            <div class="theme-part">별자리 {{THEME_SIMPLE}}</div>
+        </div>
+    </div>
+</body>
+</html>

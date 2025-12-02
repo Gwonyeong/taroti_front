@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaroTI - 오늘의 운세 마무리</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            width: 1080px;
+            height: 1080px;
+            overflow: hidden;
+            position: relative;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 60px;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        }
+
+        .logo {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            font-size: 36px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .date {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            font-size: 20px;
+            color: white;
+            opacity: 0.9;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .main-content {
+            text-align: center;
+            color: white;
+            z-index: 2;
+            max-width: 800px;
+        }
+
+        .ending-card {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 50px 40px;
+            margin-bottom: 40px;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .ending-emoji {
+            font-size: 100px;
+            margin-bottom: 30px;
+            display: block;
+        }
+
+        .ending-title {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .ending-message {
+            font-size: 24px;
+            line-height: 1.6;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+
+        .cta-section {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .cta-title {
+            font-size: 28px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .cta-text {
+            font-size: 20px;
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+
+        .social-info {
+            background: rgba(0,0,0,0.2);
+            border-radius: 15px;
+            padding: 25px;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        .decorative-stars {
+            position: absolute;
+            font-size: 30px;
+            color: rgba(255,255,255,0.6);
+            animation: twinkle 2s infinite alternate;
+        }
+
+        .star-1 { top: 120px; left: 100px; animation-delay: 0s; }
+        .star-2 { top: 200px; right: 120px; animation-delay: 0.5s; }
+        .star-3 { bottom: 200px; left: 80px; animation-delay: 1s; }
+        .star-4 { bottom: 120px; right: 90px; animation-delay: 1.5s; }
+        .star-5 { top: 50%; left: 80px; animation-delay: 0.7s; }
+        .star-6 { top: 50%; right: 80px; animation-delay: 1.2s; }
+
+        @keyframes twinkle {
+            0% { opacity: 0.3; transform: scale(1) rotate(0deg); }
+            100% { opacity: 0.8; transform: scale(1.2) rotate(180deg); }
+        }
+
+        .floating-elements {
+            position: absolute;
+            font-size: 25px;
+            color: rgba(255,255,255,0.4);
+            animation: float 4s infinite ease-in-out;
+        }
+
+        .float-1 { top: 30%; left: 10%; animation-delay: 0s; }
+        .float-2 { top: 60%; right: 10%; animation-delay: 1s; }
+        .float-3 { bottom: 40%; left: 15%; animation-delay: 2s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(10deg); }
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            color: white;
+            opacity: 0.7;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">TaroTI</div>
+        <div class="date">{{DATE}}</div>
+
+        <div class="decorative-stars star-1">✨</div>
+        <div class="decorative-stars star-2">⭐</div>
+        <div class="decorative-stars star-3">✨</div>
+        <div class="decorative-stars star-4">⭐</div>
+        <div class="decorative-stars star-5">🌟</div>
+        <div class="decorative-stars star-6">✨</div>
+
+        <div class="floating-elements float-1">🔮</div>
+        <div class="floating-elements float-2">🌙</div>
+        <div class="floating-elements float-3">⚡</div>
+
+        <div class="main-content">
+            <div class="ending-card">
+                <div class="ending-emoji">✨</div>
+                <div class="ending-title">오늘도 좋은 하루 되세요!</div>
+                <div class="ending-message">
+                    모든 별자리의 운세를 확인하셨나요?<br>
+                    타로카드가 전하는 메시지가<br>
+                    여러분의 하루에 도움이 되기를 바랍니다.
+                </div>
+            </div>
+
+            <div class="cta-section">
+                <div class="cta-title">🎴 더 자세한 운세가 궁금하다면?</div>
+                <div class="cta-text">
+                    프로필 링크에서 TaroTI를 방문해보세요!<br>
+                    개인 맞춤 타로 상담과 더 깊이 있는 운세를 만나보실 수 있습니다.
+                </div>
+            </div>
+
+            <div class="social-info">
+                💫 매일 업데이트되는 별자리 운세<br>
+                🔮 전문 타로 리더의 상세한 해석<br>
+                ⭐ 당신만을 위한 맞춤 타로 상담<br><br>
+                <strong>팔로우하고 매일 운세 받아보세요!</strong>
+            </div>
+        </div>
+
+        <div class="footer">
+            타로와 별자리가 만나는 특별한 공간<br>
+            TaroTI에서 더 많은 운세를 만나보세요 💖
+        </div>
+    </div>
+</body>
+</html>

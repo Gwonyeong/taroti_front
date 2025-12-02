@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaroTI - 별자리 운세 9-12</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            width: 1080px;
+            height: 1080px;
+            overflow: hidden;
+            position: relative;
+            background: linear-gradient(135deg, #764ba2 0%, #d73c7e 50%, #f093fb 100%);
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .date {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 16px;
+            color: white;
+            opacity: 0.9;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 50px;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .zodiac-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: calc(100% - 200px);
+        }
+
+        .zodiac-card {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .zodiac-header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .zodiac-symbol {
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+
+        .zodiac-name {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .zodiac-dates {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .card-info {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .card-number {
+            font-size: 16px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .card-name {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .fortune-text {
+            font-size: 13px;
+            line-height: 1.4;
+            text-align: center;
+            opacity: 0.95;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .keywords {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .keyword {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin: 2px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            color: white;
+            opacity: 0.7;
+            text-align: center;
+        }
+
+        .decorative-element {
+            position: absolute;
+            color: rgba(255,255,255,0.3);
+            font-size: 20px;
+            animation: float 3s infinite ease-in-out;
+        }
+
+        .deco-1 { top: 15%; left: 5%; animation-delay: 0s; }
+        .deco-2 { top: 25%; right: 5%; animation-delay: 1s; }
+        .deco-3 { bottom: 25%; left: 5%; animation-delay: 2s; }
+        .deco-4 { bottom: 15%; right: 5%; animation-delay: 1.5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(5deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">TaroTI</div>
+        <div class="date">{{DATE}}</div>
+
+        <div class="decorative-element deco-1">✨</div>
+        <div class="decorative-element deco-2">⭐</div>
+        <div class="decorative-element deco-3">🌟</div>
+        <div class="decorative-element deco-4">✨</div>
+
+        <div class="header">
+            <div class="page-title">🌙 {{THEME_TITLE}} (3/3)</div>
+        </div>
+
+        <div class="zodiac-grid">
+            <div class="zodiac-card">
+                <div class="zodiac-header">
+                    <div class="zodiac-symbol">{{ZODIAC9_SYMBOL}}</div>
+                    <div class="zodiac-name">{{ZODIAC9_NAME}}</div>
+                    <div class="zodiac-dates">{{ZODIAC9_DATES}}</div>
+                </div>
+                <div class="card-info">
+                    <div class="card-number">{{ZODIAC9_CARD_NUMBER}}번 {{ZODIAC9_CARD_NAME}}</div>
+                </div>
+                <div class="fortune-text">{{ZODIAC9_FORTUNE_TEXT}}</div>
+                <div class="keywords">{{ZODIAC9_KEYWORDS}}</div>
+            </div>
+
+            <div class="zodiac-card">
+                <div class="zodiac-header">
+                    <div class="zodiac-symbol">{{ZODIAC10_SYMBOL}}</div>
+                    <div class="zodiac-name">{{ZODIAC10_NAME}}</div>
+                    <div class="zodiac-dates">{{ZODIAC10_DATES}}</div>
+                </div>
+                <div class="card-info">
+                    <div class="card-number">{{ZODIAC10_CARD_NUMBER}}번 {{ZODIAC10_CARD_NAME}}</div>
+                </div>
+                <div class="fortune-text">{{ZODIAC10_FORTUNE_TEXT}}</div>
+                <div class="keywords">{{ZODIAC10_KEYWORDS}}</div>
+            </div>
+
+            <div class="zodiac-card">
+                <div class="zodiac-header">
+                    <div class="zodiac-symbol">{{ZODIAC11_SYMBOL}}</div>
+                    <div class="zodiac-name">{{ZODIAC11_NAME}}</div>
+                    <div class="zodiac-dates">{{ZODIAC11_DATES}}</div>
+                </div>
+                <div class="card-info">
+                    <div class="card-number">{{ZODIAC11_CARD_NUMBER}}번 {{ZODIAC11_CARD_NAME}}</div>
+                </div>
+                <div class="fortune-text">{{ZODIAC11_FORTUNE_TEXT}}</div>
+                <div class="keywords">{{ZODIAC11_KEYWORDS}}</div>
+            </div>
+
+            <div class="zodiac-card">
+                <div class="zodiac-header">
+                    <div class="zodiac-symbol">{{ZODIAC12_SYMBOL}}</div>
+                    <div class="zodiac-name">{{ZODIAC12_NAME}}</div>
+                    <div class="zodiac-dates">{{ZODIAC12_DATES}}</div>
+                </div>
+                <div class="card-info">
+                    <div class="card-number">{{ZODIAC12_CARD_NUMBER}}번 {{ZODIAC12_CARD_NAME}}</div>
+                </div>
+                <div class="fortune-text">{{ZODIAC12_FORTUNE_TEXT}}</div>
+                <div class="keywords">{{ZODIAC12_KEYWORDS}}</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            타로와 별자리가 만나는 특별한 공간 • TaroTI
+        </div>
+    </div>
+</body>
+</html>

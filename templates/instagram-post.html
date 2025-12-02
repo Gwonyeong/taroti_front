@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaroTI Instagram Post</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            width: 1080px;
+            height: 1080px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .post-container {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 60px;
+        }
+
+        .post-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        }
+
+        .logo {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            font-size: 32px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .main-content {
+            text-align: center;
+            color: white;
+            z-index: 2;
+            max-width: 800px;
+        }
+
+        .title {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            line-height: 1.2;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+        }
+
+        .subtitle {
+            font-size: 24px;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .content-text {
+            font-size: 20px;
+            line-height: 1.6;
+            margin-bottom: 40px;
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .hashtags {
+            font-size: 18px;
+            opacity: 0.8;
+            margin-top: 20px;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            font-size: 16px;
+            color: white;
+            opacity: 0.7;
+        }
+
+        .decorative-element {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            top: 100px;
+            right: 100px;
+        }
+
+        .decorative-element::before {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+    <div class="post-container">
+        <div class="logo">TaroTI</div>
+
+        <div class="decorative-element"></div>
+
+        <div class="main-content">
+            <h1 class="title">{{TITLE}}</h1>
+            <p class="subtitle">{{SUBTITLE}}</p>
+            <div class="content-text">
+                {{CONTENT}}
+            </div>
+            <div class="hashtags">{{HASHTAGS}}</div>
+        </div>
+
+        <div class="footer">
+            타로와 MBTI가 만나는 특별한 공간
+        </div>
+    </div>
+</body>
+</html>

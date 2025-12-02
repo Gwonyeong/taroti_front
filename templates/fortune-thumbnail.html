@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaroTI - 오늘의 운세 썸네일</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            width: 1080px;
+            height: 1080px;
+            overflow: hidden;
+            position: relative;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 60px;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        }
+
+        .logo {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            font-size: 36px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .date {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            font-size: 20px;
+            color: white;
+            opacity: 0.9;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .main-content {
+            text-align: center;
+            color: white;
+            z-index: 2;
+            max-width: 800px;
+        }
+
+        .zodiac-info {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .zodiac-symbol {
+            font-size: 80px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .zodiac-name {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .zodiac-dates {
+            font-size: 24px;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .theme-title {
+            font-size: 36px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 15px;
+        }
+
+        .theme-subtitle {
+            font-size: 20px;
+            opacity: 0.8;
+            font-style: italic;
+        }
+
+        .decorative-stars {
+            position: absolute;
+            font-size: 30px;
+            color: rgba(255,255,255,0.6);
+            animation: twinkle 2s infinite alternate;
+        }
+
+        .star-1 { top: 150px; left: 100px; animation-delay: 0s; }
+        .star-2 { top: 200px; right: 120px; animation-delay: 0.5s; }
+        .star-3 { bottom: 180px; left: 80px; animation-delay: 1s; }
+        .star-4 { bottom: 150px; right: 90px; animation-delay: 1.5s; }
+
+        @keyframes twinkle {
+            0% { opacity: 0.3; transform: scale(1); }
+            100% { opacity: 0.8; transform: scale(1.2); }
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            font-size: 16px;
+            color: white;
+            opacity: 0.7;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">TaroTI</div>
+        <div class="date">{{DATE}}</div>
+
+        <div class="decorative-stars star-1">✨</div>
+        <div class="decorative-stars star-2">⭐</div>
+        <div class="decorative-stars star-3">✨</div>
+        <div class="decorative-stars star-4">⭐</div>
+
+        <div class="main-content">
+            <div class="zodiac-info">
+                <div class="zodiac-symbol">{{ZODIAC_SYMBOL}}</div>
+                <div class="zodiac-name">{{ZODIAC_NAME}}</div>
+                <div class="zodiac-dates">{{ZODIAC_DATES}}</div>
+
+                <div class="theme-title">{{THEME_TITLE}}</div>
+                <div class="theme-subtitle">{{THEME_DESCRIPTION}}</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            타로와 별자리가 만나는 특별한 공간<br>
+            당신만을 위한 운세
+        </div>
+    </div>
+</body>
+</html>
