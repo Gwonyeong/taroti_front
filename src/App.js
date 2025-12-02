@@ -15,6 +15,7 @@ import ShareFortuneResult from './pages/ShareFortuneResult';
 import NewYearFortune2026 from './pages/NewYearFortune2026';
 import NewYearFortuneResult2026 from './pages/NewYearFortuneResult2026';
 import ShareNewYearResult2026 from './pages/ShareNewYearResult2026';
+import InstagramCallback from './components/admin/InstagramCallback';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './context/AuthContext';
 
@@ -34,6 +35,7 @@ function App() {
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/instagram/callback" element={<InstagramCallback />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/mypage" element={<MyPage />} />
             <Route path="/december-fortune" element={<DecemberFortune />} />
