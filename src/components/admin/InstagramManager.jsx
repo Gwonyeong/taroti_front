@@ -213,186 +213,392 @@ const InstagramManager = () => {
     </Card>
   );
 
-  const TestPostUpload = () => {
-    const [postData, setPostData] = useState({
-      imageUrl: '',
-      caption: '',
-      hashtags: '#타로 #운세 #TaroTI #오늘의운세'
-    });
-    const [uploading, setUploading] = useState(false);
+  const TemplatePreview = () => {
+    const [selectedTemplate, setSelectedTemplate] = useState('thumbnail');
+    const [selectedTheme, setSelectedTheme] = useState('기본운');
+    const [previewHtml, setPreviewHtml] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleUpload = async () => {
-      if (!postData.imageUrl || !postData.caption) {
-        toast.error('이미지 URL과 캡션을 모두 입력해주세요.');
-        return;
-      }
+    const templates = [
+      { value: 'thumbnail', label: '썸네일' },
+      { value: 'page1', label: '페이지 1 (1-4번 별자리)' },
+      { value: 'page2', label: '페이지 2 (5-8번 별자리)' },
+      { value: 'page3', label: '페이지 3 (9-12번 별자리)' },
+      { value: 'ending', label: '마무리 페이지' }
+    ];
 
+    const themes = [
+      { value: '기본운', label: '기본운 (골든 + 핑크)' },
+      { value: '연애운', label: '연애운 (핑크 + 핫핑크)' },
+      { value: '금전운', label: '금전운 (카키 + 골드)' },
+      { value: '건강운', label: '건강운 (라임 + 그린)' }
+    ];
+
+    const loadTemplate = async (templateType, theme = selectedTheme) => {
       try {
-        setUploading(true);
-        const response = await fetch(`${instagramConfig.backendUrl}/api/instagram/upload`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify(postData)
+        setLoading(true);
+        const response = await fetch(`${instagramConfig.backendUrl}/api/instagram/preview-templates?templateType=${templateType}&theme=${theme}`, {
+          credentials: 'include'
         });
 
-        const data = await response.json();
-
         if (response.ok) {
-          toast.success('Instagram에 성공적으로 게시되었습니다!');
-          setPostData({
-            imageUrl: '',
-            caption: '',
-            hashtags: '#타로 #운세 #TaroTI #오늘의운세'
-          });
+          const html = await response.text();
+          setPreviewHtml(html);
         } else {
-          throw new Error(data.error || '업로드 실패');
+          throw new Error('템플릿 로드 실패');
         }
       } catch (error) {
-        toast.error('업로드 실패: ' + error.message);
+        toast.error('템플릿을 불러오는데 실패했습니다.');
+        console.error('Template load error:', error);
       } finally {
-        setUploading(false);
+        setLoading(false);
       }
     };
 
+    React.useEffect(() => {
+      loadTemplate(selectedTemplate);
+    }, [selectedTemplate, selectedTheme]);
+
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>테스트 게시물 업로드</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isConnected ? (
+      <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Instagram 포스트 템플릿 미리보기</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">이미지 URL</label>
-                <input
-                  type="url"
-                  className="w-full px-3 py-2 border rounded-md"
-                  placeholder="https://example.com/image.jpg"
-                  value={postData.imageUrl}
-                  onChange={(e) => setPostData({...postData, imageUrl: e.target.value})}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  공개적으로 접근 가능한 HTTPS 이미지 URL을 입력하세요.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">캡션</label>
-                <textarea
-                  className="w-full px-3 py-2 border rounded-md"
-                  rows="4"
-                  placeholder="게시물 내용을 입력하세요..."
-                  value={postData.caption}
-                  onChange={(e) => setPostData({...postData, caption: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">해시태그</label>
-                <textarea
-                  className="w-full px-3 py-2 border rounded-md"
-                  rows="2"
-                  placeholder="#타로 #운세 #TaroTI"
-                  value={postData.hashtags}
-                  onChange={(e) => setPostData({...postData, hashtags: e.target.value})}
-                />
-              </div>
-
-              {postData.imageUrl && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">이미지 미리보기</label>
-                  <div className="border rounded-md p-2">
-                    <img
-                      src={postData.imageUrl}
-                      alt="미리보기"
-                      className="max-w-full h-48 object-cover rounded"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'block';
-                      }}
-                    />
-                    <div style={{display: 'none'}} className="text-center py-8 text-gray-500">
-                      이미지를 불러올 수 없습니다. URL을 확인해주세요.
+                  <label className="block text-sm font-medium mb-2">템플릿 선택</label>
+                  <select
+                    className="w-full px-3 py-2 border rounded-md"
+                    value={selectedTemplate}
+                    onChange={(e) => setSelectedTemplate(e.target.value)}
+                  >
+                    {templates.map(template => (
+                      <option key={template.value} value={template.value}>
+                        {template.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">운세 테마</label>
+                  <select
+                    className="w-full px-3 py-2 border rounded-md"
+                    value={selectedTheme}
+                    onChange={(e) => setSelectedTheme(e.target.value)}
+                  >
+                    {themes.map(theme => (
+                      <option key={theme.value} value={theme.value}>
+                        {theme.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">{templates.find(t => t.value === selectedTemplate)?.label} 미리보기</h3>
+                <Button
+                  onClick={() => loadTemplate(selectedTemplate, selectedTheme)}
+                  disabled={loading}
+                  variant="outline"
+                  className="text-sm"
+                >
+                  {loading ? '로딩 중...' : '새로고침'}
+                </Button>
+              </div>
+
+              <div className="border rounded-lg overflow-hidden bg-gray-100">
+                {loading ? (
+                  <div className="flex items-center justify-center h-96 bg-gray-50">
+                    <div className="text-center">
+                      <div className="text-gray-500 mb-2">템플릿 로딩 중...</div>
+                      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
                     </div>
                   </div>
-                </div>
-              )}
+                ) : previewHtml ? (
+                  <div className="flex justify-center p-4">
+                    <div
+                      className="relative bg-white rounded-lg shadow-lg"
+                      style={{
+                        width: '400px',
+                        height: '400px',
+                        aspectRatio: '1 / 1'
+                      }}
+                    >
+                      <iframe
+                        srcDoc={previewHtml}
+                        className="w-full h-full border-0 rounded-lg"
+                        style={{
+                          width: '1080px',
+                          height: '1080px',
+                          transform: 'scale(0.37)',
+                          transformOrigin: 'top left',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0
+                        }}
+                        title={`Template Preview: ${selectedTemplate}`}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-96 bg-gray-50">
+                    <div className="text-center text-gray-500">
+                      템플릿을 불러올 수 없습니다.
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              <Button
-                onClick={handleUpload}
-                disabled={uploading || !postData.imageUrl || !postData.caption}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-              >
-                {uploading ? '업로드 중...' : 'Instagram에 게시하기'}
-              </Button>
-
-              <div className="text-xs text-gray-500 bg-yellow-50 p-3 rounded">
-                ⚠️ 주의: 이 기능은 테스트용입니다. 실제로 Instagram에 게시물이 업로드됩니다.
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-800 mb-2">📝 사용법</h4>
+                <ul className="text-sm text-blue-700 space-y-1">
+                  <li>• 위 드롭다운에서 미리보고 싶은 템플릿을 선택하세요</li>
+                  <li>• 실제 데이터 대신 예시 운세 데이터로 미리보기가 생성됩니다</li>
+                  <li>• HTML 파일을 수정한 후 "새로고침" 버튼으로 변경사항을 확인하세요</li>
+                  <li>• 템플릿 파일 위치: <code>/marketing/templates/daily-fortune-*.html</code></li>
+                </ul>
               </div>
             </div>
-          ) : (
-            <p className="text-gray-500">Instagram을 먼저 연결해주세요.</p>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     );
   };
 
-  const AutoPostingSettings = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>자동 포스팅 설정</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isConnected ? (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <input type="checkbox" id="enable-auto-post" className="rounded" />
-              <label htmlFor="enable-auto-post" className="text-sm">자동 포스팅 활성화</label>
-            </div>
+  const DailyFortuneScheduler = () => {
+    const [schedulerData, setSchedulerData] = useState({
+      isActive: false,
+      postingTime: '09:00',
+      fortuneTheme: '기본운',
+      nextRunAt: null,
+      lastRunAt: null
+    });
+    const [loading, setLoading] = useState(false);
+    const [recentPosts, setRecentPosts] = useState([]);
 
-            <div>
-              <label className="block text-sm font-medium mb-1">포스팅 시간</label>
-              <select className="w-full px-3 py-2 border rounded-md">
-                <option value="09:00">오전 9:00</option>
-                <option value="12:00">오후 12:00</option>
-                <option value="18:00">오후 6:00</option>
-                <option value="21:00">오후 9:00</option>
-              </select>
-            </div>
+    // 스케줄러 상태 조회
+    const fetchSchedulerStatus = async () => {
+      try {
+        const response = await fetch(`${instagramConfig.backendUrl}/api/instagram/scheduler/status`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setSchedulerData(data);
+        }
+      } catch (error) {
+        console.error('스케줄러 상태 조회 실패:', error);
+      }
+    };
 
-            <div>
-              <label className="block text-sm font-medium mb-1">포스팅 빈도</label>
-              <select className="w-full px-3 py-2 border rounded-md">
-                <option value="daily">매일</option>
-                <option value="weekly">주간</option>
-                <option value="monthly">월간</option>
-              </select>
-            </div>
+    // 스케줄러 시작/중지
+    const handleSchedulerToggle = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${instagramConfig.backendUrl}/api/instagram/scheduler/start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            action: schedulerData.isActive ? 'stop' : 'start',
+            postingTime: schedulerData.postingTime,
+            fortuneTheme: schedulerData.fortuneTheme
+          })
+        });
 
-            <div>
-              <label className="block text-sm font-medium mb-1">기본 해시태그</label>
-              <textarea
-                className="w-full px-3 py-2 border rounded-md"
-                rows="3"
-                placeholder="#타로 #운세 #TaroTI #오늘의운세"
-                defaultValue="#타로 #운세 #TaroTI #오늘의운세"
-              />
-            </div>
+        if (response.ok) {
+          const data = await response.json();
+          setSchedulerData(prev => ({
+            ...prev,
+            isActive: !prev.isActive,
+            nextRunAt: data.nextRunAt
+          }));
+          toast.success(schedulerData.isActive ? '스케줄러가 중지되었습니다.' : '스케줄러가 시작되었습니다.');
+        } else {
+          throw new Error('스케줄러 상태 변경 실패');
+        }
+      } catch (error) {
+        toast.error('스케줄러 상태 변경 중 오류가 발생했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-            <Button className="w-full bg-green-600 hover:bg-green-700">
-              설정 저장
-            </Button>
-          </div>
-        ) : (
-          <p className="text-gray-500">Instagram을 먼저 연결해주세요.</p>
-        )}
-      </CardContent>
-    </Card>
-  );
+    // 즉시 실행
+    const handleRunNow = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${instagramConfig.backendUrl}/api/instagram/scheduler/run-now`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            fortuneTheme: schedulerData.fortuneTheme
+          })
+        });
+
+        if (response.ok) {
+          toast.success('오늘의 운세 게시가 시작되었습니다!');
+          fetchSchedulerStatus();
+        } else {
+          throw new Error('즉시 실행 실패');
+        }
+      } catch (error) {
+        toast.error('즉시 실행 중 오류가 발생했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // 설정 업데이트
+    const handleSettingsUpdate = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${instagramConfig.backendUrl}/api/instagram/scheduler/settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            postingTime: schedulerData.postingTime,
+            fortuneTheme: schedulerData.fortuneTheme
+          })
+        });
+
+        if (response.ok) {
+          toast.success('설정이 저장되었습니다.');
+        } else {
+          throw new Error('설정 저장 실패');
+        }
+      } catch (error) {
+        toast.error('설정 저장 중 오류가 발생했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    React.useEffect(() => {
+      if (isConnected) {
+        fetchSchedulerStatus();
+      }
+    }, [isConnected]);
+
+    return (
+      <div className="space-y-4">
+        {/* 스케줄러 상태 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              오늘의 운세 스케줄러
+              <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                schedulerData.isActive
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-gray-100 text-gray-800'
+              }`}>
+                {schedulerData.isActive ? '활성화' : '비활성화'}
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isConnected ? (
+              <div className="space-y-4">
+                {schedulerData.nextRunAt && (
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <p className="text-sm text-blue-700">
+                      다음 실행 예정: {new Date(schedulerData.nextRunAt).toLocaleString('ko-KR')}
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">게시 시간</label>
+                    <select
+                      className="w-full px-3 py-2 border rounded-md"
+                      value={schedulerData.postingTime}
+                      onChange={(e) => setSchedulerData({...schedulerData, postingTime: e.target.value})}
+                    >
+                      <option value="09:00">오전 9:00</option>
+                      <option value="12:00">오후 12:00</option>
+                      <option value="18:00">오후 6:00</option>
+                      <option value="21:00">오후 9:00</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">운세 주제</label>
+                    <select
+                      className="w-full px-3 py-2 border rounded-md"
+                      value={schedulerData.fortuneTheme}
+                      onChange={(e) => setSchedulerData({...schedulerData, fortuneTheme: e.target.value})}
+                    >
+                      <option value="기본운">기본운</option>
+                      <option value="연애운">연애운</option>
+                      <option value="재물운">재물운</option>
+                      <option value="학업운">학업운</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSchedulerToggle}
+                    disabled={loading}
+                    className={`flex-1 ${
+                      schedulerData.isActive
+                        ? 'bg-red-600 hover:bg-red-700'
+                        : 'bg-green-600 hover:bg-green-700'
+                    }`}
+                  >
+                    {loading ? '처리 중...' : (schedulerData.isActive ? '스케줄러 중지' : '스케줄러 시작')}
+                  </Button>
+
+                  <Button
+                    onClick={handleRunNow}
+                    disabled={loading || !isConnected}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    {loading ? '실행 중...' : '즉시 실행'}
+                  </Button>
+
+                  <Button
+                    onClick={handleSettingsUpdate}
+                    disabled={loading}
+                    variant="outline"
+                  >
+                    설정 저장
+                  </Button>
+                </div>
+
+                <div className="text-sm text-gray-600 bg-yellow-50 p-3 rounded">
+                  💡 스케줄러가 활성화되면 매일 설정한 시간에 12개 별자리의 운세가 자동으로 Instagram에 게시됩니다.
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-500">Instagram을 먼저 연결해주세요.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 최근 게시 내역 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>최근 게시 내역</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8 text-gray-500">
+              게시 내역이 없습니다. 스케줄러를 실행하여 운세를 게시해보세요.
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -404,8 +610,8 @@ const InstagramManager = () => {
       <Tabs defaultValue="connection" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="connection">연결 관리</TabsTrigger>
-          <TabsTrigger value="upload">테스트 업로드</TabsTrigger>
-          <TabsTrigger value="settings">포스팅 설정</TabsTrigger>
+          <TabsTrigger value="scheduler">운세 스케줄러</TabsTrigger>
+          <TabsTrigger value="template">템플릿 미리보기</TabsTrigger>
           <TabsTrigger value="analytics">분석</TabsTrigger>
         </TabsList>
 
@@ -414,12 +620,12 @@ const InstagramManager = () => {
           <TokenInfo />
         </TabsContent>
 
-        <TabsContent value="upload" className="space-y-4">
-          <TestPostUpload />
+        <TabsContent value="scheduler" className="space-y-4">
+          <DailyFortuneScheduler />
         </TabsContent>
 
-        <TabsContent value="settings" className="space-y-4">
-          <AutoPostingSettings />
+        <TabsContent value="template" className="space-y-4">
+          <TemplatePreview />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
