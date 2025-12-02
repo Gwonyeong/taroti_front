@@ -181,7 +181,7 @@ const DecemberFortuneResult = () => {
   const generateMetaTags = () => {
     if (!fortuneData || !cardInfo) return {};
 
-    const nickname = fortuneData.nickname || "타로티 친구";
+    const nickname = fortuneData.user?.nickname || "타로티 친구";
     const cardDisplayName = getCardDisplayName(fortuneData.selectedCard);
     const fortuneType = fortuneData.fortuneType || "운세";
 
