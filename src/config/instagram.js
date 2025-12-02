@@ -1,18 +1,16 @@
 // Instagram API Configuration
 const isDevelopment = process.env.NODE_ENV === 'development';
-const isNgrokMode = true; // ngrok 사용 모드 활성화
 
-// 환경별 URL 설정
-const BACKEND_URL = isNgrokMode
-  ? 'https://foxiest-jerome-untruly.ngrok-free.dev'
-  : isDevelopment
-    ? 'http://localhost:5002'
-    : 'https://taroti-back.vercel.app';
+// 환경변수에서 설정 가져오기 (기존 REACT_APP_API_BASE_URL 사용)
+const BACKEND_URL = process.env.REACT_APP_API_BASE_URL ||
+  (isDevelopment
+    ? 'https://foxiest-jerome-untruly.ngrok-free.dev'  // 개발 시 ngrok 사용
+    : 'https://tarotiback.vercel.app'  // 프로덕션 백엔드
+  );
 
-// Meta App Dashboard는 HTTPS만 허용하므로 ngrok URL 사용
-const REDIRECT_URI = isNgrokMode
-  ? 'https://foxiest-jerome-untruly.ngrok-free.dev/admin/instagram/callback'
-  : 'https://taroti-front.vercel.app/admin/instagram/callback';
+// Instagram OAuth Redirect URI (Meta Dashboard에 등록된 URI와 일치해야 함)
+const REDIRECT_URI = process.env.REACT_APP_INSTAGRAM_REDIRECT_URI ||
+  `${BACKEND_URL}/admin/instagram/callback`;
 
 export const instagramConfig = {
   clientId: process.env.REACT_APP_INSTAGRAM_APP_ID || '828538843381325',
