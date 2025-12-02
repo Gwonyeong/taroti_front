@@ -34,7 +34,7 @@ const SideMenu = ({ isOpen, onClose, constrained = false }) => {
     <>
       {/* 딤드 오버레이 */}
       <div
-        className={`${constrained ? 'absolute' : 'fixed'} ${constrained ? 'top-0 left-0 right-0 bottom-0' : 'inset-0'} bg-black/50 backdrop-blur-sm ${constrained ? 'z-[200]' : 'z-40'} transition-opacity duration-300 ease-in-out ${
+        className={`${constrained ? 'absolute' : 'fixed'} ${constrained ? 'top-0 left-0 right-0 bottom-0' : 'inset-0'} bg-black/50 backdrop-blur-sm ${constrained ? 'z-[95]' : 'z-40'} transition-opacity duration-300 ease-in-out ${
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         onClick={onClose}
@@ -42,7 +42,7 @@ const SideMenu = ({ isOpen, onClose, constrained = false }) => {
       />
 
       {/* 메뉴 패널 - 슬라이드 */}
-      <nav className={`${constrained ? 'absolute' : 'fixed'} ${constrained ? 'top-0' : 'top-0'} right-0 w-64 max-w-[65vw] ${constrained ? 'h-full' : 'h-screen'} ${constrained ? 'z-[210]' : 'z-50'} bg-white shadow-2xl ${constrained ? 'rounded-l-lg' : 'rounded-l-2xl'} transition-transform duration-300 ease-in-out ${
+      <nav className={`${constrained ? 'absolute' : 'fixed'} ${constrained ? 'top-0' : 'top-0'} right-0 w-64 max-w-[65vw] ${constrained ? 'h-full' : 'h-screen'} ${constrained ? 'z-[96]' : 'z-50'} bg-white shadow-2xl ${constrained ? 'rounded-l-lg' : 'rounded-l-2xl'} transition-transform duration-300 ease-in-out ${
         isOpen ? 'translate-x-0 pointer-events-auto' : 'translate-x-full pointer-events-none'
       }`}>
         <div className="p-6 pointer-events-auto">

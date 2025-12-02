@@ -288,8 +288,8 @@ const DecemberFortune = () => {
 
   return (
     <div className="min-h-screen bg-offWhite flex justify-center relative">
-      <Navigation fixed />
       <div className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col h-screen relative z-10">
+        <Navigation fixed />
         {/* 고정 네비게이션을 위한 여백 */}
         <div className="h-16"></div>
 
