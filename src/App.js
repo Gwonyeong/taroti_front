@@ -12,6 +12,9 @@ import MyPage from './pages/MyPage';
 import DecemberFortune from './pages/DecemberFortune';
 import DecemberFortuneResult from './pages/DecemberFortuneResult';
 import ShareFortuneResult from './pages/ShareFortuneResult';
+import NewYearFortune2026 from './pages/NewYearFortune2026';
+import NewYearFortuneResult2026 from './pages/NewYearFortuneResult2026';
+import ShareNewYearResult2026 from './pages/ShareNewYearResult2026';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './context/AuthContext';
 
@@ -35,7 +38,10 @@ function App() {
             <Route path="/mypage" element={<MyPage />} />
             <Route path="/december-fortune" element={<DecemberFortune />} />
             <Route path="/december-fortune-result/:fortuneId" element={<DecemberFortuneResult />} />
+            <Route path="/newyear-fortune-2026" element={<NewYearFortune2026 />} />
+            <Route path="/newyear-fortune-2026-result/:fortuneId" element={<NewYearFortuneResult2026 />} />
             <Route path="/share/:shareId" element={<ShareFortuneResult />} />
+            <Route path="/share-newyear-2026/:shareId" element={<ShareNewYearResult2026 />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <Toaster position="top-center" />
