@@ -9,7 +9,7 @@ const ShareNewYearResult2026 = () => {
   return (
     <FortuneShare
       shareId={shareId}
-      shareApiEndpoint="/api/share"
+      shareApiEndpoint="/api/share-newyear-2026"
       fortuneDataFile={newYearFortune2026Data}
       cardImagePath="/documents/illustrator/{cardId}-{cardName}.jpg"
       fallbackImage="/images/cards/back/camp_band.jpeg"
