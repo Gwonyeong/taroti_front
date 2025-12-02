@@ -213,6 +213,134 @@ const InstagramManager = () => {
     </Card>
   );
 
+  const TestPostUpload = () => {
+    const [postData, setPostData] = useState({
+      imageUrl: '',
+      caption: '',
+      hashtags: '#타로 #운세 #TaroTI #오늘의운세'
+    });
+    const [uploading, setUploading] = useState(false);
+
+    const handleUpload = async () => {
+      if (!postData.imageUrl || !postData.caption) {
+        toast.error('이미지 URL과 캡션을 모두 입력해주세요.');
+        return;
+      }
+
+      try {
+        setUploading(true);
+        const response = await fetch(`${instagramConfig.backendUrl}/api/instagram/upload`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(postData)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          toast.success('Instagram에 성공적으로 게시되었습니다!');
+          setPostData({
+            imageUrl: '',
+            caption: '',
+            hashtags: '#타로 #운세 #TaroTI #오늘의운세'
+          });
+        } else {
+          throw new Error(data.error || '업로드 실패');
+        }
+      } catch (error) {
+        toast.error('업로드 실패: ' + error.message);
+      } finally {
+        setUploading(false);
+      }
+    };
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>테스트 게시물 업로드</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isConnected ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">이미지 URL</label>
+                <input
+                  type="url"
+                  className="w-full px-3 py-2 border rounded-md"
+                  placeholder="https://example.com/image.jpg"
+                  value={postData.imageUrl}
+                  onChange={(e) => setPostData({...postData, imageUrl: e.target.value})}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  공개적으로 접근 가능한 HTTPS 이미지 URL을 입력하세요.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">캡션</label>
+                <textarea
+                  className="w-full px-3 py-2 border rounded-md"
+                  rows="4"
+                  placeholder="게시물 내용을 입력하세요..."
+                  value={postData.caption}
+                  onChange={(e) => setPostData({...postData, caption: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">해시태그</label>
+                <textarea
+                  className="w-full px-3 py-2 border rounded-md"
+                  rows="2"
+                  placeholder="#타로 #운세 #TaroTI"
+                  value={postData.hashtags}
+                  onChange={(e) => setPostData({...postData, hashtags: e.target.value})}
+                />
+              </div>
+
+              {postData.imageUrl && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">이미지 미리보기</label>
+                  <div className="border rounded-md p-2">
+                    <img
+                      src={postData.imageUrl}
+                      alt="미리보기"
+                      className="max-w-full h-48 object-cover rounded"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                    />
+                    <div style={{display: 'none'}} className="text-center py-8 text-gray-500">
+                      이미지를 불러올 수 없습니다. URL을 확인해주세요.
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <Button
+                onClick={handleUpload}
+                disabled={uploading || !postData.imageUrl || !postData.caption}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                {uploading ? '업로드 중...' : 'Instagram에 게시하기'}
+              </Button>
+
+              <div className="text-xs text-gray-500 bg-yellow-50 p-3 rounded">
+                ⚠️ 주의: 이 기능은 테스트용입니다. 실제로 Instagram에 게시물이 업로드됩니다.
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-500">Instagram을 먼저 연결해주세요.</p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
   const AutoPostingSettings = () => (
     <Card>
       <CardHeader>
@@ -246,7 +374,7 @@ const InstagramManager = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">해시태그</label>
+              <label className="block text-sm font-medium mb-1">기본 해시태그</label>
               <textarea
                 className="w-full px-3 py-2 border rounded-md"
                 rows="3"
@@ -274,8 +402,9 @@ const InstagramManager = () => {
       </div>
 
       <Tabs defaultValue="connection" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="connection">연결 관리</TabsTrigger>
+          <TabsTrigger value="upload">테스트 업로드</TabsTrigger>
           <TabsTrigger value="settings">포스팅 설정</TabsTrigger>
           <TabsTrigger value="analytics">분석</TabsTrigger>
         </TabsList>
@@ -283,6 +412,10 @@ const InstagramManager = () => {
         <TabsContent value="connection" className="space-y-4">
           <ConnectionStatus />
           <TokenInfo />
+        </TabsContent>
+
+        <TabsContent value="upload" className="space-y-4">
+          <TestPostUpload />
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-4">
