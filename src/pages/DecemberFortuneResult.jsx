@@ -117,55 +117,60 @@ const DecemberFortuneResult = () => {
   }, [fortuneId]);
 
   const handleShare = async () => {
+    const backendDomain = process.env.REACT_APP_API_BASE_URL ||
+                          (window.location.hostname === 'localhost' ?
+                           "http://localhost:5002" :
+                           "https://tarotiback.vercel.app");
     try {
       // 메타데이터 생성
       const metaData = generateMetaTags();
 
-      // 공유 링크 생성 API 호출 (메타데이터 포함)
-      const response = await fetch(
-        `${
-          process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
-        }/api/december-fortune/${fortuneId}/share`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            title: metaData.title,
-            description: metaData.description,
-            image: metaData.image,
-            cardName: metaData.cardName,
-            nickname: metaData.nickname,
-            fortuneType: metaData.fortuneType
-          })
-        }
-      );
+      // API를 통한 공유 링크 생성 시도
+      const apiUrl = `${backendDomain}/api/december-fortune/${fortuneId}/share`;
 
-      if (!response.ok) {
-        throw new Error("공유 링크 생성에 실패했습니다.");
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: metaData.title,
+          description: metaData.description,
+          image: metaData.image,
+          cardName: metaData.cardName,
+          nickname: metaData.nickname,
+          fortuneType: metaData.fortuneType
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const shareUrl = `${backendDomain}/share/${data.shareId}`;
+
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success("공유 링크가 클립보드에 복사되었습니다! 🔗\nSNS나 메신저에 붙여넣어 공유해보세요.");
+        return;
       }
 
-      const data = await response.json();
-
-      // 백엔드 도메인으로 공유 URL 생성 (SSR을 위해)
-      const backendDomain = process.env.REACT_APP_API_BASE_URL || "http://localhost:5002";
-      const shareUrl = `${backendDomain}/share/${data.shareId}`;
-
-      // 클립보드에 복사
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success("공유 링크가 클립보드에 복사되었습니다! 🔗\nSNS나 메신저에 붙여넣어 공유해보세요.");
-
-    } catch (error) {
-      console.error("Share error:", error);
-      // 실패 시 기존 방식으로 폴백
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        toast.success("링크가 클립보드에 복사되었습니다.");
-      } catch (fallbackError) {
-        toast.error("링크 복사에 실패했습니다.");
-      }
+    } catch (apiError) {
+      console.error("Share API error:", apiError);
     }
+
+    // API 실패 시 클라이언트 사이드 ShareId 생성
+    try {
+      const clientShareId = btoa(`fortune-${fortuneId}`).replace(/[+/=]/g, '').slice(0, 12);
+      const fallbackUrl = `${backendDomain}/share/${clientShareId}`;
+
+      await navigator.clipboard.writeText(fallbackUrl);
+      toast.success("공유 링크가 클립보드에 복사되었습니다! 🔗\nSNS나 메신저에 붙여넣어 공유해보세요.");
+      return;
+
+    } catch (fallbackError) {
+      console.error("Fallback share error:", fallbackError);
+    }
+
+    // 모든 방법 실패
+    toast.error("공유 링크 생성에 실패했습니다. 다시 시도해주세요.");
   };
 
   const handleGoHome = () => {

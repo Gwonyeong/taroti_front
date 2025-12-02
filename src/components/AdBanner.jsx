@@ -90,21 +90,8 @@ const AdBanner = ({
           </button>
         </div>
 
-        {/* 쿠팡 파트너스 광고 컨테이너 */}
-        <div
-          ref={adContainerRef}
-          className="flex justify-center items-center min-h-[600px]"
-        >
-          {/* 광고가 여기에 렌더링됩니다 */}
-        </div>
-
-        {/* 쿠팡 파트너스 안내 문구 */}
-        <p className="text-xs text-gray-500 text-center mt-3 mb-4">
-          쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를
-          제공받습니다.
-        </p>
-
-        <div className="mt-4 space-y-3">
+        {/* 진행 프로그래스 바와 계속하기 버튼 (광고 위로 이동) */}
+        <div className="mb-4 space-y-3">
           <div className="space-y-3">
             <p className="text-sm text-center text-gray-600">
               {canContinue
@@ -124,6 +111,20 @@ const AdBanner = ({
             </div>
           )}
         </div>
+
+        {/* 쿠팡 파트너스 광고 컨테이너 */}
+        <div
+          ref={adContainerRef}
+          className="flex justify-center items-center min-h-[600px]"
+        >
+          {/* 광고가 여기에 렌더링됩니다 */}
+        </div>
+
+        {/* 쿠팡 파트너스 안내 문구 */}
+        <p className="text-xs text-gray-500 text-center mt-3">
+          쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를
+          제공받습니다.
+        </p>
       </div>
     </div>
   );

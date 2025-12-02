@@ -13,6 +13,7 @@ const Profile = () => {
     mbti: ''
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [isProfileLoaded, setIsProfileLoaded] = useState(false);
 
   // 로그인되지 않은 경우 홈으로 리디렉트
   useEffect(() => {
@@ -23,14 +24,15 @@ const Profile = () => {
 
   // 사용자 정보로 폼 초기화
   useEffect(() => {
-    if (user) {
+    if (user && isAuthenticated && !isLoading) {
       setFormData({
         birthDate: user.birthDate || '',
         gender: user.gender || '',
         mbti: user.mbti || ''
       });
+      setIsProfileLoaded(true);
     }
-  }, [user]);
+  }, [user, isAuthenticated, isLoading]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -74,7 +76,7 @@ const Profile = () => {
     'ISTP', 'ISFP', 'ESTP', 'ESFP'
   ];
 
-  if (isLoading) {
+  if (isLoading || !isProfileLoaded) {
     return (
       <div className="min-h-screen bg-offWhite flex justify-center items-center">
         <Navigation fixed />
@@ -83,7 +85,7 @@ const Profile = () => {
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-charcoal mx-auto mb-4"></div>
-              <p className="text-charcoal">로딩 중...</p>
+              <p className="text-charcoal">프로필 정보를 불러오는 중...</p>
             </div>
           </div>
         </div>
@@ -215,7 +217,7 @@ const Profile = () => {
           </div>
 
           {/* 뒤로가기 */}
-          <div className="pt-4">
+          <div className="pt-2">
             <button
               onClick={() => navigate(-1)}
               className="w-full bg-gray-100 text-charcoal py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200"

@@ -71,6 +71,23 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('authToken', token);
         setUser(userData);
         setIsAuthenticated(true);
+
+        // 로그인 후 최신 프로필 정보를 다시 가져오기
+        try {
+          const profileResponse = await fetch(`${API_BASE_URL}/api/auth/me`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+
+          if (profileResponse.ok) {
+            const latestUserData = await profileResponse.json();
+            setUser(latestUserData);
+          }
+        } catch (profileError) {
+          console.warn('Failed to fetch latest profile after login:', profileError);
+        }
+
         return userData;
       } else {
         throw new Error('Login failed');
