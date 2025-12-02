@@ -1,0 +1,498 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
+import { Button } from "../ui/button";
+import Navigation from "../ui/Navigation";
+import { toast } from "sonner";
+
+/**
+ * 재사용 가능한 운세 결과 컴포넌트
+ *
+ * @param {Object} props
+ * @param {String} props.fortuneId - 운세 ID
+ * @param {String} props.apiEndpoint - API 엔드포인트 (예: "/api/december-fortune")
+ * @param {String} props.shareEndpoint - 공유 API 엔드포인트 (예: "/api/december-fortune")
+ * @param {String} props.title - 페이지 제목 (예: "12월 운세 결과")
+ * @param {String} props.subtitle - 부제목
+ * @param {Object} props.fortuneDataFile - 운세 데이터 JSON 파일 import
+ * @param {String} props.cardImagePath - 카드 이미지 경로 템플릿
+ * @param {String} props.fallbackImage - 이미지 로딩 실패 시 대체 이미지
+ * @param {Function} props.onShare - 커스텀 공유 처리 함수 (선택적)
+ * @param {Function} props.onGoHome - 홈 이동 커스텀 함수 (선택적)
+ * @param {Object} props.sections - 표시할 섹션 설정
+ * @param {Boolean} props.sections.cardMeaning - 카드 의미 표시 여부
+ * @param {Boolean} props.sections.monthlyForecast - 월간 운세 표시 여부
+ * @param {Boolean} props.sections.luckyActions - 행운 행동 표시 여부
+ * @param {Object} props.customFields - 커스텀 필드 매핑
+ */
+const FortuneResult = ({
+  fortuneId,
+  apiEndpoint,
+  shareEndpoint,
+  title = "운세 결과",
+  subtitle = "선택하신 카드의 운세를 확인해보세요",
+  fortuneDataFile,
+  cardImagePath = "/documents/illustrator/{cardId}-{cardName}.jpg",
+  fallbackImage = "/images/cards/back/camp_band.jpeg",
+  onShare,
+  onGoHome,
+  sections = {
+    cardMeaning: true,
+    monthlyForecast: true,
+    luckyActions: true,
+  },
+  customFields = {
+    description: "description",
+    monthlyForecast: "monthlyForecast",
+    luckyActions: "luckyActions",
+  },
+}) => {
+  const navigate = useNavigate();
+  const [fortuneData, setFortuneData] = useState(null);
+  const [cardInfo, setCardInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // 카드 표시명 함수
+  const getCardDisplayName = (cardNumber) => {
+    const displayNames = {
+      0: "THE FOOL (바보)",
+      1: "THE MAGICIAN (마법사)",
+      2: "THE HIGH PRIESTESS (여사제)",
+      3: "THE EMPRESS (여황제)",
+      4: "THE EMPEROR (황제)",
+      5: "THE HIEROPHANT (교황)",
+      6: "THE LOVERS (연인)",
+      7: "THE CHARIOT (전차)",
+      8: "STRENGTH (힘)",
+      9: "THE HERMIT (은둔자)",
+      10: "WHEEL OF FORTUNE (운명의 수레바퀴)",
+      11: "JUSTICE (정의)",
+      12: "THE HANGED MAN (매달린 사람)",
+      13: "DEATH (죽음)",
+      14: "TEMPERANCE (절제)",
+      15: "THE DEVIL (악마)",
+      16: "THE TOWER (탑)",
+      17: "THE STAR (별)",
+      18: "THE MOON (달)",
+      19: "THE SUN (태양)",
+      20: "JUDGEMENT (심판)",
+      21: "THE WORLD (세계)",
+    };
+    return displayNames[cardNumber] || "THE FOOL (바보)";
+  };
+
+  // 카드명 매핑 함수
+  const getCardName = (cardNumber) => {
+    const cardNames = {
+      0: "TheFool",
+      1: "TheMagician",
+      2: "TheHighPriestess",
+      3: "TheEmpress",
+      4: "TheEmperor",
+      5: "TheHierophant",
+      6: "TheLovers",
+      7: "TheChariot",
+      8: "Strength",
+      9: "TheHermit",
+      10: "WheelOfFortune",
+      11: "Justice",
+      12: "TheHangedMan",
+      13: "Death",
+      14: "Temperance",
+      15: "TheDevil",
+      16: "TheTower",
+      17: "TheStar",
+      18: "TheMoon",
+      19: "TheSun",
+      20: "Judgement",
+      21: "TheWorld",
+    };
+    return cardNames[cardNumber] || "TheFool";
+  };
+
+  // 카드 이미지 URL 생성
+  const getCardImageUrl = (cardNumber) => {
+    const cardId = String(cardNumber).padStart(2, "0");
+    const cardName = getCardName(cardNumber);
+    return cardImagePath
+      .replace("{cardId}", cardId)
+      .replace("{cardName}", cardName);
+  };
+
+  useEffect(() => {
+    const fetchFortuneData = async () => {
+      try {
+        const response = await fetch(
+          `${
+            process.env.REACT_APP_API_BASE_URL || "http://localhost:5002"
+          }${apiEndpoint}/${fortuneId}`
+        );
+
+        if (!response.ok) {
+          throw new Error("운세 데이터를 불러올 수 없습니다.");
+        }
+
+        const data = await response.json();
+        setFortuneData(data);
+
+        // JSON 파일에서 해당 카드 정보 가져오기
+        const cardNumber = data.selectedCard;
+        const cardInfo = fortuneDataFile[cardNumber.toString()];
+
+        if (cardInfo) {
+          setCardInfo(cardInfo);
+        } else {
+          throw new Error("카드 정보를 찾을 수 없습니다.");
+        }
+      } catch (error) {
+        console.error("Error fetching fortune data:", error);
+        setError(error.message);
+        toast.error("운세 데이터를 불러오는 중 오류가 발생했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (fortuneId) {
+      fetchFortuneData();
+    } else {
+      setError("잘못된 접근입니다.");
+      setLoading(false);
+    }
+  }, [fortuneId, apiEndpoint, fortuneDataFile]);
+
+  const handleShare = async () => {
+    if (onShare) {
+      return onShare(fortuneData, cardInfo, generateMetaTags());
+    }
+
+    // 기본 공유 로직
+    const backendDomain =
+      process.env.REACT_APP_API_BASE_URL ||
+      (window.location.hostname === "localhost"
+        ? "http://localhost:5002"
+        : "https://tarotiback.vercel.app");
+
+    try {
+      const metaData = generateMetaTags();
+      const apiUrl = `${backendDomain}${shareEndpoint}/${fortuneId}/share`;
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: metaData.title,
+          description: metaData.description,
+          image: metaData.image,
+          cardName: metaData.cardName,
+          nickname: metaData.nickname,
+          fortuneType: metaData.fortuneType,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const shareUrl = `${backendDomain}/share/${data.shareId}`;
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success(
+          "공유 링크가 클립보드에 복사되었습니다! 🔗\nSNS나 메신저에 붙여넣어 공유해보세요."
+        );
+        return;
+      }
+    } catch (apiError) {
+      console.error("Share API error:", apiError);
+    }
+
+    // 폴백 공유 로직
+    try {
+      const clientShareId = btoa(`fortune-${fortuneId}`)
+        .replace(/[+/=]/g, "")
+        .slice(0, 12);
+      const fallbackUrl = `${backendDomain}/share/${clientShareId}`;
+      await navigator.clipboard.writeText(fallbackUrl);
+      toast.success(
+        "공유 링크가 클립보드에 복사되었습니다! 🔗\nSNS나 메신저에 붙여넣어 공유해보세요."
+      );
+    } catch (fallbackError) {
+      console.error("Fallback share error:", fallbackError);
+      toast.error("공유 링크 생성에 실패했습니다. 다시 시도해주세요.");
+    }
+  };
+
+  const handleGoHome = () => {
+    if (onGoHome) {
+      return onGoHome();
+    }
+    navigate("/");
+  };
+
+  // 동적 메타 태그 데이터 생성
+  const generateMetaTags = () => {
+    if (!fortuneData || !cardInfo) return {};
+
+    const nickname = fortuneData.user?.nickname || "타로티 친구";
+    const cardDisplayName = getCardDisplayName(fortuneData.selectedCard);
+    const fortuneType = fortuneData.fortuneType || "운세";
+
+    const metaTitle = `${nickname}님의 ${title} - ${cardDisplayName}`;
+
+    // 카드 설명과 운세를 조합하여 설명 생성
+    const cardDescription = cardInfo[customFields.description] || "";
+    const monthlyForecast = cardInfo[customFields.monthlyForecast] || "";
+
+    let description = "";
+    if (monthlyForecast) {
+      description = `${cardDisplayName} 카드가 선택되었습니다. ${
+        monthlyForecast.length > 100
+          ? monthlyForecast.substring(0, 97) + "..."
+          : monthlyForecast
+      }`;
+    } else if (cardDescription) {
+      description = `${cardDisplayName} - ${
+        cardDescription.length > 120
+          ? cardDescription.substring(0, 117) + "..."
+          : cardDescription
+      }`;
+    } else {
+      description = `${nickname}님이 선택한 ${cardDisplayName} 카드의 ${fortuneType} 결과를 확인해보세요.`;
+    }
+
+    const cardImageUrl = `${window.location.origin}${getCardImageUrl(
+      fortuneData.selectedCard
+    )}`;
+
+    return {
+      title: metaTitle,
+      description: description.trim(),
+      image: cardImageUrl,
+      url: window.location.href,
+      cardName: cardDisplayName,
+      nickname,
+      fortuneType,
+    };
+  };
+
+  const metaTags = generateMetaTags();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-offWhite flex justify-center items-center">
+        <div className="text-center">
+          <div className="text-lg text-gray-600">운세 결과를 불러오는 중...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-offWhite flex justify-center items-center">
+        <div className="text-center p-6">
+          <div className="text-lg text-red-600 mb-4">{error}</div>
+          <Button
+            onClick={handleGoHome}
+            className="bg-charcoal text-white hover:bg-gray-800"
+          >
+            홈으로 돌아가기
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-offWhite flex justify-center relative">
+      <Helmet>
+        <title>{metaTags.title || `TaroTI - ${title}`}</title>
+        <meta
+          name="description"
+          content={metaTags.description || "타로카드로 알아보는 운세"}
+        />
+
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta
+          property="og:url"
+          content={metaTags.url || window.location.href}
+        />
+        <meta
+          property="og:title"
+          content={metaTags.title || `TaroTI - ${title}`}
+        />
+        <meta
+          property="og:description"
+          content={metaTags.description || "타로카드로 알아보는 운세"}
+        />
+        <meta
+          property="og:image"
+          content={
+            metaTags.image || `${window.location.origin}/logo192.png`
+          }
+        />
+        <meta property="og:locale" content="ko_KR" />
+        <meta property="og:site_name" content="TaroTI" />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+          name="twitter:url"
+          content={metaTags.url || window.location.href}
+        />
+        <meta
+          name="twitter:title"
+          content={metaTags.title || `TaroTI - ${title}`}
+        />
+        <meta
+          name="twitter:description"
+          content={metaTags.description || "타로카드로 알아보는 운세"}
+        />
+        <meta
+          name="twitter:image"
+          content={
+            metaTags.image || `${window.location.origin}/logo192.png`
+          }
+        />
+
+        {/* 카카오톡 공유용 */}
+        <meta property="og:image:width" content="800" />
+        <meta property="og:image:height" content="400" />
+      </Helmet>
+
+      <Navigation fixed />
+      <div className="w-full min-w-[320px] max-w-[500px] bg-white flex flex-col min-h-screen relative z-10">
+        {/* 고정 네비게이션을 위한 여백 */}
+        <div className="h-16"></div>
+
+        {/* 결과 헤더 */}
+        <div className="p-6 bg-white">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-charcoal mb-2">{title}</h1>
+            <p className="text-gray-600 text-sm">{subtitle}</p>
+          </div>
+        </div>
+
+        {/* 카드 이미지 및 기본 정보 */}
+        <div className="p-6 text-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
+            <img
+              src={getCardImageUrl(fortuneData?.selectedCard)}
+              alt={`${getCardName(fortuneData?.selectedCard)} 카드`}
+              className="w-48 h-72 object-cover rounded-lg mx-auto mb-4"
+              onError={(e) => {
+                e.target.src = fallbackImage;
+              }}
+            />
+            <h2 className="text-xl font-bold text-charcoal mb-2">
+              {getCardDisplayName(fortuneData?.selectedCard)}
+            </h2>
+            <div className="text-sm text-gray-500">
+              선택된 카드: {fortuneData?.selectedCard}번
+            </div>
+          </div>
+        </div>
+
+        {/* 카드 정보 섹션들 */}
+        {cardInfo && (
+          <div className="p-6 space-y-6">
+            {/* 카드 의미 */}
+            {sections.cardMeaning &&
+              cardInfo[customFields.description] && (
+                <div className="bg-white p-6 rounded-lg shadow-sm border">
+                  <h3 className="text-lg font-bold text-charcoal mb-4">
+                    카드의 의미
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {cardInfo[customFields.description]
+                      ?.split(/(?<=[.!?])\s+/)
+                      .map((sentence, index) => (
+                        <span key={index}>
+                          {sentence}
+                          {index <
+                            cardInfo[customFields.description].split(
+                              /(?<=[.!?])\s+/
+                            ).length -
+                              1 && "\n"}
+                        </span>
+                      ))}
+                  </p>
+                </div>
+              )}
+
+            {/* 운세 */}
+            {sections.monthlyForecast &&
+              cardInfo[customFields.monthlyForecast] && (
+                <div className="bg-purple-50 p-6 rounded-lg border border-purple-200">
+                  <h3 className="text-lg font-bold text-purple-800 mb-4">
+                    {fortuneData?.fortuneType || "운세"}
+                  </h3>
+                  <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                    {cardInfo[customFields.monthlyForecast]
+                      ?.split(/(?<=[.!?])\s+/)
+                      .map((sentence, index) => (
+                        <span key={index}>
+                          {sentence}
+                          {index <
+                            cardInfo[customFields.monthlyForecast].split(
+                              /(?<=[.!?])\s+/
+                            ).length -
+                              1 && "\n"}
+                        </span>
+                      ))}
+                  </p>
+                </div>
+              )}
+
+            {/* 행운을 부르는 행동들 */}
+            {sections.luckyActions &&
+              cardInfo[customFields.luckyActions] &&
+              Array.isArray(cardInfo[customFields.luckyActions]) && (
+                <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+                  <h3 className="text-lg font-bold text-green-800 mb-4">
+                    행운을 부르는 행동들
+                  </h3>
+                  <ul className="space-y-3">
+                    {cardInfo[customFields.luckyActions].map(
+                      (action, index) => (
+                        <li key={index} className="flex items-start">
+                          <span className="text-green-600 mr-2">✨</span>
+                          <span className="text-gray-800">{action}</span>
+                        </li>
+                      )
+                    )}
+                  </ul>
+                </div>
+              )}
+          </div>
+        )}
+
+        {/* 하단 고정 버튼을 위한 여백 */}
+        <div className="h-32"></div>
+
+        {/* 하단 고정 액션 버튼들 */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-40">
+          <div className="w-full max-w-[500px] mx-auto p-4 flex gap-3">
+            <Button
+              onClick={handleShare}
+              className="flex-1 bg-purple-600 text-white hover:bg-purple-700 py-3 flex items-center justify-center gap-2"
+            >
+              <span className="text-lg">📤</span>
+              결과 공유하기
+            </Button>
+            <Button
+              onClick={handleGoHome}
+              variant="outline"
+              className="flex-1 border-charcoal text-charcoal hover:bg-charcoal hover:text-white py-3"
+            >
+              홈으로 돌아가기
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default FortuneResult;
