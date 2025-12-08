@@ -7,9 +7,15 @@ import { toast } from 'sonner';
 const ContentManager = () => {
   // URL에서 파일명 추출 함수
   const getFileNameFromUrl = (url) => {
-    if (!url) return null;
-    const urlParts = url.split('/');
-    return urlParts[urlParts.length - 1];
+    if (!url) return '파일 없음';
+    try {
+      const urlParts = url.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      // 파일명이 너무 길면 줄임
+      return fileName.length > 30 ? fileName.substring(0, 30) + '...' : fileName;
+    } catch {
+      return '알 수 없는 파일';
+    }
   };
 
   const [contents, setContents] = useState([]);
@@ -33,6 +39,7 @@ const ContentManager = () => {
 
       // 배열인지 확인하고 안전하게 설정
       if (Array.isArray(data)) {
+        console.log('ContentManager received data:', data); // 디버깅용
         setContents(data);
       } else {
         console.warn('Received non-array data:', data);
@@ -57,8 +64,8 @@ const ContentManager = () => {
     setEditForm({
       title: content.title || '',
       description: content.description || '',
-      image_url: content.image_url || '',
-      link_url: content.link_url || '',
+      image_url: content.imageUrl || content.image_url || '',
+      link_url: content.linkUrl || content.link_url || '',
       active: content.active
     });
   };
@@ -95,8 +102,8 @@ const ContentManager = () => {
       const content = contents.find(c => c.id === id);
 
       // 이미지 파일 삭제 (백엔드에서 처리)
-      if (content.image_url) {
-        await deleteFile(content.image_url);
+      if (content.imageUrl || content.image_url) {
+        await deleteFile(content.imageUrl || content.image_url);
       }
 
       await deleteContent(id);
@@ -281,6 +288,9 @@ const ContentManager = () => {
                         src={editForm.image_url}
                         alt="미리보기"
                         className="absolute inset-0 w-full h-full object-cover rounded-t-lg"
+                        onError={(e) => {
+                          e.target.src = '/images/characters/webtoon/desert_fox_card_on_hands.jpeg';
+                        }}
                       />
                     </div>
                     <div className="p-3">
@@ -340,19 +350,13 @@ const ContentManager = () => {
                 <div className="w-full max-w-[180px] bg-white rounded-lg shadow-sm border border-gray-200">
                   <div className="relative w-full" style={{ paddingBottom: '158.33%' }}>
                     <img
-                      src={isEditing === content.id ? editForm.image_url || content.image_url : content.image_url}
+                      src={isEditing === content.id ? editForm.image_url || content.imageUrl || content.image_url : content.imageUrl || content.image_url}
                       alt={isEditing === content.id ? editForm.title || content.title : content.title}
                       className="absolute inset-0 w-full h-full object-cover rounded-t-lg"
                       onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
+                        e.target.src = '/images/characters/webtoon/desert_fox_card_on_hands.jpeg';
                       }}
                     />
-                    <div
-                      className="hidden absolute inset-0 w-full h-full bg-gray-200 rounded-t-lg items-center justify-center text-gray-500 text-xs"
-                    >
-                      이미지 오류
-                    </div>
                   </div>
                   <div className="p-3">
                     <h3 className="text-sm font-semibold text-black mb-1 truncate">
@@ -400,8 +404,19 @@ const ContentManager = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">이미지 변경</label>
-                      {content.image_url && (
-                        <p className="text-xs text-gray-600 mb-1">현재: {getFileNameFromUrl(content.image_url)}</p>
+                      {(content.imageUrl || content.image_url) && (
+                        <div className="mb-2">
+                          <p className="text-xs text-gray-600 mb-1">현재 이미지:</p>
+                          <img
+                            src={content.imageUrl || content.image_url}
+                            alt="현재 이미지"
+                            className="w-20 h-20 object-cover rounded border"
+                            onError={(e) => {
+                              e.target.src = '/images/characters/webtoon/desert_fox_card_on_hands.jpeg';
+                            }}
+                          />
+                          <p className="text-xs text-gray-500 mt-1">{getFileNameFromUrl(content.imageUrl || content.image_url)}</p>
+                        </div>
                       )}
                       <input
                         type="file"
@@ -410,6 +425,7 @@ const ContentManager = () => {
                         className="w-full text-xs text-gray-500"
                         disabled={uploading}
                       />
+                      {uploading && <p className="text-xs text-blue-600 mt-1">이미지 업로드 중...</p>}
                     </div>
                   </div>
                 ) : (

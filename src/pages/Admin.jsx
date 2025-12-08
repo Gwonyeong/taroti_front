@@ -3,6 +3,7 @@ import { Button } from '../components/ui/button';
 import PasswordAuth from '../components/admin/PasswordAuth';
 import BannerManager from '../components/admin/BannerManager';
 import ContentManager from '../components/admin/ContentManager';
+import FeaturedContentManager from '../components/admin/FeaturedContentManager';
 import RecommendationManager from '../components/admin/RecommendationManager';
 import InstagramManager from '../components/admin/InstagramManager';
 
@@ -77,7 +78,17 @@ const Admin = () => {
                   : 'border-transparent text-gray-500 hover:text-black'
               }`}
             >
-              콘텐츠 관리
+              베스트 콘텐츠 관리
+            </button>
+            <button
+              onClick={() => setActiveTab('featured')}
+              className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'featured'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-black'
+              }`}
+            >
+              운세 콘텐츠
             </button>
             <button
               onClick={() => setActiveTab('recommendations')}
@@ -107,6 +118,7 @@ const Admin = () => {
       <div className="max-w-7xl mx-auto p-6">
         {activeTab === 'banners' && <BannerManager />}
         {activeTab === 'contents' && <ContentManager />}
+        {activeTab === 'featured' && <FeaturedContentManager />}
         {activeTab === 'recommendations' && <RecommendationManager />}
         {activeTab === 'instagram' && <InstagramManager />}
       </div>

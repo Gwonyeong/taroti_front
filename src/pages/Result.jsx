@@ -5,6 +5,7 @@ import SpeechBubble from "../components/SpeechBubble";
 import KeywordsBox from "../components/KeywordsBox";
 import PromotionSection from "../components/PromotionSection";
 import Navigation from "../components/ui/Navigation";
+import ContentRecommendations from "../components/ContentRecommendations";
 
 const Result = () => {
   const { landingUserId, mindReadingId, fortuneId } = useParams();
@@ -33,6 +34,7 @@ const Result = () => {
     hundredths: 0,
   });
   const [isPromotionVisible, setIsPromotionVisible] = useState(false);
+  const [showContentModal, setShowContentModal] = useState(false);
 
   // 카드명 매핑 함수
   const getCardName = (cardNumber) => {
@@ -2218,7 +2220,7 @@ const Result = () => {
                 ref={promotionTriggerRef}
                 className="flex justify-center w-full py-8"
               >
-                <div className="w-full max-w-lg">
+                <div className="w-full max-w-lg relative">
                   <WebtoonPanel
                     backgroundImage="/images/characters/webtoon/desert_fox_watching_card.jpeg"
                     fitImage={true}
@@ -2239,6 +2241,28 @@ const Result = () => {
                       },
                     ]}
                   />
+
+                  {/* 전등 버튼 - 웹툰 패널 영역 내에서만 보이도록 클리핑 */}
+                  {isPromotionVisible && (
+                    <div
+                      className="absolute inset-0 overflow-hidden z-30"
+                      style={{ clipPath: 'inset(0)' }}
+                    >
+                      <button
+                        onClick={() => setShowContentModal(true)}
+                        className="fixed w-12 h-12 bg-yellow-400 hover:bg-yellow-500 text-black rounded-full shadow-lg transition-all duration-200 flex items-center justify-center"
+                        style={{
+                          top: '1rem',
+                          right: 'max(1rem, calc(50% - 200px))', // 웹툰 패널 max-width 기준으로 조정
+                        }}
+                      >
+                        {/* 전등 아이콘 */}
+                        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6C7.8 12.16 7 10.63 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -2324,6 +2348,37 @@ const Result = () => {
             </>
           )}
         </div>
+
+
+        {/* 콘텐츠 추천 모달 */}
+        {showContentModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50">
+            <div className="bg-white rounded-t-3xl w-full max-w-md max-h-[80vh] overflow-hidden transform transition-transform duration-300 ease-out">
+              {/* 모달 헤더 */}
+              <div className="p-6 border-b">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-bold text-black">
+                    ✨ 이런 콘텐츠도 있어요!
+                  </h3>
+                  <button
+                    onClick={() => setShowContentModal(false)}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <p className="text-gray-600 text-sm mt-2">더 많은 재미있는 콘텐츠를 확인해보세요</p>
+              </div>
+
+              {/* 콘텐츠 목록 */}
+              <div className="p-6 overflow-y-auto">
+                <ContentRecommendations pageType="mind-reading" limit={6} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

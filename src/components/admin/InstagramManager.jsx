@@ -221,9 +221,10 @@ const InstagramManager = () => {
 
     const templates = [
       { value: 'thumbnail', label: '썸네일' },
-      { value: 'page1', label: '페이지 1 (1-4번 별자리)' },
-      { value: 'page2', label: '페이지 2 (5-8번 별자리)' },
-      { value: 'page3', label: '페이지 3 (9-12번 별자리)' },
+      { value: 'page1', label: '페이지 1 (봄 별자리)' },
+      { value: 'page2', label: '페이지 2 (여름 별자리)' },
+      { value: 'page3', label: '페이지 3 (가을 별자리)' },
+      { value: 'page4', label: '페이지 4 (겨울 별자리)' },
       { value: 'ending', label: '마무리 페이지' }
     ];
 
@@ -325,8 +326,8 @@ const InstagramManager = () => {
                       className="relative bg-white rounded-lg shadow-lg"
                       style={{
                         width: '400px',
-                        height: '400px',
-                        aspectRatio: '1 / 1'
+                        height: '500px',
+                        aspectRatio: '4 / 5'
                       }}
                     >
                       <iframe
@@ -334,7 +335,7 @@ const InstagramManager = () => {
                         className="w-full h-full border-0 rounded-lg"
                         style={{
                           width: '1080px',
-                          height: '1080px',
+                          height: '1350px',
                           transform: 'scale(0.37)',
                           transformOrigin: 'top left',
                           position: 'absolute',
@@ -380,6 +381,8 @@ const InstagramManager = () => {
     });
     const [loading, setLoading] = useState(false);
     const [recentPosts, setRecentPosts] = useState([]);
+    const [generatedImages, setGeneratedImages] = useState([]);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     // 스케줄러 상태 조회
     const fetchSchedulerStatus = async () => {
@@ -452,6 +455,72 @@ const InstagramManager = () => {
         toast.error('즉시 실행 중 오류가 발생했습니다.');
       } finally {
         setLoading(false);
+      }
+    };
+
+    // 이미지 생성 (업로드 없이)
+    const handleGenerateImages = async () => {
+      try {
+        setIsGenerating(true);
+        setGeneratedImages([]);
+
+        toast.info('이미지 생성 중... (약 30초 소요)');
+
+        const response = await fetch(`${instagramConfig.backendUrl}/api/instagram/generate-fortune-images`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fortuneTheme: schedulerData.fortuneTheme
+          }),
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setGeneratedImages(data.imageUrls);
+          toast.success(`${data.imageCount}개 이미지가 생성되었습니다!`);
+        } else {
+          throw new Error(data.error || '이미지 생성 실패');
+        }
+      } catch (error) {
+        toast.error('이미지 생성 실패: ' + error.message);
+      } finally {
+        setIsGenerating(false);
+      }
+    };
+
+    // 이미지 다운로드
+    const handleDownloadImage = async (imageUrl, index) => {
+      try {
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `fortune-image-${index + 1}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } catch (error) {
+        toast.error('이미지 다운로드 실패');
+      }
+    };
+
+    // 모든 이미지 다운로드
+    const handleDownloadAllImages = async () => {
+      try {
+        for (let i = 0; i < generatedImages.length; i++) {
+          await handleDownloadImage(generatedImages[i], i);
+          // 다운로드 사이 약간의 딜레이
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        toast.success('모든 이미지 다운로드 완료!');
+      } catch (error) {
+        toast.error('이미지 다운로드 중 오류 발생');
       }
     };
 
@@ -577,6 +646,57 @@ const InstagramManager = () => {
 
                 <div className="text-sm text-gray-600 bg-yellow-50 p-3 rounded">
                   💡 스케줄러가 활성화되면 매일 설정한 시간에 12개 별자리의 운세가 자동으로 Instagram에 게시됩니다.
+                </div>
+
+                {/* 임시 이미지 생성 및 다운로드 섹션 */}
+                <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                  <h4 className="font-medium text-purple-900 mb-2">📸 이미지 수동 생성 (임시)</h4>
+                  <p className="text-sm text-purple-700 mb-3">
+                    메타 비즈니스 인증 전까지 이미지를 수동으로 생성하고 다운로드할 수 있습니다.
+                  </p>
+
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleGenerateImages}
+                      disabled={isGenerating}
+                      className="bg-purple-600 hover:bg-purple-700 text-white"
+                    >
+                      {isGenerating ? '이미지 생성 중...' : '이미지 생성'}
+                    </Button>
+
+                    {generatedImages.length > 0 && (
+                      <Button
+                        onClick={handleDownloadAllImages}
+                        variant="outline"
+                        className="border-purple-600 text-purple-600 hover:bg-purple-50"
+                      >
+                        모든 이미지 다운로드 ({generatedImages.length}개)
+                      </Button>
+                    )}
+                  </div>
+
+                  {generatedImages.length > 0 && (
+                    <div className="mt-4">
+                      <h5 className="text-sm font-medium text-purple-900 mb-2">생성된 이미지:</h5>
+                      <div className="grid grid-cols-5 gap-2">
+                        {generatedImages.map((url, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={url}
+                              alt={`Fortune ${index + 1}`}
+                              className="w-full h-24 object-cover rounded border border-purple-200"
+                            />
+                            <button
+                              onClick={() => handleDownloadImage(url, index)}
+                              className="absolute inset-0 bg-black bg-opacity-50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded"
+                            >
+                              다운로드
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (

@@ -3,6 +3,7 @@ import Header from '../components/ui/Header';
 import SideMenu from '../components/ui/SideMenu';
 import BannerSlider from '../components/ui/BannerSlider';
 import ContentGrid from '../components/ui/ContentGrid';
+import FeaturedContentGrid from '../components/ui/FeaturedContentGrid';
 import Footer from '../components/ui/Footer';
 
 const Home = () => {
@@ -57,6 +58,7 @@ const Home = () => {
         <SideMenu isOpen={isMenuOpen} onClose={closeMenu} />
         <BannerSlider />
         <ContentGrid />
+        <FeaturedContentGrid title="운세 콘텐츠" limit={8} />
         <Footer />
       </div>
     </div>

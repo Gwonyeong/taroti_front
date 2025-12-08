@@ -206,3 +206,156 @@ export const updateContentOrder = async (contentUpdates) => {
     throw error;
   }
 };
+
+// ========== 특별한 콘텐츠 관련 API ==========
+
+// 특별한 콘텐츠 목록 조회
+export const getFeaturedContents = async (activeOnly = false, category = null) => {
+  try {
+    const params = new URLSearchParams();
+    if (activeOnly) params.append('active', 'true');
+    if (category) params.append('category', category);
+
+    const url = `${API_BASE_URL}/api/featured-contents${params.toString() ? `?${params.toString()}` : ''}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.contents || [];
+  } catch (error) {
+    console.error('Error fetching featured contents:', error);
+    throw error;
+  }
+};
+
+// 특별한 콘텐츠 클릭 수 업데이트
+export const updateFeaturedContentClick = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/featured-contents/${id}/click`, {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating featured content click:', error);
+    throw error;
+  }
+};
+
+// 관리자용 특별한 콘텐츠 목록 조회
+export const getFeaturedContentsForAdmin = async (params = {}) => {
+  try {
+    const searchParams = new URLSearchParams(params);
+    const url = `${API_BASE_URL}/api/featured-contents/admin?${searchParams.toString()}`;
+
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': 'Bearer valid-admin-token',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching featured contents for admin:', error);
+    throw error;
+  }
+};
+
+// 특별한 콘텐츠 생성
+export const createFeaturedContent = async (formData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/featured-contents`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer valid-admin-token',
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating featured content:', error);
+    throw error;
+  }
+};
+
+// 특별한 콘텐츠 업데이트
+export const updateFeaturedContent = async (id, formData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/featured-contents/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer valid-admin-token',
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating featured content:', error);
+    throw error;
+  }
+};
+
+// 특별한 콘텐츠 삭제
+export const deleteFeaturedContent = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/featured-contents/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': 'Bearer valid-admin-token',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting featured content:', error);
+    throw error;
+  }
+};
+
+// 특별한 콘텐츠 순서 업데이트
+export const updateFeaturedContentOrder = async (orders) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/featured-contents/batch/order`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer valid-admin-token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ orders }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating featured content order:', error);
+    throw error;
+  }
+};
