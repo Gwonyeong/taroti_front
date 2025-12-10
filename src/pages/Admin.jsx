@@ -6,6 +6,7 @@ import ContentManager from '../components/admin/ContentManager';
 import FeaturedContentManager from '../components/admin/FeaturedContentManager';
 import RecommendationManager from '../components/admin/RecommendationManager';
 import InstagramManager from '../components/admin/InstagramManager';
+import VideoManager from '../components/admin/VideoManager';
 
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -110,6 +111,16 @@ const Admin = () => {
             >
               Instagram 마케팅
             </button>
+            <button
+              onClick={() => setActiveTab('video')}
+              className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'video'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-black'
+              }`}
+            >
+              영상 생성 테스트
+            </button>
           </div>
         </div>
       </nav>
@@ -121,6 +132,7 @@ const Admin = () => {
         {activeTab === 'featured' && <FeaturedContentManager />}
         {activeTab === 'recommendations' && <RecommendationManager />}
         {activeTab === 'instagram' && <InstagramManager />}
+        {activeTab === 'video' && <VideoManager />}
       </div>
     </div>
   );
