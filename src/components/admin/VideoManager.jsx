@@ -22,6 +22,10 @@ const VideoManager = () => {
     metadata: {}
   });
 
+  // Instagram Rate Limit 상태
+  const [rateLimitInfo, setRateLimitInfo] = useState(null);
+  const [isLoadingRateLimit, setIsLoadingRateLimit] = useState(false);
+
   // 비디오 타입별 설정
   const videoTypeOptions = {
     'weekly-fortune': {
@@ -155,15 +159,39 @@ const VideoManager = () => {
   };
 
   // Instagram 게시 다이얼로그 열기
-  const openInstagramPublish = (video) => {
-    const defaultCaption = generateVideoCaption(video);
+  const openInstagramPublish = (video, mediaType = 'REELS') => {
+    let mediaUrls = [];
+    let caption = '';
+
+    if (mediaType === 'REELS') {
+      // 릴스의 경우 비디오 URL 사용
+      mediaUrls = [video.publicUrl];
+      caption = generateReelsCaption(video);
+    } else if (mediaType === 'CAROUSEL_ALBUM') {
+      // 캐러셀의 경우 캐러셀 전용 이미지들만 사용 (order 필드로 정렬된)
+      const carouselImages = video.images && video.images.length > 0
+        ? video.images.filter(img => img.imageType && img.imageType.startsWith('carousel-'))
+        : [];
+
+      // order 필드로 정렬 (null인 경우를 대비해 fallback 정렬도 추가)
+      carouselImages.sort((a, b) => {
+        if (a.order && b.order) return a.order - b.order;
+        if (a.order) return -1;
+        if (b.order) return 1;
+        return 0;
+      });
+
+      mediaUrls = carouselImages.map(img => img.publicUrl);
+      caption = generateCarouselCaption(video);
+    }
 
     setPublishDialog({
       isOpen: true,
-      mediaUrl: video.publicUrl,
-      mediaType: 'VIDEO',
+      mediaUrl: mediaUrls.length === 1 ? mediaUrls[0] : '', // 단일 미디어의 경우
+      mediaUrls: mediaUrls, // 다중 미디어의 경우
+      mediaType: mediaType,
       title: video.title,
-      defaultCaption: defaultCaption,
+      defaultCaption: caption,
       metadata: {
         videoId: video.id,
         videoType: video.videoType,
@@ -184,24 +212,83 @@ const VideoManager = () => {
     });
   };
 
-  // 비디오용 기본 캡션 생성
-  const generateVideoCaption = (video) => {
+  // 릴스용 캡션 생성
+  const generateReelsCaption = (video) => {
     const typeLabel = videoTypeOptions[video.videoType]?.label || video.videoType;
+
+    // 카드 결과 정보 추출
+    let cardResultsText = '';
+    if (video.metadata && video.metadata.cardContent && video.metadata.cardContent.cards) {
+      const cards = video.metadata.cardContent.cards;
+      cardResultsText = cards.map((card, index) => {
+        return `${index + 1}. ${card.koreanName} - ${card.content.overall.slice(0, 50)}...`;
+      }).join('\n');
+    }
+
     const cardsText = Array.isArray(video.selectedCards) ?
       `선택된 카드: ${video.selectedCards.join(', ')}번` : '';
 
     return `✨ ${typeLabel} ✨
 
-${cardsText ? `${cardsText}\n` : ''}
-타로 카드로 보는 운세를 확인해보세요!
+${cardsText ? `${cardsText}\n\n` : ''}${cardResultsText ? `📋 이번 주 운세:\n${cardResultsText}\n\n` : ''}타로 카드로 보는 운세를 확인해보세요!
 
 🔮 매주 새로운 운세가 업데이트됩니다
 💫 당신만을 위한 특별한 메시지`;
   };
 
+  // 캐러셀용 캡션 생성
+  const generateCarouselCaption = (video) => {
+    const typeLabel = videoTypeOptions[video.videoType]?.label || video.videoType;
+    const cardsText = Array.isArray(video.selectedCards) ?
+      `선택된 카드: ${video.selectedCards.join(', ')}번` : '';
+
+    return `📖 ${typeLabel} 상세 해석 📖
+
+${cardsText ? `${cardsText}\n` : ''}
+카드별 상세한 의미와 해석을 확인해보세요!
+
+👈 좌우로 넘겨서 모든 카드 보기
+🔮 매주 새로운 운세 업데이트
+💫 당신의 운명을 알아보세요`;
+  };
+
+  // 비디오용 기본 캡션 생성 (하위 호환성)
+  const generateVideoCaption = (video) => {
+    return generateReelsCaption(video);
+  };
+
+  // Instagram Rate Limit 확인
+  const checkRateLimit = async () => {
+    setIsLoadingRateLimit(true);
+    setRateLimitInfo(null);
+
+    try {
+      const response = await fetch('/api/instagram/rate-limit', {
+        method: 'GET',
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setRateLimitInfo(data.rateLimitInfo);
+        console.log('✅ Rate Limit 정보:', data.rateLimitInfo);
+      } else {
+        throw new Error(data.error || 'Rate Limit 정보를 가져오지 못했습니다.');
+      }
+    } catch (error) {
+      console.error('❌ Rate Limit 확인 실패:', error);
+      setError(error.message);
+    } finally {
+      setIsLoadingRateLimit(false);
+    }
+  };
+
   // Instagram 게시 성공 후 처리
   const handlePublishSuccess = (publishData) => {
     console.log('Instagram 게시 성공:', publishData);
+    // Rate Limit 정보 새로고침
+    checkRateLimit();
     // 필요시 비디오 목록 새로고침 등 추가 작업
   };
 
@@ -218,12 +305,82 @@ ${cardsText ? `${cardsText}\n` : ''}
         {/* 상태 확인 섹션 */}
         <div className="border rounded-lg p-4 mb-6">
           <h3 className="text-lg font-semibold mb-3">📊 서비스 상태 확인</h3>
-          <Button
-            onClick={checkVideoServiceStatus}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            영상 서비스 상태 확인
-          </Button>
+          <div className="space-x-3">
+            <Button
+              onClick={checkVideoServiceStatus}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              영상 서비스 상태 확인
+            </Button>
+            <Button
+              onClick={checkRateLimit}
+              disabled={isLoadingRateLimit}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {isLoadingRateLimit ? '확인 중...' : 'Instagram Rate Limit 확인'}
+            </Button>
+          </div>
+
+          {/* Rate Limit 정보 표시 */}
+          {rateLimitInfo && (
+            <div className="mt-4 p-4 border border-purple-200 bg-purple-50 rounded-lg">
+              <h4 className="text-sm font-semibold text-purple-800 mb-2">📈 Instagram 게시 현황</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">사용량:</span>
+                  <span className="font-semibold ml-1">
+                    {rateLimitInfo.quota_usage}/{rateLimitInfo.config.quota_total}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">잔여:</span>
+                  <span className="font-semibold ml-1 text-green-600">
+                    {rateLimitInfo.remainingQuota}개
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">사용률:</span>
+                  <span className={`font-semibold ml-1 ${
+                    rateLimitInfo.utilizationPercentage >= 90
+                      ? 'text-red-600'
+                      : rateLimitInfo.utilizationPercentage >= 70
+                      ? 'text-yellow-600'
+                      : 'text-green-600'
+                  }`}>
+                    {rateLimitInfo.utilizationPercentage}%
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">24시간 내 게시:</span>
+                  <span className="font-semibold ml-1">
+                    {rateLimitInfo.localPostCount}개
+                  </span>
+                </div>
+              </div>
+
+              {/* 경고 메시지 */}
+              {rateLimitInfo.utilizationPercentage >= 90 && (
+                <div className="mt-3 p-2 bg-red-100 text-red-700 text-sm rounded">
+                  ⚠️ 게시 한도가 거의 소진되었습니다. 신중하게 게시하세요.
+                </div>
+              )}
+
+              {/* 최근 게시물 */}
+              {rateLimitInfo.recentPosts && rateLimitInfo.recentPosts.length > 0 && (
+                <div className="mt-3">
+                  <span className="text-xs text-gray-600 font-semibold">최근 게시물:</span>
+                  <div className="mt-1 space-y-1">
+                    {rateLimitInfo.recentPosts.map((post, index) => (
+                      <div key={post.id} className="text-xs text-gray-600 flex justify-between">
+                        <span className="truncate">{post.caption}</span>
+                        <span className="ml-2 text-purple-600">{post.mediaType}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 영상 생성 섹션 */}
@@ -533,11 +690,19 @@ ${cardsText ? `${cardsText}\n` : ''}
                     </button>
                     <span className="text-gray-300 text-sm">|</span>
                     <button
-                      onClick={() => openInstagramPublish(video)}
+                      onClick={() => openInstagramPublish(video, 'REELS')}
                       className="flex items-center gap-1 text-purple-600 hover:text-purple-800 text-sm font-medium"
                     >
                       <Instagram className="h-3 w-3" />
-                      Instagram 게시
+                      릴스 게시
+                    </button>
+                    <span className="text-gray-300 text-sm">|</span>
+                    <button
+                      onClick={() => openInstagramPublish(video, 'CAROUSEL_ALBUM')}
+                      className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                    >
+                      <Instagram className="h-3 w-3" />
+                      캐러셀 게시
                     </button>
                   </div>
 
@@ -597,6 +762,7 @@ ${cardsText ? `${cardsText}\n` : ''}
         isOpen={publishDialog.isOpen}
         onClose={closeInstagramPublish}
         mediaUrl={publishDialog.mediaUrl}
+        mediaUrls={publishDialog.mediaUrls}
         mediaType={publishDialog.mediaType}
         title={publishDialog.title}
         defaultCaption={publishDialog.defaultCaption}

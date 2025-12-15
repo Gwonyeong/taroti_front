@@ -19,7 +19,8 @@ const InstagramPublisher = ({
   isOpen,
   onClose,
   mediaUrl,
-  mediaType = 'IMAGE', // IMAGE, VIDEO, CAROUSEL_ALBUM
+  mediaUrls, // 다중 미디어 URL (캐러셀용)
+  mediaType = 'IMAGE', // IMAGE, VIDEO, CAROUSEL_ALBUM, REELS
   title = '',
   defaultCaption = '',
   defaultHashtags = '#타로 #운세 #타로티 #주간운세 #그사람의속마음',
@@ -69,7 +70,9 @@ const InstagramPublisher = ({
       return;
     }
 
-    if (!mediaUrl) {
+    // 미디어 URL 검증 (단일 또는 다중)
+    const hasMedia = mediaUrl || (mediaUrls && mediaUrls.length > 0);
+    if (!hasMedia) {
       toast.error('게시할 미디어가 없습니다.');
       return;
     }
@@ -81,7 +84,6 @@ const InstagramPublisher = ({
       const fullCaption = `${caption}\n\n${hashtags}`.trim();
 
       const requestBody = {
-        mediaUrl,
         mediaType,
         caption: fullCaption,
         metadata: {
@@ -90,6 +92,13 @@ const InstagramPublisher = ({
           source: 'admin_panel'
         }
       };
+
+      // 미디어 타입에 따라 적절한 URL 설정
+      if (mediaType === 'CAROUSEL_ALBUM') {
+        requestBody.mediaUrls = mediaUrls || [];
+      } else {
+        requestBody.mediaUrl = mediaUrl;
+      }
 
       // 예약 게시 시간이 설정된 경우
       if (scheduleTime) {
@@ -186,25 +195,45 @@ const InstagramPublisher = ({
           )}
 
           {/* 미디어 미리보기 */}
-          {mediaUrl && (
+          {(mediaUrl || (mediaUrls && mediaUrls.length > 0)) && (
             <div className="border rounded-lg overflow-hidden bg-gray-50">
               <div className="p-2 bg-gray-100 text-xs text-gray-600">
-                미리보기
+                미리보기 {mediaType === 'CAROUSEL_ALBUM' && mediaUrls && `(${mediaUrls.length}개 이미지)`}
               </div>
-              <div className="p-4 flex justify-center">
-                {mediaType === 'VIDEO' ? (
-                  <video
-                    src={mediaUrl}
-                    controls
-                    className="max-w-full max-h-[200px] rounded"
-                    style={{ aspectRatio: '4/5' }}
-                  />
+              <div className="p-4">
+                {mediaType === 'CAROUSEL_ALBUM' && mediaUrls ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {mediaUrls.slice(0, 6).map((url, index) => (
+                      <img
+                        key={index}
+                        src={url}
+                        alt={`캐러셀 이미지 ${index + 1}`}
+                        className="w-full h-20 object-cover rounded border"
+                      />
+                    ))}
+                    {mediaUrls.length > 6 && (
+                      <div className="w-full h-20 bg-gray-200 rounded border flex items-center justify-center text-xs text-gray-600">
+                        +{mediaUrls.length - 6}개 더
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <img
-                    src={mediaUrl}
-                    alt="Instagram 게시물 미리보기"
-                    className="max-w-full max-h-[200px] object-contain rounded"
-                  />
+                  <div className="flex justify-center">
+                    {(mediaType === 'VIDEO' || mediaType === 'REELS') ? (
+                      <video
+                        src={mediaUrl}
+                        controls
+                        className="max-w-full max-h-[200px] rounded"
+                        style={{ aspectRatio: '4/5' }}
+                      />
+                    ) : (
+                      <img
+                        src={mediaUrl}
+                        alt="Instagram 게시물 미리보기"
+                        className="max-w-full max-h-[200px] object-contain rounded"
+                      />
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -270,7 +299,7 @@ const InstagramPublisher = ({
           </Button>
           <Button
             onClick={handlePublish}
-            disabled={!isConnected || isPublishing || !mediaUrl}
+            disabled={!isConnected || isPublishing || (!mediaUrl && (!mediaUrls || mediaUrls.length === 0))}
             className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
           >
             {isPublishing ? (
