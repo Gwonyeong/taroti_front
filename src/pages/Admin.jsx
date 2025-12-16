@@ -3,10 +3,11 @@ import { Button } from '../components/ui/button';
 import PasswordAuth from '../components/admin/PasswordAuth';
 import BannerManager from '../components/admin/BannerManager';
 import ContentManager from '../components/admin/ContentManager';
-import FeaturedContentManager from '../components/admin/FeaturedContentManager';
+// import FeaturedContentManager from '../components/admin/FeaturedContentManager';
 import RecommendationManager from '../components/admin/RecommendationManager';
 import InstagramManager from '../components/admin/InstagramManager';
 import VideoManager from '../components/admin/VideoManager';
+import FortuneTemplateManager from '../components/admin/FortuneTemplateManager';
 
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -81,6 +82,7 @@ const Admin = () => {
             >
               베스트 콘텐츠 관리
             </button>
+{/* 운세 콘텐츠 메뉴 임시 제거
             <button
               onClick={() => setActiveTab('featured')}
               className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
@@ -91,6 +93,7 @@ const Admin = () => {
             >
               운세 콘텐츠
             </button>
+            */}
             <button
               onClick={() => setActiveTab('recommendations')}
               className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
@@ -121,6 +124,16 @@ const Admin = () => {
             >
               영상 생성 테스트
             </button>
+            <button
+              onClick={() => setActiveTab('fortune-templates')}
+              className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'fortune-templates'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-black'
+              }`}
+            >
+              운세 템플릿 관리
+            </button>
           </div>
         </div>
       </nav>
@@ -129,10 +142,11 @@ const Admin = () => {
       <div className="max-w-7xl mx-auto p-6">
         {activeTab === 'banners' && <BannerManager />}
         {activeTab === 'contents' && <ContentManager />}
-        {activeTab === 'featured' && <FeaturedContentManager />}
+        {/* {activeTab === 'featured' && <FeaturedContentManager />} */}
         {activeTab === 'recommendations' && <RecommendationManager />}
         {activeTab === 'instagram' && <InstagramManager />}
         {activeTab === 'video' && <VideoManager />}
+        {activeTab === 'fortune-templates' && <FortuneTemplateManager />}
       </div>
     </div>
   );

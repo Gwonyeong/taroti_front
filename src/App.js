@@ -16,6 +16,8 @@ import NewYearFortune2026 from './pages/NewYearFortune2026';
 import NewYearFortuneResult2026 from './pages/NewYearFortuneResult2026';
 import ShareNewYearResult2026 from './pages/ShareNewYearResult2026';
 import InstagramCallback from './components/admin/InstagramCallback';
+import DynamicFortune from './pages/DynamicFortune';
+import DynamicFortuneResultPage from './pages/DynamicFortuneResultPage';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './context/AuthContext';
 
@@ -44,6 +46,12 @@ function App() {
             <Route path="/newyear-fortune-2026-result/:fortuneId" element={<NewYearFortuneResult2026 />} />
             <Route path="/share/:shareId" element={<ShareFortuneResult />} />
             <Route path="/share-newyear-2026/:shareId" element={<ShareNewYearResult2026 />} />
+
+            {/* 동적 운세 라우팅 */}
+            <Route path="/fortune/:templateKey" element={<DynamicFortune />} />
+            <Route path="/fortune/:templateKey/result" element={<DynamicFortuneResultPage />} />
+            <Route path="/fortune/:templateKey/result/:sessionId" element={<DynamicFortuneResultPage />} />
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <Toaster position="top-center" />

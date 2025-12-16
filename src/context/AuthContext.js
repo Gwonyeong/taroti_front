@@ -52,6 +52,9 @@ export const AuthProvider = ({ children }) => {
   const login = async () => {
     try {
       setIsLoading(true);
+      // 기존에 저장된 잘못된 토큰 제거
+      localStorage.removeItem('authToken');
+
       const kakaoToken = await loginWithKakao();
       const userInfo = await getKakaoUserInfo();
 
@@ -67,8 +70,23 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (response.ok) {
-        const { token, user: userData } = await response.json();
+        const responseData = await response.json();
+        console.log('카카오 로그인 응답:', responseData); // 디버깅용
+
+        const { token, user: userData } = responseData;
+
+        if (!token) {
+          console.error('토큰이 응답에 없습니다:', responseData);
+          throw new Error('토큰이 없습니다');
+        }
+
+        console.log('저장할 토큰:', token); // 디버깅용
         localStorage.setItem('authToken', token);
+
+        // 토큰이 제대로 저장되었는지 확인
+        const savedToken = localStorage.getItem('authToken');
+        console.log('저장된 토큰 확인:', savedToken); // 디버깅용
+
         setUser(userData);
         setIsAuthenticated(true);
 
