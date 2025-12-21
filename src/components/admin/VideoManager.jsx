@@ -12,6 +12,7 @@ const VideoManager = () => {
   const [videoList, setVideoList] = useState([]);
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [listError, setListError] = useState(null);
+  const [videoCaptions, setVideoCaptions] = useState({}); // 동적으로 로드된 캡션 저장
 
   // Instagram 게시 관련 상태
   const [publishDialog, setPublishDialog] = useState({
@@ -72,7 +73,8 @@ const VideoManager = () => {
       console.log('✏️ 커스텀 제목:', customTitle || '자동 생성');
 
       const requestBody = {
-        videoType: videoType
+        videoType: videoType,
+        generateCaption: true // 캡션 생성 요청 플래그
       };
 
       // 커스텀 제목이 있으면 추가
@@ -91,11 +93,16 @@ const VideoManager = () => {
       const data = await response.json();
 
       if (data.success) {
+        // 생성된 영상 데이터로 캡션 미리 생성
+        const generatedCaption = generateReelsCaption(data.data);
+
         setLastResult({
           type: 'video_generation',
-          data: data
+          data: data,
+          generatedCaption: generatedCaption
         });
         console.log('✅ 카드 뒤집기 영상 생성 완료:', data);
+        console.log('📝 생성된 캡션:', generatedCaption);
       } else {
         setError(data.error || '영상 생성 실패');
       }
@@ -105,6 +112,27 @@ const VideoManager = () => {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  // 저장된 캡션이 없는 영상에 대해 동적으로 캡션 생성
+  const generateMissingCaptions = async (videos) => {
+    const newCaptions = {};
+
+    for (const video of videos) {
+      if (!video.reelsCaption && video.selectedCards && video.selectedCards.length > 0) {
+        try {
+          console.log(`🔍 영상 ID ${video.id}에 대해 캡션 생성 중...`);
+          const caption = await generateReelsCaptionWithBackendData(video);
+          newCaptions[video.id] = caption;
+        } catch (error) {
+          console.error(`영상 ID ${video.id} 캡션 생성 실패:`, error);
+          // 실패 시 기본 캡션 사용
+          newCaptions[video.id] = generateReelsCaption(video);
+        }
+      }
+    }
+
+    setVideoCaptions(prev => ({ ...prev, ...newCaptions }));
   };
 
   // 생성된 영상 목록 조회
@@ -118,6 +146,9 @@ const VideoManager = () => {
 
       if (data.success) {
         setVideoList(data.data.videos);
+
+        // 저장된 캡션이 없는 영상들에 대해 동적으로 캡션 생성
+        generateMissingCaptions(data.data.videos);
       } else {
         setListError('영상 목록 로드 실패');
       }
@@ -166,7 +197,7 @@ const VideoManager = () => {
     if (mediaType === 'REELS') {
       // 릴스의 경우 비디오 URL 사용
       mediaUrls = [video.publicUrl];
-      caption = generateReelsCaption(video);
+      caption = video.reelsCaption || videoCaptions[video.id] || generateReelsCaption(video);
     } else if (mediaType === 'CAROUSEL_ALBUM') {
       // 캐러셀의 경우 캐러셀 전용 이미지들만 사용 (order 필드로 정렬된)
       const carouselImages = video.images && video.images.length > 0
@@ -212,28 +243,252 @@ const VideoManager = () => {
     });
   };
 
-  // 릴스용 캡션 생성
+  // 백엔드 JSON 파일에서 카드 해석 데이터를 가져오는 함수
+  const fetchCardInterpretationsFromBackend = async (cardNumbers, videoType) => {
+    try {
+      console.log('🔍 백엔드에서 카드 해석 요청:', { cardNumbers, videoType });
+
+      const response = await fetch('/api/cards/interpretations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cardNumbers: cardNumbers,
+          type: videoType
+        }),
+      });
+
+      const data = await response.json();
+      console.log('🔍 백엔드 응답:', data);
+
+      if (data.success && data.cards) {
+        return data.cards;
+      }
+    } catch (error) {
+      console.error('백엔드 카드 해석 데이터 가져오기 실패:', error);
+    }
+    return null;
+  };
+
+  // 카드 번호에 따른 실제 해석 데이터를 가져오는 함수 (동기적으로 사용)
+  const getCardInterpretationByNumber = async (cardNumber, videoType) => {
+    try {
+      // 백엔드에서 특정 카드의 해석 데이터를 가져옴
+      const response = await fetch(`/api/cards/${cardNumber}/interpretation?type=${videoType}`);
+      const data = await response.json();
+
+      if (data.success) {
+        return {
+          koreanName: data.card.koreanName,
+          interpretation: videoType === 'weekly-fortune'
+            ? data.card.weeklyFortune?.overall
+            : data.card.trueFeelings?.feeling || data.card.overall
+        };
+      }
+    } catch (error) {
+      console.error(`카드 ${cardNumber} 해석 가져오기 실패:`, error);
+    }
+
+    // 기본값 반환
+    const cardNames = {
+      0: '바보', 1: '마법사', 2: '여사제', 3: '여황제', 4: '황제',
+      5: '교황', 6: '연인', 7: '전차', 8: '힘', 9: '은둔자',
+      10: '운명의 수레바퀴', 11: '정의', 12: '매달린 사람', 13: '죽음', 14: '절제',
+      15: '악마', 16: '탑', 17: '별', 18: '달', 19: '태양', 20: '심판', 21: '세계'
+    };
+
+    return {
+      koreanName: cardNames[cardNumber] || `${cardNumber}번 카드`,
+      interpretation: null
+    };
+  };
+
+  // 릴스용 캡션 생성 (동기 버전 - 저장된 캡션 우선 사용)
   const generateReelsCaption = (video) => {
+    console.log('🔍 캡션 생성 디버그 - video 객체:', video);
+    console.log('🔍 video.reelsCaption:', video.reelsCaption);
+    console.log('🔍 video.selectedCards:', video.selectedCards);
+
+    // 데이터베이스에 저장된 캡션이 있으면 우선 사용
+    if (video.reelsCaption) {
+      console.log('✅ 저장된 릴스 캡션 사용');
+      return video.reelsCaption;
+    }
+
+    console.log('⚠️ 저장된 캡션이 없어 실시간 생성합니다');
     const typeLabel = videoTypeOptions[video.videoType]?.label || video.videoType;
 
-    // 카드 결과 정보 추출
-    let cardResultsText = '';
+    // 카드 해석 정보 추출 및 포맷팅
+    let cardInterpretationsText = '';
+
+    // 다양한 데이터 구조를 고려하여 카드 정보 추출
+    let cardsData = null;
+
     if (video.metadata && video.metadata.cardContent && video.metadata.cardContent.cards) {
-      const cards = video.metadata.cardContent.cards;
-      cardResultsText = cards.map((card, index) => {
-        return `${index + 1}. ${card.koreanName} - ${card.content.overall.slice(0, 50)}...`;
-      }).join('\n');
+      cardsData = video.metadata.cardContent.cards;
+      console.log('🔍 cards 데이터 (metadata.cardContent.cards):', cardsData);
+    } else if (video.metadata && video.metadata.cards) {
+      cardsData = video.metadata.cards;
+      console.log('🔍 cards 데이터 (metadata.cards):', cardsData);
+    } else if (video.cardContent && video.cardContent.cards) {
+      cardsData = video.cardContent.cards;
+      console.log('🔍 cards 데이터 (cardContent.cards):', cardsData);
+    }
+
+    if (cardsData) {
+      cardInterpretationsText = cardsData.map((card, index) => {
+        console.log(`🔍 카드 ${index + 1} 데이터:`, card);
+
+        let interpretation = '';
+        let cardName = card.koreanName || card.name || `카드 ${index + 1}`;
+
+        // 영상 종류에 따른 해석 내용 선택 (전체 내용 출력)
+        if (video.videoType === 'weekly-fortune') {
+          if (card.weeklyFortune && card.weeklyFortune.overall) {
+            interpretation = card.weeklyFortune.overall;
+          } else if (card.content && card.content.weeklyFortune && card.content.weeklyFortune.overall) {
+            interpretation = card.content.weeklyFortune.overall;
+          } else if (card.overall) {
+            interpretation = card.overall;
+          }
+        } else if (video.videoType === 'true-feelings') {
+          if (card.trueFeelings && card.trueFeelings.feeling) {
+            interpretation = card.trueFeelings.feeling;
+          } else if (card.content && card.content.trueFeelings && card.content.trueFeelings.feeling) {
+            interpretation = card.content.trueFeelings.feeling;
+          } else if (card.feeling) {
+            interpretation = card.feeling;
+          }
+        }
+
+        // 기본값 처리 (전체 내용 출력)
+        if (!interpretation) {
+          if (card.content && card.content.overall) {
+            interpretation = card.content.overall;
+          } else if (card.overall) {
+            interpretation = card.overall;
+          } else {
+            interpretation = '이 카드의 의미를 영상에서 확인해보세요!';
+          }
+        }
+
+        console.log(`🔍 카드 ${index + 1} 해석:`, interpretation);
+
+        return `${index + 1}번 : ${cardName}
+${interpretation}`;
+      }).join('\n\n');
+    } else {
+      console.log('⚠️ 메타데이터에서 카드 데이터를 찾을 수 없습니다. selectedCards로 해석 시도합니다.');
+      // selectedCards 번호를 이용해서 백엔드에서 실제 해석 데이터 가져오기
+      if (Array.isArray(video.selectedCards) && video.selectedCards.length > 0) {
+        // 기본 카드명 매핑
+        const cardNames = {
+          0: '바보', 1: '마법사', 2: '여사제', 3: '여황제', 4: '황제',
+          5: '교황', 6: '연인', 7: '전차', 8: '힘', 9: '은둔자',
+          10: '운명의 수레바퀴', 11: '정의', 12: '매달린 사람', 13: '죽음', 14: '절제',
+          15: '악마', 16: '탑', 17: '별', 18: '달', 19: '태양', 20: '심판', 21: '세계'
+        };
+
+        // 백엔드에서 실제 카드 해석 데이터 가져오기 시도
+        console.log('🔍 백엔드에서 카드 해석 요청 중...', video.selectedCards, video.videoType);
+
+        // 기존 영상의 경우 카드명만 표시하고 해석은 기본 메시지로 대체
+        cardInterpretationsText = video.selectedCards.map((cardNumber, index) => {
+          const cardName = cardNames[cardNumber] || `${cardNumber}번 카드`;
+
+          return `${index + 1}번 : ${cardName}
+이 카드의 의미를 영상에서 확인해보세요!`;
+        }).join('\n\n');
+
+        // 비동기로 실제 카드 해석 데이터로 업데이트 (컴포넌트 내에서 별도 처리)
+      }
     }
 
     const cardsText = Array.isArray(video.selectedCards) ?
-      `선택된 카드: ${video.selectedCards.join(', ')}번` : '';
+      `📋 선택된 카드: ${video.selectedCards.join(', ')}번` : '';
 
-    return `✨ ${typeLabel} ✨
+    // 영상 종류에 따른 타이틀 및 설명 조정
+    const contentTitle = video.videoType === 'weekly-fortune' ? '이번 주 운세' :
+                        video.videoType === 'true-feelings' ? '그 사람의 속마음' : '운세 해석';
 
-${cardsText ? `${cardsText}\n\n` : ''}${cardResultsText ? `📋 이번 주 운세:\n${cardResultsText}\n\n` : ''}타로 카드로 보는 운세를 확인해보세요!
+    const finalCaption = `✨ ${typeLabel} ✨
 
-🔮 매주 새로운 운세가 업데이트됩니다
-💫 당신만을 위한 특별한 메시지`;
+${cardsText ? `${cardsText}\n\n` : ''}${cardInterpretationsText ? `🔮 ${contentTitle}:\n\n${cardInterpretationsText}\n\n` : ''}타로 카드로 보는 운세를 확인해보세요!
+
+🌟 매주 새로운 운세가 업데이트됩니다
+💫 당신만을 위한 특별한 메시지
+
+#타로 #운세 #타로카드 #점술`;
+
+    console.log('📝 최종 생성된 캡션:', finalCaption);
+
+    return finalCaption;
+  };
+
+  // 백엔드에서 실제 카드 해석을 가져와서 캡션을 생성하는 비동기 함수
+  const generateReelsCaptionWithBackendData = async (video) => {
+    console.log('🔍 비동기 캡션 생성 시작 - video 객체:', video);
+
+    const typeLabel = videoTypeOptions[video.videoType]?.label || video.videoType;
+    let cardInterpretationsText = '';
+
+    // selectedCards가 있을 때 백엔드에서 실제 카드 해석 가져오기
+    if (Array.isArray(video.selectedCards) && video.selectedCards.length > 0) {
+      try {
+        console.log('🔍 백엔드에서 카드 해석 요청:', video.selectedCards, video.videoType);
+
+        const cardData = await fetchCardInterpretationsFromBackend(video.selectedCards, video.videoType);
+
+        if (cardData && cardData.length > 0) {
+          cardInterpretationsText = cardData.map((card, index) => {
+            return `${index + 1}번 : ${card.koreanName}
+${card.interpretation}`;
+          }).join('\n\n');
+          console.log('✅ 백엔드에서 카드 해석 데이터 로드 성공');
+        } else {
+          throw new Error('백엔드에서 카드 데이터를 가져올 수 없습니다.');
+        }
+      } catch (error) {
+        console.error('❌ 백엔드 카드 해석 로드 실패:', error);
+
+        // 기본 카드명 매핑
+        const cardNames = {
+          0: '바보', 1: '마법사', 2: '여사제', 3: '여황제', 4: '황제',
+          5: '교황', 6: '연인', 7: '전차', 8: '힘', 9: '은둔자',
+          10: '운명의 수레바퀴', 11: '정의', 12: '매달린 사람', 13: '죽음', 14: '절제',
+          15: '악마', 16: '탑', 17: '별', 18: '달', 19: '태양', 20: '심판', 21: '세계'
+        };
+
+        // 실패 시 기본 메시지로 처리
+        cardInterpretationsText = video.selectedCards.map((cardNumber, index) => {
+          const cardName = cardNames[cardNumber] || `${cardNumber}번 카드`;
+
+          return `${index + 1}번 : ${cardName}
+백엔드에서 카드 해석을 가져오는데 실패했습니다. 영상을 확인해주세요.`;
+        }).join('\n\n');
+      }
+    }
+
+    const cardsText = Array.isArray(video.selectedCards) ?
+      `📋 선택된 카드: ${video.selectedCards.join(', ')}번` : '';
+
+    // 영상 종류에 따른 타이틀 및 설명 조정
+    const contentTitle = video.videoType === 'weekly-fortune' ? '이번 주 운세' :
+                        video.videoType === 'true-feelings' ? '그 사람의 속마음' : '운세 해석';
+
+    const finalCaption = `✨ ${typeLabel} ✨
+
+${cardsText ? `${cardsText}\n\n` : ''}${cardInterpretationsText ? `🔮 ${contentTitle}:\n\n${cardInterpretationsText}\n\n` : ''}타로 카드로 보는 운세를 확인해보세요!
+
+🌟 매주 새로운 운세가 업데이트됩니다
+💫 당신만을 위한 특별한 메시지
+
+#타로 #운세 #타로카드 #점술`;
+
+    console.log('📝 비동기 캡션 생성 완료:', finalCaption);
+
+    return finalCaption;
   };
 
   // 캐러셀용 캡션 생성
@@ -252,10 +507,6 @@ ${cardsText ? `${cardsText}\n` : ''}
 💫 당신의 운명을 알아보세요`;
   };
 
-  // 비디오용 기본 캡션 생성 (하위 호환성)
-  const generateVideoCaption = (video) => {
-    return generateReelsCaption(video);
-  };
 
   // Instagram Rate Limit 확인
   const checkRateLimit = async () => {
@@ -370,7 +621,7 @@ ${cardsText ? `${cardsText}\n` : ''}
                 <div className="mt-3">
                   <span className="text-xs text-gray-600 font-semibold">최근 게시물:</span>
                   <div className="mt-1 space-y-1">
-                    {rateLimitInfo.recentPosts.map((post, index) => (
+                    {rateLimitInfo.recentPosts.map((post) => (
                       <div key={post.id} className="text-xs text-gray-600 flex justify-between">
                         <span className="truncate">{post.caption}</span>
                         <span className="ml-2 text-purple-600">{post.mediaType}</span>
@@ -521,6 +772,33 @@ ${cardsText ? `${cardsText}\n` : ''}
                     </video>
                   </div>
                 </div>
+
+                {/* 생성된 캡션 미리보기 */}
+                {lastResult.generatedCaption && (
+                  <div className="mt-6">
+                    <strong>생성된 릴스 캡션 미리보기:</strong>
+                    <div className="mt-3 p-4 border border-purple-200 bg-purple-50 rounded-lg">
+                      <div className="text-sm whitespace-pre-wrap text-gray-800">
+                        {lastResult.generatedCaption}
+                      </div>
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          onClick={() => navigator.clipboard.writeText(lastResult.generatedCaption)}
+                          className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700"
+                        >
+                          캡션 복사
+                        </button>
+                        <button
+                          onClick={() => openInstagramPublish(lastResult.data.data, 'REELS')}
+                          className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"
+                        >
+                          <Instagram className="h-3 w-3" />
+                          바로 릴스 게시
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* 생성된 이미지들 미리보기 */}
                 {lastResult.data.data.generatedImages && lastResult.data.data.generatedImages.length > 0 && (
@@ -690,6 +968,18 @@ ${cardsText ? `${cardsText}\n` : ''}
                     </button>
                     <span className="text-gray-300 text-sm">|</span>
                     <button
+                      onClick={() => {
+                        // 저장된 캡션 > 동적 로드된 캡션 > 실시간 생성 순으로 우선순위
+                        const caption = video.reelsCaption || videoCaptions[video.id] || generateReelsCaption(video);
+                        navigator.clipboard.writeText(caption);
+                        alert('캡션이 클립보드에 복사되었습니다!');
+                      }}
+                      className="text-orange-600 hover:text-orange-800 text-sm"
+                    >
+                      캡션 복사
+                    </button>
+                    <span className="text-gray-300 text-sm">|</span>
+                    <button
                       onClick={() => openInstagramPublish(video, 'REELS')}
                       className="flex items-center gap-1 text-purple-600 hover:text-purple-800 text-sm font-medium"
                     >
@@ -704,6 +994,34 @@ ${cardsText ? `${cardsText}\n` : ''}
                       <Instagram className="h-3 w-3" />
                       캐러셀 게시
                     </button>
+                  </div>
+
+                  {/* 캡션 미리보기 */}
+                  <div className="mt-4">
+                    <details className="group">
+                      <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-purple-600 select-none">
+                        📝 릴스 캡션 미리보기
+                        <span className="ml-2 text-xs text-gray-500 group-open:hidden">
+                          (클릭하여 펼치기)
+                        </span>
+                      </summary>
+                      <div className="mt-3 p-3 bg-purple-50 border border-purple-200 rounded text-sm">
+                        <div className="whitespace-pre-wrap text-gray-800 max-h-40 overflow-y-auto">
+                          {video.reelsCaption || videoCaptions[video.id] || generateReelsCaption(video)}
+                        </div>
+                        <button
+                          onClick={() => {
+                            // 저장된 캡션 > 동적 로드된 캡션 > 실시간 생성 순으로 우선순위
+                            const caption = video.reelsCaption || videoCaptions[video.id] || generateReelsCaption(video);
+                            navigator.clipboard.writeText(caption);
+                            alert('캡션이 클립보드에 복사되었습니다!');
+                          }}
+                          className="mt-2 px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700"
+                        >
+                          캡션 복사
+                        </button>
+                      </div>
+                    </details>
                   </div>
 
                   {/* 영상 미리보기 */}
@@ -766,7 +1084,7 @@ ${cardsText ? `${cardsText}\n` : ''}
         mediaType={publishDialog.mediaType}
         title={publishDialog.title}
         defaultCaption={publishDialog.defaultCaption}
-        defaultHashtags="#타로 #운세 #타로티 #주간운세 #그사람의속마음 #타로카드 #점술 #미래 #운명"
+        defaultHashtags="#타로티 #주간운세 #그사람의속마음 #미래 #운명 #인스타타로 #무료운세"
         onPublishSuccess={handlePublishSuccess}
         metadata={publishDialog.metadata}
       />
