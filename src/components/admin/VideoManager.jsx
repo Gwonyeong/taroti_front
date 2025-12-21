@@ -44,7 +44,7 @@ const VideoManager = () => {
   // 영상 서비스 상태 확인
   const checkVideoServiceStatus = async () => {
     try {
-      const response = await fetch('/api/video/status');
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/video/status`);
       const data = await response.json();
 
       if (data.success) {
@@ -82,7 +82,7 @@ const VideoManager = () => {
         requestBody.customTitle = customTitle.trim();
       }
 
-      const response = await fetch('/api/video/test/card-flip', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/video/test/card-flip`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,7 +141,7 @@ const VideoManager = () => {
     setListError(null);
 
     try {
-      const response = await fetch('/api/video/list?limit=20');
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/video/list?limit=20`);
       const data = await response.json();
 
       if (data.success) {
@@ -248,7 +248,7 @@ const VideoManager = () => {
     try {
       console.log('🔍 백엔드에서 카드 해석 요청:', { cardNumbers, videoType });
 
-      const response = await fetch('/api/cards/interpretations', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/cards/interpretations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -275,7 +275,7 @@ const VideoManager = () => {
   const getCardInterpretationByNumber = async (cardNumber, videoType) => {
     try {
       // 백엔드에서 특정 카드의 해석 데이터를 가져옴
-      const response = await fetch(`/api/cards/${cardNumber}/interpretation?type=${videoType}`);
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/cards/${cardNumber}/interpretation?type=${videoType}`);
       const data = await response.json();
 
       if (data.success) {
@@ -514,7 +514,7 @@ ${cardsText ? `${cardsText}\n` : ''}
     setRateLimitInfo(null);
 
     try {
-      const response = await fetch('/api/instagram/rate-limit', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/instagram/rate-limit`, {
         method: 'GET',
         credentials: 'include'
       });
