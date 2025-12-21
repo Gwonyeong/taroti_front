@@ -4,6 +4,35 @@ import Navigation from '../ui/Navigation';
 import CardBack from '../CardBack';
 import { toast } from 'sonner';
 
+// 고정 카드 이름 매핑
+const getCardDisplayName = (cardNumber) => {
+  const displayNames = {
+    0: "THE FOOL (바보)",
+    1: "THE MAGICIAN (마법사)",
+    2: "THE HIGH PRIESTESS (여사제)",
+    3: "THE EMPRESS (여황제)",
+    4: "THE EMPEROR (황제)",
+    5: "THE HIEROPHANT (교황)",
+    6: "THE LOVERS (연인)",
+    7: "THE CHARIOT (전차)",
+    8: "STRENGTH (힘)",
+    9: "THE HERMIT (은둑자)",
+    10: "WHEEL OF FORTUNE (운명의 수레바퀴)",
+    11: "JUSTICE (정의)",
+    12: "THE HANGED MAN (매달린 사람)",
+    13: "DEATH (죽음)",
+    14: "TEMPERANCE (절제)",
+    15: "THE DEVIL (악마)",
+    16: "THE TOWER (탑)",
+    17: "THE STAR (별)",
+    18: "THE MOON (달)",
+    19: "THE SUN (태양)",
+    20: "JUDGEMENT (심판)",
+    21: "THE WORLD (세계)",
+  };
+  return displayNames[cardNumber] || "THE FOOL (바보)";
+};
+
 /**
  * 동적 운세 결과 페이지 컴포넌트 - 템플릿 데이터 기반으로 동작
  */
@@ -55,14 +84,71 @@ const DynamicFortuneResult = () => {
 
   // 카드 해석 데이터 가져오기
   const getCardInterpretation = (cardNumber) => {
+    // 새로운 박스 시스템
+    if (template.resultTemplateData?.cardData) {
+      return template.resultTemplateData.cardData[cardNumber.toString()];
+    }
+    // 기존 시스템 호환성
     if (!template.resultTemplateData?.cards) return null;
-
     return template.resultTemplateData.cards.find(
       card => card.cardNumber === cardNumber
     );
   };
 
-  // 섹션별 해석 렌더링
+  // 박스 렌더링
+  const renderBox = (box, cardData) => {
+    if (!cardData || !cardData[box.id]) return null;
+
+    if (box.type === 'card_description') {
+      const boxData = cardData[box.id];
+      return (
+        <div key={box.id} className="mb-8">
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <CardBack
+                cardNumber={session.selectedCard}
+                isFlipped={true}
+                customBackImage={template.cardConfig?.cardBackImage}
+              />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              {getCardDisplayName(session.selectedCard)}
+            </h2>
+            {boxData?.interpretation && (
+              <div className="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-400">
+                <p className="text-gray-700 leading-relaxed">{boxData.interpretation}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (box.type === 'fortune_box') {
+      const boxData = cardData[box.id];
+      const backgroundColor = box.backgroundColor || '#F9FAFB';
+
+      return (
+        <div key={box.id} className="mb-6">
+          <div
+            className="rounded-lg p-6 border"
+            style={{ backgroundColor }}
+          >
+            <h3 className="text-lg font-semibold mb-3 text-gray-800">
+              {box.title}
+            </h3>
+            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+              {boxData.content}
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  // 섹션별 해석 렌더링 (기존 호환성)
   const renderInterpretationSection = (sectionKey, title, cardData) => {
     if (!cardData || !cardData[sectionKey]) return null;
 
@@ -120,6 +206,7 @@ const DynamicFortuneResult = () => {
 
   const cardData = getCardInterpretation(session.selectedCard);
   const layout = template.resultTemplateData?.layout || {};
+  const hasNewBoxSystem = layout.boxes && Array.isArray(layout.boxes);
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -140,48 +227,60 @@ const DynamicFortuneResult = () => {
           )}
         </div>
 
-        {/* 선택한 카드 표시 */}
-        {layout.showCardImage !== false && (
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <CardBack
-                cardNumber={session.selectedCard}
-                isFlipped={true}
-                customBackImage={template.cardConfig?.cardBackImage}
-              />
-            </div>
-            <h2 className="text-xl font-semibold text-gray-800">
-              {cardData?.cardName || `카드 ${session.selectedCard}`}
-            </h2>
+        {/* 새로운 박스 시스템 */}
+        {hasNewBoxSystem ? (
+          <div>
+            {layout.boxes
+              .sort((a, b) => a.order - b.order)
+              .map(box => renderBox(box, cardData))}
           </div>
+        ) : (
+          // 기존 시스템 호환성
+          <>
+            {/* 선택한 카드 표시 */}
+            {layout.showCardImage !== false && (
+              <div className="text-center mb-8">
+                <div className="flex justify-center mb-4">
+                  <CardBack
+                    cardNumber={session.selectedCard}
+                    isFlipped={true}
+                    customBackImage={template.cardConfig?.cardBackImage}
+                  />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-800">
+                  {getCardDisplayName(session.selectedCard)}
+                </h2>
+              </div>
+            )}
+
+            {/* 기본 해석 */}
+            {layout.showInterpretation !== false && cardData?.interpretation && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold mb-3 text-gray-800">카드의 의미</h3>
+                <div className="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-400">
+                  <p className="text-gray-700 leading-relaxed">{cardData.interpretation}</p>
+                </div>
+              </div>
+            )}
+
+            {/* 섹션별 해석 */}
+            {layout.sections?.map(section => {
+              const titles = {
+                love: '💕 연애운',
+                career: '💼 직업운',
+                money: '💰 재물운',
+                health: '🌿 건강운',
+                study: '📚 학업운'
+              };
+
+              return renderInterpretationSection(
+                section,
+                titles[section] || section,
+                cardData
+              );
+            })}
+          </>
         )}
-
-        {/* 기본 해석 */}
-        {layout.showInterpretation !== false && cardData?.interpretation && (
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold mb-3 text-gray-800">카드의 의미</h3>
-            <div className="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-400">
-              <p className="text-gray-700 leading-relaxed">{cardData.interpretation}</p>
-            </div>
-          </div>
-        )}
-
-        {/* 섹션별 해석 */}
-        {layout.sections?.map(section => {
-          const titles = {
-            love: '💕 연애운',
-            career: '💼 직업운',
-            money: '💰 재물운',
-            health: '🌿 건강운',
-            study: '📚 학업운'
-          };
-
-          return renderInterpretationSection(
-            section,
-            titles[section] || section,
-            cardData
-          );
-        })}
 
         {/* 액션 버튼들 */}
         <div className="mt-12 space-y-4">
