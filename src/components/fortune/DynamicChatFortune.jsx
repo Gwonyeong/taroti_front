@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from 'react-router-dom';
 import ChatMessage from "../ChatMessage";
 import CardBack from "../CardBack";
 import { useAuth } from "../../context/AuthContext";
 import LoginModal from "../LoginModal";
 import AdBanner from "../AdBanner";
 import Navigation from "../ui/Navigation";
-import DynamicFortuneResult from "./DynamicFortuneResult";
 
 /**
  * 동적 운세 채팅 컴포넌트 - 템플릿 데이터 기반으로 동작
@@ -15,6 +15,7 @@ import DynamicFortuneResult from "./DynamicFortuneResult";
  */
 const DynamicChatFortune = ({ template, onSessionCreated }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
 
   // 페이지 상태
   const [messages, setMessages] = useState([]);
@@ -46,7 +47,6 @@ const DynamicChatFortune = ({ template, onSessionCreated }) => {
   // 모달 상태
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showAdBanner, setShowAdBanner] = useState(false);
-  const [showResultPage, setShowResultPage] = useState(false);
 
   // 사용자 상태 확인
   const needsProfile = () => {
@@ -273,8 +273,16 @@ const DynamicChatFortune = ({ template, onSessionCreated }) => {
   };
 
   const handleAdComplete = () => {
-    setShowResultPage(true);
-    setShowAdBanner(false);
+    // localStorage에 저장된 sessionId 가져오기
+    const sessionId = localStorage.getItem(`fortune_session_${template.templateKey}`);
+    if (sessionId) {
+      // sessionId를 URL에 포함시켜 결과 페이지로 이동
+      navigate(`/fortune/${template.templateKey}/result/${sessionId}`);
+    } else {
+      // sessionId가 없는 경우 에러 처리
+      console.error('Session ID not found');
+      setShowAdBanner(false);
+    }
   };
 
   // 초기화 및 첫 메시지 시작
@@ -609,12 +617,6 @@ const DynamicChatFortune = ({ template, onSessionCreated }) => {
         />
       </div>
 
-      {/* 운세 결과 페이지 */}
-      {showResultPage && (
-        <div className="fixed inset-0 bg-white z-50">
-          <DynamicFortuneResult />
-        </div>
-      )}
     </div>
   );
 };

@@ -48,16 +48,15 @@ const DynamicFortuneResult = () => {
       try {
         setLoading(true);
 
-        // URL에서 sessionId를 가져오거나 localStorage에서 가져오기
-        const currentSessionId = sessionId || localStorage.getItem(`fortune_session_${templateKey}`);
-
-        if (!currentSessionId) {
-          throw new Error('세션을 찾을 수 없습니다.');
+        // URL에서 sessionId를 가져오기 (필수)
+        // localStorage fallback 제거 - URL에 sessionId가 반드시 있어야 함
+        if (!sessionId) {
+          throw new Error('세션 ID가 URL에 없습니다. 운세를 다시 선택해주세요.');
         }
 
         // 세션 데이터 조회
         const sessionResponse = await fetch(
-          `${process.env.REACT_APP_API_BASE_URL}/api/fortune-sessions/${currentSessionId}`
+          `${process.env.REACT_APP_API_BASE_URL}/api/fortune-sessions/${sessionId}`
         );
         const sessionData = await sessionResponse.json();
 
@@ -65,20 +64,24 @@ const DynamicFortuneResult = () => {
           throw new Error('세션 데이터를 불러올 수 없습니다.');
         }
 
+
         setSession(sessionData.session);
         setTemplate(sessionData.session.template);
 
       } catch (err) {
         console.error('Error fetching session:', err);
         setError(err.message);
-        toast.error('데이터를 불러오는데 실패했습니다.');
+        toast.error(err.message || '데이터를 불러오는데 실패했습니다.');
       } finally {
         setLoading(false);
       }
     };
 
-    if (templateKey) {
+    if (templateKey && sessionId) {
       fetchData();
+    } else if (!sessionId) {
+      setError('세션 ID가 없습니다. 운세를 다시 선택해주세요.');
+      setLoading(false);
     }
   }, [templateKey, sessionId]);
 
@@ -95,9 +98,60 @@ const DynamicFortuneResult = () => {
     );
   };
 
+  // 새로운 박스 시스템용 카드 데이터 검증
+  const getCardDataForNewSystem = (cardNumber) => {
+    const cardData = template.resultTemplateData?.cardData?.[cardNumber.toString()];
+    return cardData;
+  };
+
   // 박스 렌더링
   const renderBox = (box, cardData) => {
-    if (!cardData || !cardData[box.id]) return null;
+    if (!cardData || !cardData[box.id]) {
+
+      // 데이터가 없을 때 기본 메시지 표시
+      if (box.type === 'card_description') {
+        return (
+          <div key={box.id} className="mb-8">
+            <div className="text-center">
+              <div className="flex justify-center mb-4">
+                <CardBack
+                  cardNumber={session.selectedCard}
+                  isFlipped={true}
+                  customBackImage={template.cardConfig?.cardBackImage}
+                />
+              </div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                {getCardDisplayName(session.selectedCard)}
+              </h2>
+              <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-gray-400">
+                <p className="text-gray-500 italic">카드 해석 데이터가 설정되지 않았습니다.</p>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (box.type === 'fortune_box') {
+        const backgroundColor = box.backgroundColor || '#F9FAFB';
+        return (
+          <div key={box.id} className="mb-6">
+            <div
+              className="rounded-lg p-6 border"
+              style={{ backgroundColor }}
+            >
+              <h3 className="text-lg font-semibold mb-3 text-gray-800">
+                {box.title}
+              </h3>
+              <p className="text-gray-500 italic">
+                이 박스의 운세 데이터가 설정되지 않았습니다.
+              </p>
+            </div>
+          </div>
+        );
+      }
+
+      return null;
+    }
 
     if (box.type === 'card_description') {
       const boxData = cardData[box.id];
@@ -189,24 +243,36 @@ const DynamicFortuneResult = () => {
       <div className="min-h-screen bg-white flex flex-col">
         <Navigation />
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">오류가 발생했습니다</h2>
-            <p className="text-gray-600 mb-6">{error || '데이터를 찾을 수 없습니다.'}</p>
-            <button
-              onClick={handleOtherFortune}
-              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              홈으로 돌아가기
-            </button>
+          <div className="text-center px-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">운세 결과를 찾을 수 없습니다</h2>
+            <p className="text-gray-600 mb-6">{error || '세션이 만료되었거나 잘못된 접근입니다.'}</p>
+            <div className="space-y-3">
+              <button
+                onClick={() => window.location.href = `/fortune/${templateKey}`}
+                className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                운세 다시 보기
+              </button>
+              <button
+                onClick={handleOtherFortune}
+                className="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                홈으로 돌아가기
+              </button>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  const cardData = getCardInterpretation(session.selectedCard);
   const layout = template.resultTemplateData?.layout || {};
   const hasNewBoxSystem = layout.boxes && Array.isArray(layout.boxes);
+
+  // 새로운 박스 시스템용 카드 데이터 또는 기존 시스템용 데이터
+  const cardData = hasNewBoxSystem
+    ? getCardDataForNewSystem(session.selectedCard)
+    : getCardInterpretation(session.selectedCard);
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -220,7 +286,43 @@ const DynamicFortuneResult = () => {
           </h1>
           {session.userProfile?.birthDate && (
             <p className="text-gray-600">
-              {new Date(session.userProfile.birthDate).toLocaleDateString('ko-KR')} 생 •
+              {(() => {
+                const birthDate = session.userProfile.birthDate;
+                try {
+                  if (typeof birthDate === 'string') {
+                    // yymmdd 형식 (6자리 숫자)
+                    if (/^\d{6}$/.test(birthDate)) {
+                      const yy = birthDate.substring(0, 2);
+                      const mm = birthDate.substring(2, 4);
+                      const dd = birthDate.substring(4, 6);
+
+                      // 00-30은 2000년대, 31-99는 1900년대로 추정
+                      const year = parseInt(yy) <= 30 ? `20${yy}` : `19${yy}`;
+                      const month = parseInt(mm);
+                      const day = parseInt(dd);
+
+                      return `${year.substring(2)}년 ${month}월 ${day}일생`;
+                    }
+                    // YYYY-MM-DD 형식
+                    else if (birthDate.includes('-')) {
+                      const [year, month, day] = birthDate.split('-');
+                      return `${year.substring(2)}년 ${parseInt(month)}월 ${parseInt(day)}일생`;
+                    }
+                    // 기타 형식은 그대로 표시
+                    else {
+                      return birthDate + '생';
+                    }
+                  }
+                  // Date 객체인 경우
+                  const date = new Date(birthDate);
+                  if (isNaN(date.getTime())) {
+                    return birthDate + '생';
+                  }
+                  return date.toLocaleDateString('ko-KR') + '생';
+                } catch (error) {
+                  return birthDate + '생';
+                }
+              })()} •
               {session.userProfile.gender} •
               {session.userProfile.mbti}
             </p>

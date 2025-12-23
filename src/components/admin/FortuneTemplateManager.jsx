@@ -369,6 +369,193 @@ const CardDataEditor = ({ cardData, layout, onCardDataChange }) => {
           </div>
         </div>
       )}
+
+      {/* AI 프롬프트 생성기 */}
+      {selectedBox && (
+        <AIPromptGenerator
+          selectedBox={layout.boxes.find(box => box.id === selectedBox)}
+          onGeneratedPrompt={(prompt) => {
+            navigator.clipboard.writeText(prompt).then(() => {
+              toast.success('프롬프트가 클립보드에 복사되었습니다!');
+            }).catch(() => {
+              toast.error('복사에 실패했습니다.');
+            });
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// AI 프롬프트 생성기 컴포넌트
+const AIPromptGenerator = ({ selectedBox, onGeneratedPrompt }) => {
+  const [subject, setSubject] = useState('');
+  const [generatedPrompt, setGeneratedPrompt] = useState('');
+
+  const generatePrompt = () => {
+    if (!subject.trim()) {
+      toast.error('주제를 입력해주세요.');
+      return;
+    }
+
+    const boxType = selectedBox?.type;
+    const boxTitle = selectedBox?.title || '';
+
+    // 카드 기본 정보
+    const cardInfo = `
+타로카드 정보:
+- 0: 바보 (The Fool) - 새로운 시작, 순수함, 모험
+- 1: 마법사 (The Magician) - 의지력, 창조력, 기술
+- 2: 여사제 (The High Priestess) - 직감, 내면의 지혜, 신비
+- 3: 여황제 (The Empress) - 풍요, 창조성, 모성
+- 4: 황제 (The Emperor) - 권위, 안정성, 질서
+- 5: 교황 (The Hierophant) - 전통, 영성, 가르침
+- 6: 연인 (The Lovers) - 사랑, 선택, 조화
+- 7: 전차 (The Chariot) - 의지력, 승리, 통제
+- 8: 힘 (Strength) - 내적 힘, 용기, 인내
+- 9: 은둔자 (The Hermit) - 내적 탐구, 지혜, 고독
+- 10: 운명의 수레바퀴 (Wheel of Fortune) - 운명, 변화, 기회
+- 11: 정의 (Justice) - 공정함, 균형, 결과
+- 12: 매달린 사람 (The Hanged Man) - 희생, 관점 변화, 기다림
+- 13: 죽음 (Death) - 변화, 끝과 시작, 재생
+- 14: 절제 (Temperance) - 조화, 균형, 치유
+- 15: 악마 (The Devil) - 유혹, 속박, 물질주의
+- 16: 탑 (The Tower) - 급변, 깨달음, 파괴와 재건
+- 17: 별 (The Star) - 희망, 영감, 치유
+- 18: 달 (The Moon) - 환상, 직감, 무의식
+- 19: 태양 (The Sun) - 성공, 기쁨, 활력
+- 20: 심판 (Judgement) - 재생, 용서, 각성
+- 21: 세계 (The World) - 완성, 성취, 통합`;
+
+    let prompt = '';
+
+    if (boxType === 'card_description') {
+      prompt = `다음 지침에 따라 타로카드 해석 데이터를 JSON 형식으로 생성해주세요.
+
+주제: ${subject}
+
+${cardInfo}
+
+요구사항:
+1. 각 카드(0-21)에 대해 "${subject}" 관점에서의 해석을 작성
+2. 각 해석은 2-3문장으로 구성
+3. 카드의 본래 의미와 ${subject} 주제를 연결
+4. 긍정적이고 희망적인 톤으로 작성
+5. 구체적이고 실용적인 조언 포함
+
+출력 형식:
+\`\`\`json
+{
+  "0": {
+    "interpretation": "바보 카드와 ${subject}에 대한 해석..."
+  },
+  "1": {
+    "interpretation": "마법사 카드와 ${subject}에 대한 해석..."
+  },
+  ...
+  "21": {
+    "interpretation": "세계 카드와 ${subject}에 대한 해석..."
+  }
+}
+\`\`\``;
+    } else {
+      prompt = `다음 지침에 따라 "${boxTitle}" 운세 데이터를 JSON 형식으로 생성해주세요.
+
+주제: ${subject}
+
+${cardInfo}
+
+요구사항:
+1. 각 카드(0-21)에 대해 "${subject}"와 관련된 "${boxTitle}" 운세를 작성
+2. 각 운세는 3-4문장으로 구성
+3. 카드의 의미를 "${subject}" 맥락에서 해석
+4. 구체적인 조언과 실천 방법 포함
+5. 긍정적이고 격려하는 톤으로 작성
+6. 12월 또는 특정 시기와 연관지어 작성
+
+출력 형식:
+\`\`\`json
+{
+  "0": {
+    "content": "바보 카드가 나타내는 ${subject} 관련 ${boxTitle}..."
+  },
+  "1": {
+    "content": "마법사 카드가 나타내는 ${subject} 관련 ${boxTitle}..."
+  },
+  ...
+  "21": {
+    "content": "세계 카드가 나타내는 ${subject} 관련 ${boxTitle}..."
+  }
+}
+\`\`\``;
+    }
+
+    setGeneratedPrompt(prompt);
+  };
+
+  const copyPrompt = () => {
+    if (generatedPrompt) {
+      onGeneratedPrompt(generatedPrompt);
+    }
+  };
+
+  return (
+    <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg">
+      <h5 className="text-sm font-semibold text-purple-800 mb-3">🤖 AI 프롬프트 생성기</h5>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            주제 입력 <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="예: 연애운, 취업운, 건강운, 재물운 등"
+            className="w-full px-3 py-2 border border-purple-200 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+          />
+          <p className="text-xs text-gray-600 mt-1">
+            선택한 박스: <span className="font-medium">{selectedBox?.title}</span>
+            ({selectedBox?.type === 'card_description' ? '카드 설명' : '운세 박스'})
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={generatePrompt}
+            className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-colors"
+          >
+            프롬프트 생성
+          </button>
+
+          {generatedPrompt && (
+            <button
+              type="button"
+              onClick={copyPrompt}
+              className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors flex items-center gap-1"
+            >
+              📋 복사하기
+            </button>
+          )}
+        </div>
+
+        {generatedPrompt && (
+          <div>
+            <label className="block text-sm font-medium mb-2">생성된 프롬프트:</label>
+            <textarea
+              value={generatedPrompt}
+              readOnly
+              className="w-full h-48 px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm font-mono resize-none"
+            />
+            <p className="text-xs text-gray-600 mt-2">
+              💡 이 프롬프트를 ChatGPT나 Claude에 붙여넣어서 사용하세요.
+              생성된 JSON을 위의 데이터 입력란에 붙여넣으면 됩니다.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -692,10 +879,24 @@ const FortuneTemplateManager = () => {
         resultButtonText: '운세 결과 보기',
         adTitle: '운세 결과'
       },
-      resultTemplateData: template.resultTemplateData || {
-        layout: { boxes: [] },
-        cardData: {}
-      },
+      resultTemplateData: (() => {
+        // 백엔드에서 파싱되어 온 객체 또는 문자열 처리
+        let data = template.resultTemplateData;
+
+        if (typeof data === 'string') {
+          try {
+            data = JSON.parse(data);
+          } catch (e) {
+            console.error('Failed to parse resultTemplateData:', e);
+            data = null;
+          }
+        }
+
+        return data || {
+          layout: { boxes: [] },
+          cardData: {}
+        };
+      })(),
       theme: template.theme || {
         primaryColor: '#4F46E5',
         secondaryColor: '#7C3AED',
@@ -705,10 +906,18 @@ const FortuneTemplateManager = () => {
       isActive: template.isActive !== undefined ? template.isActive : true,
       sortOrder: template.sortOrder || 0
     });
-    console.log('🔄 Final resultTemplateData being set:', template.resultTemplateData || {
-      layout: { boxes: [] },
-      cardData: {}
-    });
+    console.log('🔄 Final resultTemplateData being set:', (() => {
+      let data = template.resultTemplateData;
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data);
+        } catch (e) {
+          console.error('Failed to parse resultTemplateData:', e);
+          data = null;
+        }
+      }
+      return data || { layout: { boxes: [] }, cardData: {} };
+    })());
     setIsEditing(true);
   };
 
