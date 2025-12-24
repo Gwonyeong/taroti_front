@@ -388,7 +388,7 @@ const DynamicFortuneResult = () => {
         <div className="mt-12 space-y-4">
           <button
             onClick={handleRestart}
-            className="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all font-medium"
+            className="w-full px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
           >
             다시 해보기
           </button>
@@ -408,16 +408,46 @@ const DynamicFortuneResult = () => {
           </p>
           <div className="flex justify-center space-x-4">
             <button
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: `${template.title} 결과`,
-                    text: `나의 ${template.title} 결과를 확인해보세요!`,
-                    url: window.location.origin + `/fortune/${templateKey}`
-                  });
-                } else {
-                  navigator.clipboard.writeText(window.location.origin + `/fortune/${templateKey}`);
-                  toast.success('링크가 복사되었습니다!');
+              onClick={async () => {
+                try {
+                  toast.loading('공유 링크 생성 중...', { id: 'share-loading' });
+
+                  // 공유 링크 생성 요청
+                  const response = await fetch(
+                    `${process.env.REACT_APP_API_BASE_URL}/api/share`,
+                    {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                        resourceType: 'fortune-session',
+                        resourceId: sessionId,
+                        title: `${session.userProfile?.gender === '남성' ? '남성' : '여성'}이 선택한 ${getCardDisplayName(session.selectedCard)} 카드의 ${template.title} 결과`,
+                        description: `${session.userProfile?.mbti || '타로티 친구'}가 선택한 ${getCardDisplayName(session.selectedCard)} 카드의 운세를 확인해보세요!`,
+                        image: `${window.location.origin}/images/cards/${String(session.selectedCard).padStart(2, '0')}-${getCardDisplayName(session.selectedCard).split(' ')[0]}.jpg`
+                      })
+                    }
+                  );
+
+                  const data = await response.json();
+
+                  if (data.success) {
+                    // 백엔드 HTML URL을 사용 (기존 12월 운세와 동일한 방식)
+                    const shareUrl = `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5002'}${data.shareUrl}`;
+
+                    // 클립보드에 복사
+                    await navigator.clipboard.writeText(shareUrl);
+
+                    toast.dismiss('share-loading');
+                    toast.success('📋 공유 링크가 클립보드에 복사되었습니다!');
+                  } else {
+                    throw new Error(data.message || '공유 링크 생성에 실패했습니다.');
+                  }
+                } catch (error) {
+                  console.error('Error creating share link:', error);
+                  toast.dismiss('share-loading');
+                  toast.error('공유 링크 생성 중 오류가 발생했습니다.');
                 }
               }}
               className="px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
