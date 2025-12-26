@@ -6,7 +6,6 @@ export const initKakao = () => {
 
     if (!window.Kakao.isInitialized()) {
       window.Kakao.init(kakaoKey);
-      console.log('Kakao SDK initialized');
     }
   }
 };
@@ -21,7 +20,6 @@ export const loginWithKakao = () => {
 
     window.Kakao.Auth.login({
       success: function(authObj) {
-        console.log('Kakao login success:', authObj);
         resolve(authObj.access_token);
       },
       fail: function(err) {
@@ -41,7 +39,6 @@ export const logoutFromKakao = () => {
     }
 
     window.Kakao.Auth.logout(() => {
-      console.log('Kakao logout success');
       resolve();
     });
   });
@@ -58,7 +55,6 @@ export const getKakaoUserInfo = () => {
     window.Kakao.API.request({
       url: '/v2/user/me',
       success: function(res) {
-        console.log('Kakao user info:', res);
         resolve(res);
       },
       fail: function(err) {

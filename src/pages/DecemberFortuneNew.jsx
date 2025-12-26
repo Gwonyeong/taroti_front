@@ -46,7 +46,7 @@ const DecemberFortuneNew = () => {
         throw new Error("Failed to create December fortune session");
       }
     } catch (error) {
-      console.error("Error creating December fortune session:", error);
+      
       throw error;
     }
   };
@@ -60,7 +60,7 @@ const DecemberFortuneNew = () => {
       // 결과 페이지로 이동
       navigate(`/december-fortune-result/${fortuneId}`);
     } catch (error) {
-      console.error("Error navigating to result:", error);
+      
       toast.error("결과 페이지로 이동 중 오류가 발생했습니다.");
     }
   };

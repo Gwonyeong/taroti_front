@@ -53,7 +53,6 @@ const FeaturedContentManager = () => {
       setLoading(true);
       const response = await getFeaturedContentsForAdmin();
       const data = response.contents || [];
-      console.log('FeaturedContentManager received data:', data);
       setContents(data);
     } catch (error) {
       console.error('Failed to fetch featured contents:', error);

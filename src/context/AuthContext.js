@@ -71,7 +71,6 @@ export const AuthProvider = ({ children }) => {
 
       if (response.ok) {
         const responseData = await response.json();
-        console.log('카카오 로그인 응답:', responseData); // 디버깅용
 
         const { token, user: userData } = responseData;
 
@@ -80,12 +79,10 @@ export const AuthProvider = ({ children }) => {
           throw new Error('토큰이 없습니다');
         }
 
-        console.log('저장할 토큰:', token); // 디버깅용
         localStorage.setItem('authToken', token);
 
         // 토큰이 제대로 저장되었는지 확인
         const savedToken = localStorage.getItem('authToken');
-        console.log('저장된 토큰 확인:', savedToken); // 디버깅용
 
         setUser(userData);
         setIsAuthenticated(true);

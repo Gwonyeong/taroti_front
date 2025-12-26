@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import LoginModal from "../LoginModal";
 import AdBanner from "../AdBanner";
 import Navigation from "../ui/Navigation";
+import { toast } from "sonner";
 
 /**
  * 동적 운세 채팅 컴포넌트 - 템플릿 데이터 기반으로 동작
@@ -60,26 +61,16 @@ const DynamicChatFortune = ({ template, onSessionCreated }) => {
   // 메시지 시나리오 선택
   const getMessageScenario = () => {
     if (!template) {
-      console.log('Template is missing');
       return [];
     }
 
-    console.log('Template data:', template);
-    console.log('Message scenarios:', template.messageScenarios);
-    console.log('Message scenarios type:', typeof template.messageScenarios);
-
     if (!template.messageScenarios) {
-      console.error('messageScenarios is null or undefined');
       return [];
     }
 
     if (needsProfile()) {
-      console.log('Using needsProfile scenario');
-      console.log('needsProfile data:', template.messageScenarios?.needsProfile);
       return template.messageScenarios?.needsProfile || [];
     }
-    console.log('Using withProfile scenario');
-    console.log('withProfile data:', template.messageScenarios?.withProfile);
     return template.messageScenarios?.withProfile || [];
   };
 
@@ -103,10 +94,8 @@ const DynamicChatFortune = ({ template, onSessionCreated }) => {
       characterName: sender === 'bot' ? template?.characterInfo?.name : null,
       characterImage: sender === 'bot' ? template?.characterInfo?.imageSrc : null
     };
-    console.log('Adding message:', newMessage);
     setMessages((prev) => {
       const updatedMessages = [...prev, newMessage];
-      console.log('Updated messages:', updatedMessages);
       return updatedMessages;
     });
     return messageId;
@@ -166,9 +155,6 @@ const DynamicChatFortune = ({ template, onSessionCreated }) => {
   // 다음 메시지 표시
   const showNextMessage = () => {
     const scenario = getMessageScenario();
-    console.log('showNextMessage called, currentStep:', currentStep);
-    console.log('scenario:', scenario);
-    console.log('scenario length:', scenario.length);
 
     if (currentStep < scenario.length) {
       const currentMessage = scenario[currentStep];
@@ -214,8 +200,15 @@ const DynamicChatFortune = ({ template, onSessionCreated }) => {
   };
 
   // 카드 선택 처리
-  const handleCardSelect = async (cardNumber) => {
-    setSelectedCardNumber(cardNumber);
+  const handleCardSelect = async (cardIndex) => {
+    // 카드 설정에서 사용 가능한 카드 번호 배열 가져오기
+    const availableCards = template.cardConfig?.cardNumbers || [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+
+    // 랜덤하게 카드 선택
+    const randomIndex = Math.floor(Math.random() * availableCards.length);
+    const selectedCardNumber = availableCards[randomIndex];
+
+    setSelectedCardNumber(selectedCardNumber);
     setShowCardSelect(false);
     setShowSelectedCard(true);
 
@@ -226,7 +219,7 @@ const DynamicChatFortune = ({ template, onSessionCreated }) => {
     try {
       const fortuneSettings = getFortuneSettings();
       const sessionData = {
-        selectedCard: cardNumber,
+        selectedCard: selectedCardNumber,
         userProfileData: needsProfile() ? userInputs : null,
         fortuneType: fortuneSettings.fortuneType || template.title
       };
@@ -249,7 +242,7 @@ const DynamicChatFortune = ({ template, onSessionCreated }) => {
         }
       }
     } catch (error) {
-      console.error('세션 생성 실패:', error);
+      // 세션 생성 실패
     }
   };
 
@@ -260,16 +253,111 @@ const DynamicChatFortune = ({ template, onSessionCreated }) => {
       try {
         return JSON.parse(template.fortuneSettings);
       } catch (e) {
-        console.error('Error parsing fortuneSettings:', e);
         return {};
       }
     }
     return template.fortuneSettings;
   };
 
+  // 임시 데이터 세션 스토리지에 저장
+  const saveTempFortuneData = () => {
+    const tempData = {
+      templateKey: template.templateKey,
+      selectedCard: selectedCardNumber,
+      userProfileData: userInputs,
+      timestamp: Date.now()
+    };
+    sessionStorage.setItem('temp_fortune_data', JSON.stringify(tempData));
+  };
+
   // 결과 페이지로 이동
   const handleNavigateToResult = () => {
-    setShowAdBanner(true);
+    if (!isAuthenticated) {
+      // 비로그인 사용자 - 임시 데이터 저장 후 로그인 모달 표시
+      saveTempFortuneData();
+      setShowLoginModal(true);
+    } else {
+      // 로그인 사용자 - 바로 광고 표시 후 결과 페이지로 이동
+      setShowAdBanner(true);
+    }
+  };
+
+  // 로그인 성공 후 처리
+  const handleLoginSuccess = async () => {
+    try {
+      // 토큰이 제대로 설정될 때까지 잠시 대기
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // 임시 저장된 데이터 가져오기
+      const tempDataStr = sessionStorage.getItem('temp_fortune_data');
+      if (!tempDataStr) {
+        return;
+      }
+
+      const tempData = JSON.parse(tempDataStr);
+
+      // 토큰 존재 확인
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken) {
+        toast.error('로그인 정보를 확인할 수 없습니다.');
+        return;
+      }
+
+      // 사용자 프로필 업데이트
+      const updateResponse = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/auth/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify(tempData.userProfileData)
+      });
+
+      if (!updateResponse.ok) {
+        toast.error('프로필 업데이트에 실패했습니다.');
+        return;
+      }
+
+      // 세션 생성
+      const fortuneSettings = getFortuneSettings();
+      const sessionData = {
+        selectedCard: tempData.selectedCard,
+        userProfileData: tempData.userProfileData,
+        fortuneType: fortuneSettings.fortuneType || template.title
+      };
+
+      const sessionResponse = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/fortune-sessions/template/${template.templateKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify(sessionData)
+      });
+
+      const sessionData_result = await sessionResponse.json();
+
+      if (sessionData_result.success) {
+        // 임시 데이터 삭제
+        sessionStorage.removeItem('temp_fortune_data');
+
+        // 세션 ID 저장
+        localStorage.setItem(`fortune_session_${template.templateKey}`, sessionData_result.sessionId);
+
+        // 로그인 모달 닫기
+        setShowLoginModal(false);
+
+        // 성공 알림
+        toast.success('로그인이 완료되었습니다! 운세 결과를 확인해보세요.');
+
+        // 광고 표시 후 결과 페이지로 이동
+        setShowAdBanner(true);
+      } else {
+        toast.error('운세 세션 생성에 실패했습니다.');
+      }
+    } catch (error) {
+      toast.error('로그인 처리 중 오류가 발생했습니다.');
+    }
   };
 
   const handleAdComplete = () => {
@@ -280,23 +368,17 @@ const DynamicChatFortune = ({ template, onSessionCreated }) => {
       navigate(`/fortune/${template.templateKey}/result/${sessionId}`);
     } else {
       // sessionId가 없는 경우 에러 처리
-      console.error('Session ID not found');
       setShowAdBanner(false);
     }
   };
 
   // 초기화 및 첫 메시지 시작
   useEffect(() => {
-    console.log('Initialization useEffect called, template:', template);
-    console.log('hasInitialized.current:', hasInitialized.current);
-
     if (!template || hasInitialized.current) {
-      console.log('Skipping initialization - template missing or already initialized');
       return;
     }
 
     hasInitialized.current = true;
-    console.log('Starting first message...');
 
     setTimeout(() => {
       showNextMessage();
@@ -606,6 +688,7 @@ const DynamicChatFortune = ({ template, onSessionCreated }) => {
         <LoginModal
           isOpen={showLoginModal}
           onClose={() => setShowLoginModal(false)}
+          onLoginSuccess={handleLoginSuccess}
         />
 
         {/* 광고 배너 */}

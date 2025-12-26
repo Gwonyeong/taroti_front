@@ -14,12 +14,6 @@ const PasswordAuth = ({ onAuthSuccess }) => {
     // 환경변수에서 비밀번호 확인
     const correctPassword = process.env.REACT_APP_ADMIN_PASSWORD;
 
-    // 디버깅용 콘솔 로그 (개발 환경에서만)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('입력된 비밀번호:', password);
-      console.log('설정된 비밀번호:', correctPassword);
-      console.log('비교 결과:', password === correctPassword);
-    }
 
     setTimeout(() => {
       if (password === correctPassword) {

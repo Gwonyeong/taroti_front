@@ -4,15 +4,12 @@ import { toast } from 'sonner';
 
 // 박스 레이아웃 편집 컴포넌트
 const BoxLayoutEditor = ({ layout, onLayoutChange }) => {
-  console.log('📦 BoxLayoutEditor received layout:', layout);
   const [boxes, setBoxes] = useState(layout?.boxes || []);
   const [editingBox, setEditingBox] = useState(null);
   const [showAddBox, setShowAddBox] = useState(false);
 
   // layout이 변경될 때 boxes 상태 업데이트
   useEffect(() => {
-    console.log('📦 BoxLayoutEditor layout changed:', layout);
-    console.log('📦 Setting boxes to:', layout?.boxes || []);
     setBoxes(layout?.boxes || []);
   }, [layout]);
 
@@ -25,8 +22,6 @@ const BoxLayoutEditor = ({ layout, onLayoutChange }) => {
       backgroundColor: '#F9FAFB'
     };
     const updatedBoxes = [...boxes, newBox];
-    console.log('Adding box:', newBox);
-    console.log('Updated boxes:', updatedBoxes);
     setBoxes(updatedBoxes);
     onLayoutChange({ boxes: updatedBoxes });
     setShowAddBox(false);
@@ -607,6 +602,7 @@ const ImagePreview = ({ imageUrl }) => {
 
 const FortuneTemplateManager = () => {
   const [templates, setTemplates] = useState([]);
+  const [characters, setCharacters] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -622,6 +618,7 @@ const FortuneTemplateManager = () => {
     category: 'special',
     imageUrl: '',
     requiredFields: ['birthDate', 'gender', 'mbti'],
+    characterId: null,
     characterInfo: {
       name: '',
       imageSrc: ''
@@ -697,6 +694,19 @@ const FortuneTemplateManager = () => {
     }
   };
 
+  // 캐릭터 목록 조회
+  const fetchCharacters = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/characters`);
+      if (response.ok) {
+        const data = await response.json();
+        setCharacters(data.characters);
+      }
+    } catch (error) {
+      console.error('Error fetching characters:', error);
+    }
+  };
+
   // 템플릿 목록 조회
   const fetchTemplates = async () => {
     try {
@@ -753,8 +763,6 @@ const FortuneTemplateManager = () => {
     try {
       if (!selectedTemplate) return;
 
-      console.log('Updating template with data:', formData);
-      console.log('resultTemplateData being sent:', formData.resultTemplateData);
 
       const response = await fetch(`${API_BASE}/api/fortune-templates/${selectedTemplate.templateKey}`, {
         method: 'PUT',
@@ -854,8 +862,6 @@ const FortuneTemplateManager = () => {
 
   // 템플릿 편집 시작
   const startEditing = (template) => {
-    console.log('🔄 Starting to edit template:', template);
-    console.log('🔄 Template resultTemplateData:', template.resultTemplateData);
     setSelectedTemplate(template);
     setFormData({
       templateKey: template.templateKey,
@@ -864,6 +870,7 @@ const FortuneTemplateManager = () => {
       category: template.category || 'special',
       imageUrl: template.imageUrl || '',
       requiredFields: template.requiredFields || ['birthDate', 'gender', 'mbti'],
+      characterId: template.characterId || null,
       characterInfo: template.characterInfo || { name: '', imageSrc: '' },
       messageScenarios: template.messageScenarios || {
         withProfile: [],
@@ -906,24 +913,13 @@ const FortuneTemplateManager = () => {
       isActive: template.isActive !== undefined ? template.isActive : true,
       sortOrder: template.sortOrder || 0
     });
-    console.log('🔄 Final resultTemplateData being set:', (() => {
-      let data = template.resultTemplateData;
-      if (typeof data === 'string') {
-        try {
-          data = JSON.parse(data);
-        } catch (e) {
-          console.error('Failed to parse resultTemplateData:', e);
-          data = null;
-        }
-      }
-      return data || { layout: { boxes: [] }, cardData: {} };
-    })());
     setIsEditing(true);
   };
 
   // 컴포넌트 마운트 시 데이터 로딩
   useEffect(() => {
     fetchTemplates();
+    fetchCharacters();
   }, []);
 
   if (isLoading) {
@@ -1111,37 +1107,107 @@ const FortuneTemplateManager = () => {
                 </div>
               </div>
 
-              {/* 캐릭터 정보 */}
+              {/* 캐릭터 설정 */}
               <div className="border p-4 rounded-md">
-                <h4 className="font-medium mb-2">캐릭터 설정</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">캐릭터 이름</label>
-                    <input
-                      type="text"
-                      value={formData.characterInfo.name}
-                      onChange={(e) => setFormData({
+                <h4 className="font-medium mb-4">캐릭터 설정</h4>
+
+                {/* 캐릭터 선택 */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">캐릭터 선택</label>
+                  <select
+                    value={formData.characterId || ''}
+                    onChange={(e) => {
+                      const selectedCharacterId = e.target.value ? parseInt(e.target.value) : null;
+                      const selectedCharacter = characters.find(c => c.id === selectedCharacterId);
+
+                      setFormData({
                         ...formData,
-                        characterInfo: { ...formData.characterInfo, name: e.target.value }
-                      })}
-                      className="w-full px-3 py-2 border rounded-md"
-                      placeholder="돌핀"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">캐릭터 이미지 경로</label>
-                    <input
-                      type="text"
-                      value={formData.characterInfo.imageSrc}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        characterInfo: { ...formData.characterInfo, imageSrc: e.target.value }
-                      })}
-                      className="w-full px-3 py-2 border rounded-md"
-                      placeholder="/images/characters/dollfin/dollfin.jpg"
-                    />
-                  </div>
+                        characterId: selectedCharacterId,
+                        characterInfo: selectedCharacter ? {
+                          name: selectedCharacter.name,
+                          imageSrc: selectedCharacter.imageSrc
+                        } : { name: '', imageSrc: '' },
+                        messageScenarios: selectedCharacter?.defaultMessageScenarios || formData.messageScenarios
+                      });
+                    }}
+                    className="w-full px-3 py-2 border rounded-md"
+                  >
+                    <option value="">캐릭터를 선택하세요</option>
+                    {characters.map((character) => (
+                      <option key={character.id} value={character.id}>
+                        {character.name} {character.description ? `- ${character.description}` : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+
+                {/* 선택된 캐릭터 미리보기 */}
+                {formData.characterId && characters.length > 0 && (() => {
+                  const selectedCharacter = characters.find(c => c.id === formData.characterId);
+                  if (selectedCharacter) {
+                    return (
+                      <div className="mb-4 p-3 bg-gray-50 rounded-md">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={selectedCharacter.imageSrc}
+                            alt={selectedCharacter.name}
+                            className="w-12 h-12 rounded-lg object-cover"
+                            onError={(e) => {
+                              e.target.src = '/images/character/default.png';
+                            }}
+                          />
+                          <div>
+                            <h5 className="font-medium">{selectedCharacter.name}</h5>
+                            {selectedCharacter.description && (
+                              <p className="text-sm text-gray-600">{selectedCharacter.description}</p>
+                            )}
+                            {selectedCharacter.personality && (
+                              <p className="text-xs text-gray-500">성격: {selectedCharacter.personality}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {/* 수동 입력 (캐릭터를 선택하지 않은 경우) */}
+                {!formData.characterId && (
+                  <div className="space-y-4">
+                    <div className="text-sm text-gray-500 mb-3">
+                      캐릭터를 선택하지 않으면 직접 입력할 수 있습니다.
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">캐릭터 이름</label>
+                        <input
+                          type="text"
+                          value={formData.characterInfo.name}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            characterInfo: { ...formData.characterInfo, name: e.target.value }
+                          })}
+                          className="w-full px-3 py-2 border rounded-md"
+                          placeholder="돌핀"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">캐릭터 이미지 경로</label>
+                        <input
+                          type="text"
+                          value={formData.characterInfo.imageSrc}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            characterInfo: { ...formData.characterInfo, imageSrc: e.target.value }
+                          })}
+                          className="w-full px-3 py-2 border rounded-md"
+                          placeholder="/images/characters/dollfin/dollfin.jpg"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 메시지 시나리오 설정 */}
@@ -1349,13 +1415,10 @@ const FortuneTemplateManager = () => {
                   <BoxLayoutEditor
                     layout={formData.resultTemplateData?.layout || { boxes: [] }}
                     onLayoutChange={(newLayout) => {
-                      console.log('Layout changed:', newLayout);
-                      console.log('Previous formData:', formData.resultTemplateData);
                       const newResultTemplateData = {
                         layout: newLayout,
                         cardData: formData.resultTemplateData?.cardData || {}
                       };
-                      console.log('New resultTemplateData:', newResultTemplateData);
                       setFormData({
                         ...formData,
                         resultTemplateData: newResultTemplateData

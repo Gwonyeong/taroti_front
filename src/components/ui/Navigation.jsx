@@ -94,13 +94,10 @@ const Navigation = ({ fixed = false, className = "" }) => {
   // Fixed 네비게이션의 경우 다른 스타일 적용
   const headerProps = fixed ? {
     onMenuClick: toggleMenu,
-    className: `fixed top-0 z-[90] bg-white shadow-sm transition-all duration-300 ease-in-out ${isMenuOpen ? 'opacity-100' : 'opacity-100'}`,
+    className: `fixed top-0 z-[90] bg-white shadow-sm transition-all duration-300 ease-in-out w-full min-w-[320px] max-w-[500px] ${isMenuOpen ? 'opacity-100' : 'opacity-100'}`,
     style: {
       left: '50%',
-      transform: `translateX(-50%) translateY(${isNavVisible ? '0' : '-100%'})`,
-      width: '100%',
-      minWidth: '320px',
-      maxWidth: '500px'
+      transform: `translateX(-50%) translateY(${isNavVisible ? '0' : '-100%'})`
     }
   } : {
     onMenuClick: toggleMenu

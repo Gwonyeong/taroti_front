@@ -104,7 +104,7 @@ const NewYearFortuneResult2026 = () => {
           throw new Error("카드 정보를 찾을 수 없습니다.");
         }
       } catch (error) {
-        console.error("Error fetching fortune data:", error);
+        
         setError(error.message);
         toast.error("운세 데이터를 불러오는 중 오류가 발생했습니다.");
       } finally {
@@ -156,7 +156,7 @@ const NewYearFortuneResult2026 = () => {
         return;
       }
     } catch (apiError) {
-      console.error("Share API error:", apiError);
+      
     }
 
     // 폴백 공유 로직
@@ -170,7 +170,7 @@ const NewYearFortuneResult2026 = () => {
         "공유 링크가 클립보드에 복사되었습니다! 🔗\nSNS나 메신저에 붙여넣어 공유해보세요."
       );
     } catch (fallbackError) {
-      console.error("Fallback share error:", fallbackError);
+      
       toast.error("공유 링크 생성에 실패했습니다. 다시 시도해주세요.");
     }
   };

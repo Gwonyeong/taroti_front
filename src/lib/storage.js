@@ -7,13 +7,6 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:500
 // 배너 이미지 업로드 (백엔드 API 사용)
 export const uploadBannerImage = async (file, type = 'pc') => {
   try {
-    console.log('Uploading banner image:', {
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      type: type,
-      url: `${API_BASE_URL}/api/upload/banner`
-    });
 
     const formData = new FormData();
     formData.append('image', file);
@@ -24,7 +17,6 @@ export const uploadBannerImage = async (file, type = 'pc') => {
       body: formData,
     });
 
-    console.log('Upload response status:', response.status);
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -33,7 +25,6 @@ export const uploadBannerImage = async (file, type = 'pc') => {
     }
 
     const result = await response.json();
-    console.log('Upload success:', result);
     return result;
   } catch (error) {
     console.error('Error uploading banner image:', error);
@@ -44,12 +35,6 @@ export const uploadBannerImage = async (file, type = 'pc') => {
 // 콘텐츠 이미지 업로드 (백엔드 API 사용)
 export const uploadContentImage = async (file) => {
   try {
-    console.log('Uploading content image:', {
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      url: `${API_BASE_URL}/api/upload/content`
-    });
 
     const formData = new FormData();
     formData.append('image', file);
@@ -59,7 +44,6 @@ export const uploadContentImage = async (file) => {
       body: formData,
     });
 
-    console.log('Upload response status:', response.status);
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -68,7 +52,6 @@ export const uploadContentImage = async (file) => {
     }
 
     const result = await response.json();
-    console.log('Upload success:', result);
     return result;
   } catch (error) {
     console.error('Error uploading content image:', error);

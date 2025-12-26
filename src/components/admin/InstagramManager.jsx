@@ -39,7 +39,6 @@ const InstagramManager = () => {
   const generateAuthUrl = () => {
     const url = getInstagramAuthUrl();
     setAuthUrl(url);
-    console.log('Generated Instagram Auth URL:', url); // 디버깅용
   };
 
   const handleConnect = () => {

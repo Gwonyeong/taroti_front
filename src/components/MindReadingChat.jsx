@@ -20,7 +20,6 @@ const MindReadingChat = ({ user, preselectedCard }) => {
   const messagesEndRef = useRef(null);
   const hasInitialized = useRef(false);
 
-  console.log("MindReadingChat component mounted with preselectedCard:", preselectedCard);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -33,7 +32,6 @@ const MindReadingChat = ({ user, preselectedCard }) => {
   // preselectedCard가 변경될 때 selectedCardNumber 업데이트
   useEffect(() => {
     if (preselectedCard !== null && preselectedCard !== undefined) {
-      console.log("Setting selectedCardNumber from preselectedCard:", preselectedCard);
       setSelectedCardNumber(preselectedCard);
     }
   }, [preselectedCard]);
@@ -114,7 +112,6 @@ const MindReadingChat = ({ user, preselectedCard }) => {
 
       // 이미 선택된 카드가 있으면 카드 선택 단계 건너뛰기
       if (preselectedCard !== null && preselectedCard !== undefined) {
-        console.log("Using preselected card:", preselectedCard);
         addMessage("이미 선택하신 카드가 있네요! 결과를 확인해보자마.", "bot");
 
         setTimeout(() => {
@@ -173,16 +170,6 @@ const MindReadingChat = ({ user, preselectedCard }) => {
   const handleCardSelect = async () => {
     // 0-9번 중 랜덤 선택 (10번 이상 카드 제외)
     const randomCardNumber = Math.floor(Math.random() * 10);
-    console.log("Generated random card number:", randomCardNumber);
-
-    // 테스트: 10번 랜덤 생성해서 분포 확인
-    console.log("=== Random Card Test ===");
-    const testResults = [];
-    for (let i = 0; i < 10; i++) {
-      testResults.push(Math.floor(Math.random() * 10));
-    }
-    console.log("10 random tests:", testResults);
-    console.log("======================");
 
     setSelectedCardNumber(randomCardNumber);
 
@@ -204,14 +191,10 @@ const MindReadingChat = ({ user, preselectedCard }) => {
   const createMindReadingSession = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      console.log("Creating MindReading session with:");
-      console.log("- selectedCardNumber:", selectedCardNumber);
-      console.log("- preselectedCard prop:", preselectedCard);
 
       // tempProfile 삭제 (이미 사용했으므로)
       if (localStorage.getItem("tempProfile")) {
         localStorage.removeItem("tempProfile");
-        console.log("Removed tempProfile from localStorage");
       }
 
       const response = await fetch(

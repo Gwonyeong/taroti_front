@@ -8,6 +8,7 @@ import RecommendationManager from '../components/admin/RecommendationManager';
 import InstagramManager from '../components/admin/InstagramManager';
 import VideoManager from '../components/admin/VideoManager';
 import FortuneTemplateManager from '../components/admin/FortuneTemplateManager';
+import CharacterManager from '../components/admin/CharacterManager';
 
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -134,6 +135,16 @@ const Admin = () => {
             >
               운세 템플릿 관리
             </button>
+            <button
+              onClick={() => setActiveTab('characters')}
+              className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'characters'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-black'
+              }`}
+            >
+              캐릭터 관리
+            </button>
           </div>
         </div>
       </nav>
@@ -147,6 +158,7 @@ const Admin = () => {
         {activeTab === 'instagram' && <InstagramManager />}
         {activeTab === 'video' && <VideoManager />}
         {activeTab === 'fortune-templates' && <FortuneTemplateManager />}
+        {activeTab === 'characters' && <CharacterManager />}
       </div>
     </div>
   );

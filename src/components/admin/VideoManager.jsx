@@ -68,9 +68,6 @@ const VideoManager = () => {
     setLastResult(null);
 
     try {
-      console.log('🎬 카드 뒤집기 영상 생성 요청 시작');
-      console.log('📺 비디오 타입:', videoType);
-      console.log('✏️ 커스텀 제목:', customTitle || '자동 생성');
 
       const requestBody = {
         videoType: videoType,
@@ -101,8 +98,6 @@ const VideoManager = () => {
           data: data,
           generatedCaption: generatedCaption
         });
-        console.log('✅ 카드 뒤집기 영상 생성 완료:', data);
-        console.log('📝 생성된 캡션:', generatedCaption);
       } else {
         setError(data.error || '영상 생성 실패');
       }
@@ -121,7 +116,6 @@ const VideoManager = () => {
     for (const video of videos) {
       if (!video.reelsCaption && video.selectedCards && video.selectedCards.length > 0) {
         try {
-          console.log(`🔍 영상 ID ${video.id}에 대해 캡션 생성 중...`);
           const caption = await generateReelsCaptionWithBackendData(video);
           newCaptions[video.id] = caption;
         } catch (error) {
@@ -246,7 +240,6 @@ const VideoManager = () => {
   // 백엔드 JSON 파일에서 카드 해석 데이터를 가져오는 함수
   const fetchCardInterpretationsFromBackend = async (cardNumbers, videoType) => {
     try {
-      console.log('🔍 백엔드에서 카드 해석 요청:', { cardNumbers, videoType });
 
       const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/cards/interpretations`, {
         method: 'POST',
@@ -260,7 +253,6 @@ const VideoManager = () => {
       });
 
       const data = await response.json();
-      console.log('🔍 백엔드 응답:', data);
 
       if (data.success && data.cards) {
         return data.cards;
@@ -306,17 +298,12 @@ const VideoManager = () => {
 
   // 릴스용 캡션 생성 (동기 버전 - 저장된 캡션 우선 사용)
   const generateReelsCaption = (video) => {
-    console.log('🔍 캡션 생성 디버그 - video 객체:', video);
-    console.log('🔍 video.reelsCaption:', video.reelsCaption);
-    console.log('🔍 video.selectedCards:', video.selectedCards);
 
     // 데이터베이스에 저장된 캡션이 있으면 우선 사용
     if (video.reelsCaption) {
-      console.log('✅ 저장된 릴스 캡션 사용');
       return video.reelsCaption;
     }
 
-    console.log('⚠️ 저장된 캡션이 없어 실시간 생성합니다');
     const typeLabel = videoTypeOptions[video.videoType]?.label || video.videoType;
 
     // 카드 해석 정보 추출 및 포맷팅
@@ -327,18 +314,14 @@ const VideoManager = () => {
 
     if (video.metadata && video.metadata.cardContent && video.metadata.cardContent.cards) {
       cardsData = video.metadata.cardContent.cards;
-      console.log('🔍 cards 데이터 (metadata.cardContent.cards):', cardsData);
     } else if (video.metadata && video.metadata.cards) {
       cardsData = video.metadata.cards;
-      console.log('🔍 cards 데이터 (metadata.cards):', cardsData);
     } else if (video.cardContent && video.cardContent.cards) {
       cardsData = video.cardContent.cards;
-      console.log('🔍 cards 데이터 (cardContent.cards):', cardsData);
     }
 
     if (cardsData) {
       cardInterpretationsText = cardsData.map((card, index) => {
-        console.log(`🔍 카드 ${index + 1} 데이터:`, card);
 
         let interpretation = '';
         let cardName = card.koreanName || card.name || `카드 ${index + 1}`;
@@ -373,13 +356,11 @@ const VideoManager = () => {
           }
         }
 
-        console.log(`🔍 카드 ${index + 1} 해석:`, interpretation);
 
         return `${index + 1}번 : ${cardName}
 ${interpretation}`;
       }).join('\n\n');
     } else {
-      console.log('⚠️ 메타데이터에서 카드 데이터를 찾을 수 없습니다. selectedCards로 해석 시도합니다.');
       // selectedCards 번호를 이용해서 백엔드에서 실제 해석 데이터 가져오기
       if (Array.isArray(video.selectedCards) && video.selectedCards.length > 0) {
         // 기본 카드명 매핑
@@ -391,7 +372,6 @@ ${interpretation}`;
         };
 
         // 백엔드에서 실제 카드 해석 데이터 가져오기 시도
-        console.log('🔍 백엔드에서 카드 해석 요청 중...', video.selectedCards, video.videoType);
 
         // 기존 영상의 경우 카드명만 표시하고 해석은 기본 메시지로 대체
         cardInterpretationsText = video.selectedCards.map((cardNumber, index) => {
@@ -421,14 +401,12 @@ ${cardsText ? `${cardsText}\n\n` : ''}${cardInterpretationsText ? `🔮 ${conten
 
 #타로 #운세 #타로카드 #점술`;
 
-    console.log('📝 최종 생성된 캡션:', finalCaption);
 
     return finalCaption;
   };
 
   // 백엔드에서 실제 카드 해석을 가져와서 캡션을 생성하는 비동기 함수
   const generateReelsCaptionWithBackendData = async (video) => {
-    console.log('🔍 비동기 캡션 생성 시작 - video 객체:', video);
 
     const typeLabel = videoTypeOptions[video.videoType]?.label || video.videoType;
     let cardInterpretationsText = '';
@@ -436,7 +414,6 @@ ${cardsText ? `${cardsText}\n\n` : ''}${cardInterpretationsText ? `🔮 ${conten
     // selectedCards가 있을 때 백엔드에서 실제 카드 해석 가져오기
     if (Array.isArray(video.selectedCards) && video.selectedCards.length > 0) {
       try {
-        console.log('🔍 백엔드에서 카드 해석 요청:', video.selectedCards, video.videoType);
 
         const cardData = await fetchCardInterpretationsFromBackend(video.selectedCards, video.videoType);
 
@@ -445,7 +422,6 @@ ${cardsText ? `${cardsText}\n\n` : ''}${cardInterpretationsText ? `🔮 ${conten
             return `${index + 1}번 : ${card.koreanName}
 ${card.interpretation}`;
           }).join('\n\n');
-          console.log('✅ 백엔드에서 카드 해석 데이터 로드 성공');
         } else {
           throw new Error('백엔드에서 카드 데이터를 가져올 수 없습니다.');
         }
@@ -486,7 +462,6 @@ ${cardsText ? `${cardsText}\n\n` : ''}${cardInterpretationsText ? `🔮 ${conten
 
 #타로 #운세 #타로카드 #점술`;
 
-    console.log('📝 비동기 캡션 생성 완료:', finalCaption);
 
     return finalCaption;
   };
@@ -523,7 +498,6 @@ ${cardsText ? `${cardsText}\n` : ''}
 
       if (data.success) {
         setRateLimitInfo(data.rateLimitInfo);
-        console.log('✅ Rate Limit 정보:', data.rateLimitInfo);
       } else {
         throw new Error(data.error || 'Rate Limit 정보를 가져오지 못했습니다.');
       }
@@ -537,7 +511,6 @@ ${cardsText ? `${cardsText}\n` : ''}
 
   // Instagram 게시 성공 후 처리
   const handlePublishSuccess = (publishData) => {
-    console.log('Instagram 게시 성공:', publishData);
     // Rate Limit 정보 새로고침
     checkRateLimit();
     // 필요시 비디오 목록 새로고침 등 추가 작업

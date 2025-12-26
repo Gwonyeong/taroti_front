@@ -152,7 +152,6 @@ const Result = () => {
   // 카드 데이터 로드 함수
   const loadCardData = async (cardNumber) => {
     try {
-      console.log('📥 카드 데이터 로딩 시작, 카드 번호:', cardNumber);
       const response = await fetch(
         "/documents/cardDescription/3cardSpread/1.current.json"
       );
@@ -161,7 +160,6 @@ const Result = () => {
         const cardInfo = data.TarotInterpretations.find(
           (card) => card.CardNumber === cardNumber.toString()
         );
-        console.log('📥 카드 데이터 로딩 완료:', cardInfo ? '성공' : '실패');
         setCardData(cardInfo);
       }
     } catch (error) {
@@ -201,12 +199,10 @@ const Result = () => {
 
             // 카드 번호가 있다면 설정, 없다면 기본값 사용
             if (data.selectedCard !== null && data.selectedCard !== undefined) {
-              console.log('🃏 mind-reading: selectedCard 있음:', data.selectedCard);
               setSelectedCardNumber(data.selectedCard);
               await loadCardData(data.selectedCard);
             } else {
               // mind-reading에서도 기본 카드 데이터를 로딩하도록 보장
-              console.log('🃏 mind-reading: selectedCard 없음, 기본 카드 로딩');
               setSelectedCardNumber(0);
               await loadCardData(0);
             }

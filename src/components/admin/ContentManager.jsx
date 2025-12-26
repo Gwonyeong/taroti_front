@@ -39,7 +39,6 @@ const ContentManager = () => {
 
       // 배열인지 확인하고 안전하게 설정
       if (Array.isArray(data)) {
-        console.log('ContentManager received data:', data); // 디버깅용
         setContents(data);
       } else {
         console.warn('Received non-array data:', data);

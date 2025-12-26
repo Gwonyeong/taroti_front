@@ -10,7 +10,7 @@ const Header = ({ onMenuClick, className = "absolute top-0 left-0 right-0 z-50",
 
   return (
     <header className={className} style={style}>
-      <div className="w-full px-4">
+      <div className="max-w-[1600px] mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           <img
             src="/logo.png"

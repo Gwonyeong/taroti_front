@@ -135,7 +135,6 @@ const FortuneShare = ({
           throw new Error("공유된 운세 결과를 찾을 수 없습니다.");
         }
       } catch (error) {
-        console.error("Error fetching share data:", error);
         setError("공유된 운세 결과를 불러올 수 없습니다.");
         toast.error("공유된 운세 결과를 불러오는 중 오류가 발생했습니다.");
       } finally {

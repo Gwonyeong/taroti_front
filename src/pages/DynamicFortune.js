@@ -20,14 +20,11 @@ const DynamicFortune = () => {
         const data = await response.json();
 
         if (data.success) {
-          console.log('Template data received:', data.template);
-          console.log('Message scenarios:', data.template.messageScenarios);
           setTemplate(data.template);
         } else {
           throw new Error(data.message || '템플릿을 찾을 수 없습니다.');
         }
       } catch (err) {
-        console.error('Error fetching template:', err);
         setError(err.message);
         toast.error('템플릿을 불러오는데 실패했습니다.');
       } finally {

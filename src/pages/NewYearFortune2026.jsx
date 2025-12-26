@@ -49,7 +49,7 @@ const NewYearFortune2026 = () => {
         throw new Error("Failed to create new year fortune session");
       }
     } catch (error) {
-      console.error("Error creating new year fortune session:", error);
+      
       throw error;
     }
   };
@@ -63,7 +63,7 @@ const NewYearFortune2026 = () => {
       // 결과 페이지로 이동
       navigate(`/newyear-fortune-2026-result/${fortuneId}`);
     } catch (error) {
-      console.error("Error navigating to result:", error);
+      
       toast.error("결과 페이지로 이동 중 오류가 발생했습니다.");
     }
   };

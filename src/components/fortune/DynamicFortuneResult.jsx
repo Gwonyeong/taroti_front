@@ -69,7 +69,6 @@ const DynamicFortuneResult = () => {
         setTemplate(sessionData.session.template);
 
       } catch (err) {
-        console.error('Error fetching session:', err);
         setError(err.message);
         toast.error(err.message || '데이터를 불러오는데 실패했습니다.');
       } finally {
@@ -230,8 +229,8 @@ const DynamicFortuneResult = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex flex-col">
-        <Navigation />
-        <div className="flex-1 flex items-center justify-center">
+        <Navigation fixed />
+        <div className="flex-1 flex items-center justify-center pt-20">
           <div className="text-lg">결과를 불러오는 중...</div>
         </div>
       </div>
@@ -241,8 +240,8 @@ const DynamicFortuneResult = () => {
   if (error || !session || !template) {
     return (
       <div className="min-h-screen bg-white flex flex-col">
-        <Navigation />
-        <div className="flex-1 flex items-center justify-center">
+        <Navigation fixed />
+        <div className="flex-1 flex items-center justify-center pt-20">
           <div className="text-center px-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">운세 결과를 찾을 수 없습니다</h2>
             <p className="text-gray-600 mb-6">{error || '세션이 만료되었거나 잘못된 접근입니다.'}</p>
@@ -276,9 +275,9 @@ const DynamicFortuneResult = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <Navigation />
+      <Navigation fixed />
 
-      <div className="flex-1 max-w-md mx-auto w-full p-6">
+      <div className="flex-1 max-w-md mx-auto w-full p-6 pt-20">
         {/* 헤더 */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
@@ -445,7 +444,6 @@ const DynamicFortuneResult = () => {
                     throw new Error(data.message || '공유 링크 생성에 실패했습니다.');
                   }
                 } catch (error) {
-                  console.error('Error creating share link:', error);
                   toast.dismiss('share-loading');
                   toast.error('공유 링크 생성 중 오류가 발생했습니다.');
                 }

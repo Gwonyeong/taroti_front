@@ -222,7 +222,7 @@ const ChatFortune = ({
       setShowAdModal(true);
       setIsTyping(false);
     } catch (error) {
-      console.error("Error in handleNavigateToResult:", error);
+      
       setIsTyping(false);
     }
   };
@@ -244,7 +244,7 @@ const ChatFortune = ({
         setShowNavigateButton(true);
       }
     } catch (error) {
-      console.error("Error handling login success:", error);
+      
     }
   };
 

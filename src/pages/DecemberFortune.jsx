@@ -210,7 +210,7 @@ const DecemberFortune = () => {
         throw new Error("Failed to create December fortune session");
       }
     } catch (error) {
-      console.error("Error creating December fortune session:", error);
+      
       throw error;
     }
   };
@@ -239,7 +239,7 @@ const DecemberFortune = () => {
       setShowAdModal(true);
       setIsTyping(false);
     } catch (error) {
-      console.error("Error in handleNavigateToResult:", error);
+      
       setIsTyping(false);
       toast.error("오류가 발생했습니다. 다시 시도해주세요.");
     }
@@ -254,7 +254,7 @@ const DecemberFortune = () => {
       // 결과 페이지로 이동
       navigate(`/december-fortune-result/${fortuneId}`);
     } catch (error) {
-      console.error("Error navigating to result:", error);
+      
       toast.error("결과 페이지로 이동 중 오류가 발생했습니다.");
     }
   };
@@ -270,7 +270,7 @@ const DecemberFortune = () => {
         setShowNavigateButton(true);
       }
     } catch (error) {
-      console.error("Error handling login success:", error);
+      
       toast.error("운세 저장 중 오류가 발생했습니다.");
     }
   };

@@ -413,13 +413,11 @@ const Landing = () => {
     setSelectedCardNumber(randomCardNumber);
 
     // 카드 선택 즉시 localStorage 업데이트
-    console.log("Card selected:", randomCardNumber);
     const existingProfile = localStorage.getItem("tempProfile");
     if (existingProfile) {
       const profile = JSON.parse(existingProfile);
       profile.selectedCardNumber = randomCardNumber;
       localStorage.setItem("tempProfile", JSON.stringify(profile));
-      console.log("Updated tempProfile with card:", randomCardNumber);
     } else {
       // tempProfile이 없으면 새로 생성
       const profile = {
@@ -429,7 +427,6 @@ const Landing = () => {
         selectedCardNumber: randomCardNumber,
       };
       localStorage.setItem("tempProfile", JSON.stringify(profile));
-      console.log("Created tempProfile with card:", randomCardNumber);
     }
 
     setShowCardSelect(false);
@@ -469,8 +466,6 @@ const Landing = () => {
   // Mind Reading 세션 생성
   const createMindReadingSession = async (profileData) => {
     try {
-      console.log("createMindReadingSession - sending profileData:", profileData);
-      console.log("selectedCard in profileData:", profileData.selectedCard);
 
       const token = localStorage.getItem('authToken');
       const response = await fetch(
@@ -518,7 +513,6 @@ const Landing = () => {
         // 1. 로그인하지 않은 경우: 로컬 스토리지에 저장 후 로그인 모달
         // selectedCardNumber가 이미 handleCardSelect에서 저장되었지만, 혹시 모르니 다시 한번 저장
         saveProfileToLocalStorage();
-        console.log("Saved profile to localStorage before login, selectedCard:", selectedCardNumber);
         setShowLoginModal(true);
         // 버튼은 유지하고 모달만 표시
         return;
@@ -558,7 +552,6 @@ const Landing = () => {
     setIsNavigatingToResult(true); // 페이지 상태 변경 방지
     try {
       const tempProfile = loadAndClearTempProfile();
-      console.log("handleLoginSuccess - tempProfile:", tempProfile);
 
       if (tempProfile) {
         // 임시 저장된 프로필로 사용자 프로필 업데이트
@@ -577,7 +570,6 @@ const Landing = () => {
           mbti: tempProfile.mbti,
           selectedCard: tempProfile.selectedCardNumber, // 필드명 변경: selectedCardNumber -> selectedCard
         };
-        console.log("Creating MindReading with data:", mindReadingData);
         const mindReadingId = await createMindReadingSession(mindReadingData);
 
         // 결과 페이지로 이동
@@ -609,10 +601,8 @@ const Landing = () => {
     if (tempProfile) {
       const profileData = JSON.parse(tempProfile);
       savedCardNumber = profileData.selectedCardNumber;
-      console.log("Landing: Found tempProfile with selectedCardNumber:", savedCardNumber);
       // 삭제를 나중에 하도록 변경 - MindReadingChat이 사용한 후에 삭제
     } else {
-      console.log("Landing: No tempProfile found in localStorage");
     }
 
     return <MindReadingChat user={user} preselectedCard={savedCardNumber} />;

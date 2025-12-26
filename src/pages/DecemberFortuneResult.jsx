@@ -101,7 +101,7 @@ const DecemberFortuneResult = () => {
         }
 
       } catch (error) {
-        console.error("Error fetching fortune data:", error);
+        
         setError(error.message);
         toast.error("운세 데이터를 불러오는 중 오류가 발생했습니다.");
       } finally {
@@ -154,7 +154,7 @@ const DecemberFortuneResult = () => {
       }
 
     } catch (apiError) {
-      console.error("Share API error:", apiError);
+      
     }
 
     // API 실패 시 클라이언트 사이드 ShareId 생성
@@ -167,7 +167,7 @@ const DecemberFortuneResult = () => {
       return;
 
     } catch (fallbackError) {
-      console.error("Fallback share error:", fallbackError);
+      
     }
 
     // 모든 방법 실패
