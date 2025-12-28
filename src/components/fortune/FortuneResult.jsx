@@ -53,6 +53,22 @@ const FortuneResult = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // 마크다운 텍스트를 React 엘리먼트로 변환하는 함수
+  const renderTextWithBold = (text) => {
+    if (!text) return text;
+
+    // **텍스트** 패턴을 찾아 볼드로 변환
+    const parts = text.split(/\*\*(.*?)\*\*/g);
+
+    return parts.map((part, index) => {
+      // 홀수 인덱스는 ** 사이의 텍스트
+      if (index % 2 === 1) {
+        return <strong key={index} className="font-bold">{part}</strong>;
+      }
+      return part;
+    });
+  };
+
   // 카드 표시명 함수
   const getCardDisplayName = (cardNumber) => {
     const displayNames = {
@@ -402,20 +418,15 @@ const FortuneResult = ({
                   <h3 className="text-lg font-bold text-charcoal mb-4">
                     카드의 의미
                   </h3>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                     {cardInfo[customFields.description]
                       ?.split(/(?<=[.!?])\s+/)
                       .map((sentence, index) => (
-                        <span key={index}>
-                          {sentence}
-                          {index <
-                            cardInfo[customFields.description].split(
-                              /(?<=[.!?])\s+/
-                            ).length -
-                              1 && "\n"}
-                        </span>
+                        <p key={index} className="mb-2">
+                          {renderTextWithBold(sentence)}
+                        </p>
                       ))}
-                  </p>
+                  </div>
                 </div>
               )}
 
@@ -426,20 +437,15 @@ const FortuneResult = ({
                   <h3 className="text-lg font-bold text-purple-800 mb-4">
                     {fortuneData?.fortuneType || "운세"}
                   </h3>
-                  <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                  <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
                     {cardInfo[customFields.monthlyForecast]
                       ?.split(/(?<=[.!?])\s+/)
                       .map((sentence, index) => (
-                        <span key={index}>
-                          {sentence}
-                          {index <
-                            cardInfo[customFields.monthlyForecast].split(
-                              /(?<=[.!?])\s+/
-                            ).length -
-                              1 && "\n"}
-                        </span>
+                        <p key={index} className="mb-2">
+                          {renderTextWithBold(sentence)}
+                        </p>
                       ))}
-                  </p>
+                  </div>
                 </div>
               )}
 

@@ -86,6 +86,7 @@ const CharacterForm = ({ character, onSubmit, onCancel, isLoading }) => {
     imageSrc: '',
     description: '',
     personality: '',
+    imageFile: null,
     defaultMessageScenarios: {
       withProfile: [
         { text: '운세를 봐줄거래!', sender: 'bot' },
@@ -138,15 +139,52 @@ const CharacterForm = ({ character, onSubmit, onCancel, isLoading }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">이미지 경로 *</label>
-            <input
-              type="text"
-              value={formData.imageSrc}
-              onChange={(e) => setFormData({ ...formData, imageSrc: e.target.value })}
-              className="w-full px-3 py-2 border rounded-md"
-              placeholder="예: /images/character/taroti.png"
-              required
-            />
+            <label className="block text-sm font-medium mb-2">캐릭터 이미지 *</label>
+
+            {/* 이미지 미리보기 */}
+            {(formData.imageSrc || formData.imageFile) && (
+              <div className="mb-3">
+                <img
+                  src={formData.imageFile ? URL.createObjectURL(formData.imageFile) : formData.imageSrc}
+                  alt="캐릭터 미리보기"
+                  className="w-32 h-32 rounded-lg object-cover border"
+                />
+              </div>
+            )}
+
+            {/* 파일 업로드 입력 */}
+            <div className="space-y-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setFormData({ ...formData, imageFile: file });
+                  }
+                }}
+                className="w-full px-3 py-2 border rounded-md"
+              />
+              <p className="text-sm text-gray-500">
+                {
+                  character && !formData.imageFile
+                    ? '새 이미지를 업로드하지 않으면 기존 이미지가 유지됩니다.'
+                    : 'JPG, PNG, GIF 형식을 지원합니다. (최대 5MB)'
+                }
+              </p>
+
+              {/* 외부 URL 입력 (선택적) */}
+              <div className="mt-3">
+                <label className="text-sm text-gray-600">또는 이미지 URL 입력:</label>
+                <input
+                  type="text"
+                  value={formData.imageSrc}
+                  onChange={(e) => setFormData({ ...formData, imageSrc: e.target.value, imageFile: null })}
+                  className="w-full px-3 py-2 border rounded-md mt-1"
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+            </div>
           </div>
 
           <div>
@@ -244,13 +282,37 @@ const CharacterManager = () => {
 
       const method = isEdit ? 'PUT' : 'POST';
 
+      // FormData 객체 생성 (파일 업로드를 위해)
+      const formDataToSend = new FormData();
+
+      // 텍스트 데이터 추가
+      formDataToSend.append('name', characterData.name);
+      if (characterData.description) formDataToSend.append('description', characterData.description);
+      if (characterData.personality) formDataToSend.append('personality', characterData.personality);
+      if (characterData.defaultMessageScenarios) {
+        formDataToSend.append('defaultMessageScenarios', JSON.stringify(characterData.defaultMessageScenarios));
+      }
+
+      // 이미지 파일이 있는 경우
+      if (characterData.imageFile) {
+        formDataToSend.append('image', characterData.imageFile);
+      } else if (characterData.imageSrc) {
+        // URL을 직접 입력한 경우
+        formDataToSend.append('imageSrc', characterData.imageSrc);
+      } else if (!isEdit) {
+        // 새 캐릭터인데 이미지가 없는 경우
+        toast.error('캐릭터 이미지를 선택해주세요.');
+        setIsSubmitting(false);
+        return;
+      }
+
       const response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
+          // Content-Type을 설정하지 않음 (FormData가 자동으로 설정)
         },
-        body: JSON.stringify(characterData)
+        body: formDataToSend
       });
 
       const data = await response.json();
@@ -365,14 +427,16 @@ const CharacterManager = () => {
             <div key={character.id} className="border rounded-lg p-6 bg-white">
               <div className="flex items-start justify-between">
                 <div className="flex gap-4">
-                  <img
-                    src={character.imageSrc}
-                    alt={character.name}
-                    className="w-16 h-16 rounded-lg object-cover"
-                    onError={(e) => {
-                      e.target.src = '/images/character/default.png';
-                    }}
-                  />
+                  {character.imageSrc && (
+                    <img
+                      src={character.imageSrc}
+                      alt={character.name}
+                      className="w-16 h-16 rounded-lg object-cover"
+                      onError={(e) => {
+                        e.target.src = '/images/character/default.png';
+                      }}
+                    />
+                  )}
                   <div className="flex-1">
                     <h3 className="text-xl font-bold mb-2">{character.name}</h3>
                     {character.description && (

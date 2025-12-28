@@ -4,6 +4,22 @@ import Navigation from '../ui/Navigation';
 import CardBack from '../CardBack';
 import { toast } from 'sonner';
 
+// 마크다운 텍스트를 React 엘리먼트로 변환하는 함수
+const renderTextWithBold = (text) => {
+  if (!text) return text;
+
+  // **텍스트** 패턴을 찾아 볼드로 변환
+  const parts = text.split(/\*\*(.*?)\*\*/g);
+
+  return parts.map((part, index) => {
+    // 홀수 인덱스는 ** 사이의 텍스트
+    if (index % 2 === 1) {
+      return <strong key={index} className="font-bold">{part}</strong>;
+    }
+    return part;
+  });
+};
+
 // 고정 카드 이름 매핑
 const getCardDisplayName = (cardNumber) => {
   const displayNames = {
@@ -169,7 +185,7 @@ const DynamicFortuneResult = () => {
             </h2>
             {boxData?.interpretation && (
               <div className="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-400">
-                <p className="text-gray-700 leading-relaxed">{boxData.interpretation}</p>
+                <p className="text-gray-700 leading-relaxed">{renderTextWithBold(boxData.interpretation)}</p>
               </div>
             )}
           </div>
@@ -190,9 +206,9 @@ const DynamicFortuneResult = () => {
             <h3 className="text-lg font-semibold mb-3 text-gray-800">
               {box.title}
             </h3>
-            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {boxData.content}
-            </p>
+            <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+              {renderTextWithBold(boxData.content)}
+            </div>
           </div>
         </div>
       );
@@ -209,7 +225,7 @@ const DynamicFortuneResult = () => {
       <div className="mb-6">
         <h3 className="text-lg font-semibold mb-3 text-gray-800">{title}</h3>
         <div className="bg-gray-50 rounded-lg p-4">
-          <p className="text-gray-700 leading-relaxed">{cardData[sectionKey]}</p>
+          <div className="text-gray-700 leading-relaxed">{renderTextWithBold(cardData[sectionKey])}</div>
         </div>
       </div>
     );
@@ -359,7 +375,7 @@ const DynamicFortuneResult = () => {
               <div className="mb-8">
                 <h3 className="text-lg font-semibold mb-3 text-gray-800">카드의 의미</h3>
                 <div className="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-400">
-                  <p className="text-gray-700 leading-relaxed">{cardData.interpretation}</p>
+                  <div className="text-gray-700 leading-relaxed">{renderTextWithBold(cardData.interpretation)}</div>
                 </div>
               </div>
             )}

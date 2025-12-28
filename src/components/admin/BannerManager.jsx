@@ -25,6 +25,8 @@ const BannerManager = () => {
   });
   const [showAddForm, setShowAddForm] = useState(false);
   const [uploading, setUploading] = useState({ pc: false, mobile: false });
+  const [fortuneTemplates, setFortuneTemplates] = useState([]);
+  const [selectedLinkType, setSelectedLinkType] = useState('custom'); // 'custom' or 'template'
 
   // 배너 목록 조회
   const fetchBanners = async () => {
@@ -40,8 +42,22 @@ const BannerManager = () => {
     }
   };
 
+  // 운세 템플릿 목록 조회
+  const fetchFortuneTemplates = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5002'}/api/fortune-templates`);
+      const data = await response.json();
+      if (data.success && data.templates) {
+        setFortuneTemplates(data.templates.filter(t => t.isActive));
+      }
+    } catch (error) {
+      console.error('Failed to fetch fortune templates:', error);
+    }
+  };
+
   useEffect(() => {
     fetchBanners();
+    fetchFortuneTemplates();
   }, []);
 
   const handleEdit = (banner) => {
@@ -54,6 +70,12 @@ const BannerManager = () => {
       link_url: banner.link_url || '',
       active: banner.active
     });
+    // 링크 타입 판단 (운세 템플릿인지 체크)
+    if (banner.link_url && banner.link_url.startsWith('/fortune/')) {
+      setSelectedLinkType('template');
+    } else {
+      setSelectedLinkType('custom');
+    }
   };
 
   const handleSave = async (id) => {
@@ -315,15 +337,67 @@ const BannerManager = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                링크 URL
+                링크 설정
               </label>
-              <input
-                type="text"
-                value={editForm.link_url}
-                onChange={(e) => setEditForm({ ...editForm, link_url: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                placeholder="#new-event"
-              />
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className={`px-3 py-1 text-sm rounded ${
+                      selectedLinkType === 'custom'
+                        ? 'bg-black text-white'
+                        : 'bg-gray-200 text-gray-700'
+                    }`}
+                    onClick={() => {
+                      setSelectedLinkType('custom');
+                      setEditForm({ ...editForm, link_url: '' });
+                    }}
+                  >
+                    직접 입력
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-1 text-sm rounded ${
+                      selectedLinkType === 'template'
+                        ? 'bg-black text-white'
+                        : 'bg-gray-200 text-gray-700'
+                    }`}
+                    onClick={() => {
+                      setSelectedLinkType('template');
+                      setEditForm({ ...editForm, link_url: '' });
+                    }}
+                  >
+                    운세 템플릿 선택
+                  </button>
+                </div>
+                {selectedLinkType === 'custom' ? (
+                  <input
+                    type="text"
+                    value={editForm.link_url}
+                    onChange={(e) => setEditForm({ ...editForm, link_url: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                    placeholder="예: #new-event, /about, https://example.com"
+                  />
+                ) : (
+                  <select
+                    value={editForm.link_url}
+                    onChange={(e) => setEditForm({ ...editForm, link_url: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  >
+                    <option value="">운세 템플릿을 선택하세요</option>
+                    {fortuneTemplates.map((template) => (
+                      <option key={template.id} value={`/fortune/${template.templateKey}`}>
+                        {template.title} ({template.category})
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {editForm.link_url && (
+                  <p className="text-xs text-gray-500">
+                    연결될 링크: {editForm.link_url}
+                  </p>
+                )}
+              </div>
             </div>
             <div className="flex items-center">
               <input
@@ -437,13 +511,61 @@ const BannerManager = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">링크 URL</label>
-                      <input
-                        type="text"
-                        value={editForm.link_url}
-                        onChange={(e) => setEditForm({ ...editForm, link_url: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-sm"
-                      />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">링크 설정</label>
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            className={`px-2 py-1 text-xs rounded ${
+                              selectedLinkType === 'custom'
+                                ? 'bg-black text-white'
+                                : 'bg-gray-200 text-gray-700'
+                            }`}
+                            onClick={() => {
+                              setSelectedLinkType('custom');
+                              setEditForm({ ...editForm, link_url: '' });
+                            }}
+                          >
+                            직접 입력
+                          </button>
+                          <button
+                            type="button"
+                            className={`px-2 py-1 text-xs rounded ${
+                              selectedLinkType === 'template'
+                                ? 'bg-black text-white'
+                                : 'bg-gray-200 text-gray-700'
+                            }`}
+                            onClick={() => {
+                              setSelectedLinkType('template');
+                              setEditForm({ ...editForm, link_url: '' });
+                            }}
+                          >
+                            운세 템플릿
+                          </button>
+                        </div>
+                        {selectedLinkType === 'custom' ? (
+                          <input
+                            type="text"
+                            value={editForm.link_url}
+                            onChange={(e) => setEditForm({ ...editForm, link_url: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-sm"
+                            placeholder="예: #new-event, /about"
+                          />
+                        ) : (
+                          <select
+                            value={editForm.link_url}
+                            onChange={(e) => setEditForm({ ...editForm, link_url: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-sm"
+                          >
+                            <option value="">운세 템플릿 선택</option>
+                            {fortuneTemplates.map((template) => (
+                              <option key={template.id} value={`/fortune/${template.templateKey}`}>
+                                {template.title}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
