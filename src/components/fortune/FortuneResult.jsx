@@ -182,7 +182,7 @@ const FortuneResult = ({
       return onShare(fortuneData, cardInfo, generateMetaTags());
     }
 
-    // 기본 공유 로직
+    // 기본 공유 로직 (통합 API 사용)
     const backendDomain =
       process.env.REACT_APP_API_BASE_URL ||
       (window.location.hostname === "localhost"
@@ -191,7 +191,7 @@ const FortuneResult = ({
 
     try {
       const metaData = generateMetaTags();
-      const apiUrl = `${backendDomain}${shareEndpoint}/${fortuneId}/share`;
+      const apiUrl = `${backendDomain}/api/share`;
 
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -199,18 +199,17 @@ const FortuneResult = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          resourceType: 'fortune-session',
+          resourceId: fortuneId,
           title: metaData.title,
           description: metaData.description,
           image: metaData.image,
-          cardName: metaData.cardName,
-          nickname: metaData.nickname,
-          fortuneType: metaData.fortuneType,
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        const shareUrl = `${backendDomain}/share/${data.shareId}`;
+        const shareUrl = `${backendDomain}${data.shareUrl}`;
         await navigator.clipboard.writeText(shareUrl);
         toast.success(
           "공유 링크가 클립보드에 복사되었습니다! 🔗\nSNS나 메신저에 붙여넣어 공유해보세요."
@@ -218,7 +217,7 @@ const FortuneResult = ({
         return;
       }
     } catch (apiError) {
-      // Share API error
+      console.error('Share API error:', apiError);
     }
 
     // 폴백 공유 로직
