@@ -17,12 +17,7 @@ const RecommendationManager = () => {
   // 추천 콘텐츠 목록 조회
   const fetchRecommendations = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE}/api/content-recommendations/admin`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch(`${API_BASE}/api/content-recommendations/admin`);
 
       if (response.ok) {
         const data = await response.json();
@@ -39,12 +34,7 @@ const RecommendationManager = () => {
   // 사용 가능한 콘텐츠 목록 조회
   const fetchAvailableContents = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE}/api/content-recommendations/admin/available-contents`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch(`${API_BASE}/api/content-recommendations/admin/available-contents`);
 
       if (response.ok) {
         const data = await response.json();
@@ -85,12 +75,10 @@ const RecommendationManager = () => {
   // 추천 콘텐츠 추가
   const handleAddRecommendation = async (contentId, formData) => {
     try {
-      const token = localStorage.getItem('authToken');
       const response = await fetch(`${API_BASE}/api/content-recommendations`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           contentId,
@@ -118,12 +106,10 @@ const RecommendationManager = () => {
   // 추천 콘텐츠 수정
   const handleUpdateRecommendation = async (id, formData) => {
     try {
-      const token = localStorage.getItem('authToken');
       const response = await fetch(`${API_BASE}/api/content-recommendations/${id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(formData)
       });
@@ -147,12 +133,8 @@ const RecommendationManager = () => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
 
     try {
-      const token = localStorage.getItem('authToken');
       const response = await fetch(`${API_BASE}/api/content-recommendations/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        method: 'DELETE'
       });
 
       if (response.ok) {

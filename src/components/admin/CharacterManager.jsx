@@ -269,12 +269,6 @@ const CharacterManager = () => {
     try {
       setIsSubmitting(true);
 
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        toast.error('로그인이 필요합니다.');
-        return;
-      }
-
       const isEdit = editingCharacter !== null;
       const url = isEdit
         ? `${API_BASE_URL}/api/characters/${editingCharacter.id}`
@@ -308,10 +302,6 @@ const CharacterManager = () => {
 
       const response = await fetch(url, {
         method,
-        headers: {
-          'Authorization': `Bearer ${token}`
-          // Content-Type을 설정하지 않음 (FormData가 자동으로 설정)
-        },
         body: formDataToSend
       });
 
@@ -338,17 +328,8 @@ const CharacterManager = () => {
     if (!window.confirm('정말로 이 캐릭터를 삭제하시겠습니까?')) return;
 
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        toast.error('로그인이 필요합니다.');
-        return;
-      }
-
       const response = await fetch(`${API_BASE_URL}/api/characters/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        method: 'DELETE'
       });
 
       const data = await response.json();
