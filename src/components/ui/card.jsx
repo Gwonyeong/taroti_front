@@ -22,6 +22,7 @@ const CardHeader = React.forwardRef(({ className, ...props }, ref) => (
 ));
 CardHeader.displayName = "CardHeader";
 
+/* eslint-disable jsx-a11y/heading-has-content */
 const CardTitle = React.forwardRef(({ className, ...props }, ref) => (
   <h3
     ref={ref}
@@ -32,6 +33,7 @@ const CardTitle = React.forwardRef(({ className, ...props }, ref) => (
     {...props}
   />
 ));
+/* eslint-enable jsx-a11y/heading-has-content */
 CardTitle.displayName = "CardTitle";
 
 const CardDescription = React.forwardRef(({ className, ...props }, ref) => (

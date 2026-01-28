@@ -29,6 +29,7 @@ const MyPage = () => {
     if (isAuthenticated) {
       fetchUserContent();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, activeTab, currentPage]);
 
   const fetchUserContent = async () => {

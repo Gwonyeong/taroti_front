@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     initKakao();
     checkAuthStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkAuthStatus = async () => {
@@ -80,9 +81,6 @@ export const AuthProvider = ({ children }) => {
         }
 
         localStorage.setItem('authToken', token);
-
-        // 토큰이 제대로 저장되었는지 확인
-        const savedToken = localStorage.getItem('authToken');
 
         setUser(userData);
         setIsAuthenticated(true);

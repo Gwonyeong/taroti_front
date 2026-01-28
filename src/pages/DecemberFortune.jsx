@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../components/ui/button";
 import ChatMessage from "../components/ChatMessage";
 import CardBack from "../components/CardBack";
 import { useAuth } from "../context/AuthContext";
@@ -11,7 +10,7 @@ import { toast } from "sonner";
 
 const DecemberFortune = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   // 페이지 상태
   const [messages, setMessages] = useState([]);
@@ -51,6 +50,7 @@ const DecemberFortune = () => {
         showNextMessage();
       }, 300);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addMessage = (text, sender = "bot", imageUrl = null) => {

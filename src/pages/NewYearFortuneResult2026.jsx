@@ -6,7 +6,7 @@ import Navigation from "../components/ui/Navigation";
 import ContentRecommendations from "../components/ContentRecommendations";
 import { toast } from "sonner";
 import newYearFortune2026Data from "../data/newYearFortune2026.json";
-import { getCardInfo, getCardName, getCardDescription } from "../data/tarotCards";
+import { getCardInfo } from "../data/tarotCards";
 
 const NewYearFortuneResult2026 = () => {
   const { fortuneId } = useParams();

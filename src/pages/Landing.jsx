@@ -36,7 +36,7 @@ const Landing = () => {
     TF: "", // T or F
     JP: "", // J or P
   });
-  const [userInfo, setUserInfo] = useState({});
+  const [, setUserInfo] = useState({});
   const [selectedCardNumber, setSelectedCardNumber] = useState(null);
   const messagesEndRef = useRef(null);
   const hasInitialized = useRef(false);
