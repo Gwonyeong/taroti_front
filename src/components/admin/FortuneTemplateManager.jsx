@@ -609,6 +609,7 @@ const FortuneTemplateManager = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [resultTabMode, setResultTabMode] = useState('layout'); // 'layout', 'data', 'json'
+  const [templateType, setTemplateType] = useState('default'); // 'default' 또는 'mini'
 
   // 폼 상태
   const [formData, setFormData] = useState({
@@ -616,6 +617,7 @@ const FortuneTemplateManager = () => {
     title: '',
     description: '',
     category: 'special',
+    type: 'default',
     imageUrl: '',
     requiredFields: ['birthDate', 'gender', 'mbti'],
     characterId: null,
@@ -708,10 +710,10 @@ const FortuneTemplateManager = () => {
   };
 
   // 템플릿 목록 조회
-  const fetchTemplates = async () => {
+  const fetchTemplates = async (type = templateType) => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_BASE}/api/fortune-templates?includeInactive=true`);
+      const response = await fetch(`${API_BASE}/api/fortune-templates?includeInactive=true&type=${type}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -816,6 +818,7 @@ const FortuneTemplateManager = () => {
       title: '',
       description: '',
       category: 'special',
+      type: templateType,
       imageUrl: '',
       requiredFields: ['birthDate', 'gender', 'mbti'],
       characterInfo: {
@@ -868,6 +871,7 @@ const FortuneTemplateManager = () => {
       title: template.title,
       description: template.description || '',
       category: template.category || 'special',
+      type: template.type || 'default',
       imageUrl: template.imageUrl || '',
       requiredFields: template.requiredFields || ['birthDate', 'gender', 'mbti'],
       characterId: template.characterId || null,
@@ -918,9 +922,9 @@ const FortuneTemplateManager = () => {
 
   // 컴포넌트 마운트 시 데이터 로딩
   useEffect(() => {
-    fetchTemplates();
+    fetchTemplates(templateType);
     fetchCharacters();
-  }, []);
+  }, [templateType]);
 
   if (isLoading) {
     return (
@@ -936,11 +940,40 @@ const FortuneTemplateManager = () => {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">운세 템플릿 관리</h2>
         <Button
-          onClick={() => setShowCreateForm(true)}
+          onClick={() => {
+            resetForm();
+            setShowCreateForm(true);
+          }}
           className="bg-blue-600 text-white hover:bg-blue-700"
         >
           새 템플릿 만들기
         </Button>
+      </div>
+
+      {/* 서브 탭 */}
+      <div className="border-b border-gray-200">
+        <nav className="flex space-x-4">
+          <button
+            onClick={() => setTemplateType('default')}
+            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
+              templateType === 'default'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            운세 템플릿
+          </button>
+          <button
+            onClick={() => setTemplateType('mini')}
+            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
+              templateType === 'mini'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            미니 운세 템플릿
+          </button>
+        </nav>
       </div>
 
       {/* 템플릿 목록 */}
@@ -1014,7 +1047,7 @@ const FortuneTemplateManager = () => {
 
       {templates.length === 0 && (
         <div className="text-center py-8 text-gray-500">
-          등록된 템플릿이 없습니다.
+          등록된 {templateType === 'mini' ? '미니 운세 ' : ''}템플릿이 없습니다.
         </div>
       )}
 
@@ -1023,7 +1056,7 @@ const FortuneTemplateManager = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">
-              {isEditing ? '템플릿 편집' : '새 템플릿 만들기'}
+              {isEditing ? '템플릿 편집' : `새 ${templateType === 'mini' ? '미니 운세 ' : ''}템플릿 만들기`}
             </h3>
 
             <div className="space-y-6">
