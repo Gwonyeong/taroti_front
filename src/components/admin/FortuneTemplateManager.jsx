@@ -737,6 +737,12 @@ const FortuneTemplateManager = () => {
         return;
       }
 
+      // 공백 검증
+      if (/\s/.test(formData.templateKey)) {
+        toast.error('템플릿 키에 공백을 포함할 수 없습니다.');
+        return;
+      }
+
       const response = await fetch(`${API_BASE}/api/fortune-templates`, {
         method: 'POST',
         headers: {
@@ -1069,9 +1075,14 @@ const FortuneTemplateManager = () => {
                     value={formData.templateKey}
                     onChange={(e) => setFormData({ ...formData, templateKey: e.target.value })}
                     disabled={isEditing}
-                    className="w-full px-3 py-2 border rounded-md disabled:bg-gray-100"
+                    className={`w-full px-3 py-2 border rounded-md disabled:bg-gray-100 ${
+                      /\s/.test(formData.templateKey) ? 'border-red-500' : ''
+                    }`}
                     placeholder="valentine-2025"
                   />
+                  {/\s/.test(formData.templateKey) && (
+                    <p className="text-red-500 text-xs mt-1">공백을 포함할 수 없습니다</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">제목 *</label>
