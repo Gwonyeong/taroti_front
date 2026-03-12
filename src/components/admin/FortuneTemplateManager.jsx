@@ -555,8 +555,12 @@ ${cardInfo}
   );
 };
 
-// 사주 25가지 조합 키 생성 (dominantElement × dayElement.stem)
+// 사주 오행 및 변형 설정
 const FIVE_ELEMENTS = ['목', '화', '토', '금', '수'];
+const VARIATION_COUNT = 10; // 오행당 변형 수
+const VARIATION_INDICES = Array.from({ length: VARIATION_COUNT }, (_, i) => i); // [0, 1, ..., 9]
+
+// 하위호환: 기존 25조합 키 (dominantElement × dayElement.stem)
 const SAJU_KEYS = FIVE_ELEMENTS.flatMap(dominant =>
   FIVE_ELEMENTS.map(dayStem => `${dominant}_${dayStem}`)
 );
@@ -566,7 +570,7 @@ const getSajuKeyLabel = (key) => {
   return `주오행: ${dominant} / 일간: ${dayStem}`;
 };
 
-// 사주 데이터 에디터 컴포넌트
+// 사주 데이터 에디터 컴포넌트 (5×10 랜덤 변형 방식)
 const SajuDataEditor = ({ sajuData, layout, onSajuDataChange }) => {
   const [selectedBox, setSelectedBox] = useState('');
   const [selectedDominant, setSelectedDominant] = useState('목');
@@ -584,28 +588,35 @@ const SajuDataEditor = ({ sajuData, layout, onSajuDataChange }) => {
     '수': { bg: '#EFF6FF', border: '#93C5FD', text: '#1E40AF' },
   };
 
-  // 개별 콘텐츠 업데이트
-  const updateContent = (sajuKey, content) => {
+  // 개별 콘텐츠 업데이트 (신규 배열 구조: sajuData[오행][인덱스][boxId])
+  const updateContent = (element, variationIndex, content) => {
     const updated = { ...currentSajuData };
-    if (!updated[sajuKey]) updated[sajuKey] = {};
-    updated[sajuKey][selectedBox] = { content };
+    if (!updated[element]) updated[element] = [];
+    if (!updated[element][variationIndex]) updated[element][variationIndex] = {};
+    updated[element][variationIndex][selectedBox] = { content };
     setCurrentSajuData(updated);
     onSajuDataChange(updated);
   };
 
-  // JSON 일괄 적용
+  // JSON 일괄 적용 (신규 구조)
   const applyBulkJson = () => {
     try {
       const parsed = JSON.parse(bulkJson);
       const updated = { ...currentSajuData };
-      Object.keys(parsed).forEach(sajuKey => {
-        if (!updated[sajuKey]) updated[sajuKey] = {};
-        updated[sajuKey][selectedBox] = parsed[sajuKey];
+      Object.keys(parsed).forEach(element => {
+        if (!FIVE_ELEMENTS.includes(element)) return;
+        if (!Array.isArray(parsed[element])) return;
+        if (!updated[element]) updated[element] = [];
+        parsed[element].forEach((variation, idx) => {
+          if (!updated[element][idx]) updated[element][idx] = {};
+          updated[element][idx][selectedBox] = variation;
+        });
       });
       setCurrentSajuData(updated);
       onSajuDataChange(updated);
       setJsonError('');
-      toast.success(`${Object.keys(parsed).length}개 조합이 적용되었습니다.`);
+      const totalCount = Object.keys(parsed).reduce((sum, el) => sum + (Array.isArray(parsed[el]) ? parsed[el].length : 0), 0);
+      toast.success(`${totalCount}개 변형이 적용되었습니다.`);
     } catch (err) {
       setJsonError('JSON 형식이 올바르지 않습니다: ' + err.message);
     }
@@ -614,28 +625,30 @@ const SajuDataEditor = ({ sajuData, layout, onSajuDataChange }) => {
   // 현재 박스의 데이터를 JSON으로 추출
   const exportCurrentBoxJson = () => {
     const boxData = {};
-    SAJU_KEYS.forEach(key => {
-      if (currentSajuData[key]?.[selectedBox]) {
-        boxData[key] = currentSajuData[key][selectedBox];
+    FIVE_ELEMENTS.forEach(element => {
+      if (currentSajuData[element]) {
+        boxData[element] = VARIATION_INDICES.map(idx => {
+          return currentSajuData[element]?.[idx]?.[selectedBox] || { content: '' };
+        });
       }
     });
     setBulkJson(JSON.stringify(boxData, null, 2));
   };
 
-  // 입력 현황 카운트
-  const getFilledCount = (dominant) => {
+  // 입력 현황 카운트 (오행별)
+  const getFilledCount = (element) => {
     if (!selectedBox) return 0;
-    return FIVE_ELEMENTS.filter(dayStem =>
-      currentSajuData[`${dominant}_${dayStem}`]?.[selectedBox]?.content
+    return VARIATION_INDICES.filter(idx =>
+      currentSajuData[element]?.[idx]?.[selectedBox]?.content
     ).length;
   };
 
   const getTotalFilledCount = () => {
     if (!selectedBox) return 0;
-    return SAJU_KEYS.filter(key =>
-      currentSajuData[key]?.[selectedBox]?.content
-    ).length;
+    return FIVE_ELEMENTS.reduce((sum, element) => sum + getFilledCount(element), 0);
   };
+
+  const TOTAL_ITEMS = FIVE_ELEMENTS.length * VARIATION_COUNT; // 50
 
   if (!layout?.boxes?.length) {
     return (
@@ -658,6 +671,11 @@ const SajuDataEditor = ({ sajuData, layout, onSajuDataChange }) => {
 
   return (
     <div className="space-y-4">
+      {/* 안내 문구 */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+        주요 오행(5) × 변형(10) = 총 50개 콘텐츠를 입력합니다. 같은 사용자도 접속할 때마다 랜덤으로 다른 결과를 봅니다.
+      </div>
+
       {/* 박스 선택 */}
       <div>
         <label className="block text-sm font-medium mb-2">결과 박스 선택:</label>
@@ -676,7 +694,7 @@ const SajuDataEditor = ({ sajuData, layout, onSajuDataChange }) => {
               {box.title}
               {selectedBox === box.id && (
                 <span className="ml-1 text-xs">
-                  ({SAJU_KEYS.filter(k => currentSajuData[k]?.[box.id]?.content).length}/25)
+                  ({FIVE_ELEMENTS.reduce((sum, el) => sum + VARIATION_INDICES.filter(idx => currentSajuData[el]?.[idx]?.[box.id]?.content).length, 0)}/{TOTAL_ITEMS})
                 </span>
               )}
             </button>
@@ -690,8 +708,8 @@ const SajuDataEditor = ({ sajuData, layout, onSajuDataChange }) => {
           <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
             <div className="text-sm">
               입력 현황:{' '}
-              <span className={totalFilled === 25 ? 'text-green-600 font-bold' : 'text-orange-600 font-medium'}>
-                {totalFilled}/25
+              <span className={totalFilled === TOTAL_ITEMS ? 'text-green-600 font-bold' : 'text-orange-600 font-medium'}>
+                {totalFilled}/{TOTAL_ITEMS}
               </span>
             </div>
             <div className="flex gap-2">
@@ -738,13 +756,13 @@ const SajuDataEditor = ({ sajuData, layout, onSajuDataChange }) => {
                         borderColor: colors.text,
                       } : {}}
                     >
-                      {el}({filled}/5)
+                      {el}({filled}/{VARIATION_COUNT})
                     </button>
                   );
                 })}
               </div>
 
-              {/* 일간 오행별 입력 카드 */}
+              {/* 변형별 입력 카드 */}
               <div
                 className="border rounded-b-lg p-4 space-y-4"
                 style={{
@@ -753,44 +771,34 @@ const SajuDataEditor = ({ sajuData, layout, onSajuDataChange }) => {
                 }}
               >
                 <p className="text-xs font-medium" style={{ color: elementColors[selectedDominant].text }}>
-                  주오행 "{selectedDominant}" — 일간 오행별 콘텐츠 (5개)
+                  주오행 "{selectedDominant}" — 랜덤 변형 콘텐츠 ({VARIATION_COUNT}개)
                 </p>
 
-                {FIVE_ELEMENTS.map(dayStem => {
-                  const sajuKey = `${selectedDominant}_${dayStem}`;
-                  const content = currentSajuData[sajuKey]?.[selectedBox]?.content || '';
-                  const dayColors = elementColors[dayStem];
+                {VARIATION_INDICES.map(idx => {
+                  const content = currentSajuData[selectedDominant]?.[idx]?.[selectedBox]?.content || '';
 
                   return (
-                    <div key={sajuKey} className="bg-white rounded-lg p-3 border border-gray-200">
+                    <div key={`${selectedDominant}_${idx}`} className="bg-white rounded-lg p-3 border border-gray-200">
                       <div className="flex items-center gap-2 mb-2">
                         <span
                           className="inline-block px-2 py-0.5 text-xs font-bold rounded"
                           style={{ backgroundColor: elementColors[selectedDominant].bg, color: elementColors[selectedDominant].text, border: `1px solid ${elementColors[selectedDominant].border}` }}
                         >
-                          주 {selectedDominant}
+                          {selectedDominant}
                         </span>
-                        <span className="text-gray-400 text-xs">x</span>
-                        <span
-                          className="inline-block px-2 py-0.5 text-xs font-bold rounded"
-                          style={{ backgroundColor: dayColors.bg, color: dayColors.text, border: `1px solid ${dayColors.border}` }}
-                        >
-                          일간 {dayStem}
+                        <span className="text-gray-600 text-sm font-medium">
+                          변형 {idx + 1}
                         </span>
-                        <span className="text-xs text-gray-400 ml-auto">
-                          {selectedDominant === dayStem ? '동일 오행 (기운 강함)' :
-                            (['목화', '화토', '토금', '금수', '수목'].includes(selectedDominant + dayStem) ? '상생 관계' :
-                            ['목토', '토수', '수화', '화금', '금목'].includes(selectedDominant + dayStem) ? '상극 관계' : '')
-                          }
+                        <span className="ml-auto">
+                          {content && <span className="text-green-500 text-xs">입력됨</span>}
                         </span>
-                        {content && <span className="text-green-500 text-xs">입력됨</span>}
                       </div>
                       <textarea
                         value={content}
-                        onChange={(e) => updateContent(sajuKey, e.target.value)}
+                        onChange={(e) => updateContent(selectedDominant, idx, e.target.value)}
                         className="w-full px-3 py-2 border border-gray-200 rounded text-sm resize-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
                         rows="3"
-                        placeholder={`주오행 ${selectedDominant}, 일간 ${dayStem}인 사용자의 "${layout.boxes.find(b => b.id === selectedBox)?.title}" 내용을 입력하세요...`}
+                        placeholder={`주오행 ${selectedDominant} 사용자의 "${layout.boxes.find(b => b.id === selectedBox)?.title}" 변형 ${idx + 1} 내용을 입력하세요...`}
                       />
                     </div>
                   );
@@ -802,7 +810,7 @@ const SajuDataEditor = ({ sajuData, layout, onSajuDataChange }) => {
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <p className="text-sm text-gray-600">
-                  25개 조합의 JSON을 한번에 붙여넣어 적용할 수 있습니다.
+                  5개 오행 × {VARIATION_COUNT}개 변형의 JSON을 한번에 붙여넣어 적용할 수 있습니다.
                 </p>
                 <button
                   type="button"
@@ -819,10 +827,16 @@ const SajuDataEditor = ({ sajuData, layout, onSajuDataChange }) => {
                 className="w-full px-3 py-2 border rounded font-mono text-sm"
                 rows="18"
                 placeholder={`{
-  "목_목": { "content": "주오행이 목이고 일간이 목인 당신은..." },
-  "목_화": { "content": "..." },
-  ...
-  "수_수": { "content": "..." }
+  "목": [
+    { "content": "변형 1 내용..." },
+    { "content": "변형 2 내용..." },
+    ...
+    { "content": "변형 10 내용..." }
+  ],
+  "화": [ ... ],
+  "토": [ ... ],
+  "금": [ ... ],
+  "수": [ ... ]
 }`}
               />
 
@@ -849,7 +863,7 @@ const SajuDataEditor = ({ sajuData, layout, onSajuDataChange }) => {
   );
 };
 
-// 사주 AI 프롬프트 생성기
+// 사주 AI 프롬프트 생성기 (5×10 랜덤 변형 방식)
 const SajuPromptGenerator = ({ selectedBox, onGeneratedPrompt }) => {
   const [subject, setSubject] = useState('');
   const [generatedPrompt, setGeneratedPrompt] = useState('');
@@ -873,102 +887,55 @@ const SajuPromptGenerator = ({ selectedBox, onGeneratedPrompt }) => {
 - 금(金) 기질: 결단력, 의리, 정의감, 깔끔하고 체계적
 - 수(水) 기질: 지혜롭고 유연함, 적응력, 관찰력이 뛰어남
 
-조합 구조 (내부 키 형식):
-- 키: "주오행_일간오행" (예: "목_화")
-- 주오행: 사주에서 가장 강한 기운 → 삶 전반의 흐름과 환경
-- 일간오행: 본인의 핵심 성격과 기질
-- 총 25가지 조합 (5 x 5)
+구조:
+- 키: 주요 오행 ("목", "화", "토", "금", "수")
+- 주요 오행: 사주에서 가장 강한 기운 → 삶 전반의 흐름, 성격, 환경
+- 각 오행마다 10개의 서로 다른 변형(variation)을 배열로 작성
+- 총 50개 콘텐츠 (5개 오행 × 10개 변형)
+- 같은 오행 사용자가 여러 번 접속해도 매번 다른 결과를 보여주기 위한 랜덤 변형 구조
 
 중요 요구사항:
-1. 25개 모든 조합에 대해 "${subject}" 관점의 "${boxTitle}" 내용을 작성
+1. 5개 오행 각각에 대해 10개씩, 총 50개의 "${subject}" 관점의 "${boxTitle}" 내용을 작성
 2. 각 내용은 4-5문장으로 구성
-3. **절대로 "주오행이 X이고 일간이 Y인 당신은", "상생 관계로", "목 기운이 강한" 같은 사주 용어를 사용하지 마세요**
-4. 대신 해당 오행 조합이 만들어내는 **성격, 성향, 상황**을 자연스러운 일상 언어로 풀어서 작성
+3. **절대로 "주오행이 X인 당신은", "상생 관계로", "목 기운이 강한" 같은 사주 용어를 사용하지 마세요**
+4. 대신 해당 오행이 만들어내는 **성격, 성향, 상황**을 자연스러운 일상 언어로 풀어서 작성
 5. 마치 친한 점술가가 이야기하듯 자연스럽고 따뜻한 톤으로 작성
 6. 구체적이고 실용적인 조언 포함
-7. 각 조합별로 내용이 충분히 다르게 작성 (복붙 느낌 금지)
+7. 같은 오행 내 10개 변형이 서로 충분히 다르게 작성 (복붙 느낌 금지)
 
 좋은 예: "요즘 새로운 도전을 하고 싶은 마음이 강하시죠? 그 에너지를 잘 활용하면..."
-나쁜 예: "주오행이 목이고 일간이 화인 당신은 상생 관계로 목이 화를 생하여..."
+나쁜 예: "주오행이 목인 당신은 목 기운이 강하여..."
 
 출력 형식 (반드시 이 JSON 구조를 따르세요):
 \`\`\`json
 {
-  "목_목": {
-    "content": "${subject}에 대한 자연스러운 운세 내용..."
-  },
-  "목_화": {
-    "content": "${subject}에 대한 자연스러운 운세 내용..."
-  },
-  "목_토": {
-    "content": "..."
-  },
-  "목_금": {
-    "content": "..."
-  },
-  "목_수": {
-    "content": "..."
-  },
-  "화_목": {
-    "content": "..."
-  },
-  "화_화": {
-    "content": "..."
-  },
-  "화_토": {
-    "content": "..."
-  },
-  "화_금": {
-    "content": "..."
-  },
-  "화_수": {
-    "content": "..."
-  },
-  "토_목": {
-    "content": "..."
-  },
-  "토_화": {
-    "content": "..."
-  },
-  "토_토": {
-    "content": "..."
-  },
-  "토_금": {
-    "content": "..."
-  },
-  "토_수": {
-    "content": "..."
-  },
-  "금_목": {
-    "content": "..."
-  },
-  "금_화": {
-    "content": "..."
-  },
-  "금_토": {
-    "content": "..."
-  },
-  "금_금": {
-    "content": "..."
-  },
-  "금_수": {
-    "content": "..."
-  },
-  "수_목": {
-    "content": "..."
-  },
-  "수_화": {
-    "content": "..."
-  },
-  "수_토": {
-    "content": "..."
-  },
-  "수_금": {
-    "content": "..."
-  },
-  "수_수": {
-    "content": "..."
-  }
+  "목": [
+    { "content": "${subject}에 대한 자연스러운 운세 내용 변형1..." },
+    { "content": "${subject}에 대한 자연스러운 운세 내용 변형2..." },
+    { "content": "변형3..." },
+    { "content": "변형4..." },
+    { "content": "변형5..." },
+    { "content": "변형6..." },
+    { "content": "변형7..." },
+    { "content": "변형8..." },
+    { "content": "변형9..." },
+    { "content": "변형10..." }
+  ],
+  "화": [
+    { "content": "..." },
+    { "content": "..." },
+    { "content": "..." },
+    { "content": "..." },
+    { "content": "..." },
+    { "content": "..." },
+    { "content": "..." },
+    { "content": "..." },
+    { "content": "..." },
+    { "content": "..." }
+  ],
+  "토": [ "... 10개 변형" ],
+  "금": [ "... 10개 변형" ],
+  "수": [ "... 10개 변형" ]
 }
 \`\`\``;
 
@@ -985,7 +952,7 @@ const SajuPromptGenerator = ({ selectedBox, onGeneratedPrompt }) => {
     <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg">
       <h5 className="text-sm font-semibold text-purple-800 mb-3">🤖 사주 AI 프롬프트 생성기</h5>
       <p className="text-xs text-gray-600 mb-3">
-        25가지 오행 조합별 콘텐츠를 AI로 한번에 생성합니다. 생성된 프롬프트를 ChatGPT/Claude에 붙여넣으세요.
+        오행별 10개 변형 콘텐츠(총 50개)를 AI로 한번에 생성합니다. 생성된 프롬프트를 ChatGPT/Claude에 붙여넣으세요.
       </p>
 
       <div className="space-y-4">
