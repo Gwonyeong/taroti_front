@@ -555,6 +555,495 @@ ${cardInfo}
   );
 };
 
+// 사주 25가지 조합 키 생성 (dominantElement × dayElement.stem)
+const FIVE_ELEMENTS = ['목', '화', '토', '금', '수'];
+const SAJU_KEYS = FIVE_ELEMENTS.flatMap(dominant =>
+  FIVE_ELEMENTS.map(dayStem => `${dominant}_${dayStem}`)
+);
+
+const getSajuKeyLabel = (key) => {
+  const [dominant, dayStem] = key.split('_');
+  return `주오행: ${dominant} / 일간: ${dayStem}`;
+};
+
+// 사주 데이터 에디터 컴포넌트
+const SajuDataEditor = ({ sajuData, layout, onSajuDataChange }) => {
+  const [selectedBox, setSelectedBox] = useState('');
+  const [selectedDominant, setSelectedDominant] = useState('목');
+  const [currentSajuData, setCurrentSajuData] = useState(sajuData || {});
+  const [editMode, setEditMode] = useState('individual'); // 'individual' | 'json'
+  const [bulkJson, setBulkJson] = useState('');
+  const [jsonError, setJsonError] = useState('');
+
+  // 오행별 색상
+  const elementColors = {
+    '목': { bg: '#ECFDF5', border: '#6EE7B7', text: '#065F46' },
+    '화': { bg: '#FEF2F2', border: '#FCA5A5', text: '#991B1B' },
+    '토': { bg: '#FFFBEB', border: '#FCD34D', text: '#92400E' },
+    '금': { bg: '#F5F5F4', border: '#A8A29E', text: '#44403C' },
+    '수': { bg: '#EFF6FF', border: '#93C5FD', text: '#1E40AF' },
+  };
+
+  // 개별 콘텐츠 업데이트
+  const updateContent = (sajuKey, content) => {
+    const updated = { ...currentSajuData };
+    if (!updated[sajuKey]) updated[sajuKey] = {};
+    updated[sajuKey][selectedBox] = { content };
+    setCurrentSajuData(updated);
+    onSajuDataChange(updated);
+  };
+
+  // JSON 일괄 적용
+  const applyBulkJson = () => {
+    try {
+      const parsed = JSON.parse(bulkJson);
+      const updated = { ...currentSajuData };
+      Object.keys(parsed).forEach(sajuKey => {
+        if (!updated[sajuKey]) updated[sajuKey] = {};
+        updated[sajuKey][selectedBox] = parsed[sajuKey];
+      });
+      setCurrentSajuData(updated);
+      onSajuDataChange(updated);
+      setJsonError('');
+      toast.success(`${Object.keys(parsed).length}개 조합이 적용되었습니다.`);
+    } catch (err) {
+      setJsonError('JSON 형식이 올바르지 않습니다: ' + err.message);
+    }
+  };
+
+  // 현재 박스의 데이터를 JSON으로 추출
+  const exportCurrentBoxJson = () => {
+    const boxData = {};
+    SAJU_KEYS.forEach(key => {
+      if (currentSajuData[key]?.[selectedBox]) {
+        boxData[key] = currentSajuData[key][selectedBox];
+      }
+    });
+    setBulkJson(JSON.stringify(boxData, null, 2));
+  };
+
+  // 입력 현황 카운트
+  const getFilledCount = (dominant) => {
+    if (!selectedBox) return 0;
+    return FIVE_ELEMENTS.filter(dayStem =>
+      currentSajuData[`${dominant}_${dayStem}`]?.[selectedBox]?.content
+    ).length;
+  };
+
+  const getTotalFilledCount = () => {
+    if (!selectedBox) return 0;
+    return SAJU_KEYS.filter(key =>
+      currentSajuData[key]?.[selectedBox]?.content
+    ).length;
+  };
+
+  if (!layout?.boxes?.length) {
+    return (
+      <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded">
+        먼저 "박스 레이아웃" 탭에서 박스를 추가해주세요.
+      </div>
+    );
+  }
+
+  const fortuneBoxes = layout.boxes.filter(b => b.type === 'fortune_box');
+  if (!fortuneBoxes.length) {
+    return (
+      <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded">
+        "박스 레이아웃" 탭에서 운세 박스를 추가해주세요.
+      </div>
+    );
+  }
+
+  const totalFilled = getTotalFilledCount();
+
+  return (
+    <div className="space-y-4">
+      {/* 박스 선택 */}
+      <div>
+        <label className="block text-sm font-medium mb-2">결과 박스 선택:</label>
+        <div className="flex gap-2 flex-wrap">
+          {fortuneBoxes.map(box => (
+            <button
+              key={box.id}
+              type="button"
+              onClick={() => { setSelectedBox(box.id); setEditMode('individual'); }}
+              className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                selectedBox === box.id
+                  ? 'bg-blue-50 border-blue-500 text-blue-700 font-medium'
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400'
+              }`}
+            >
+              {box.title}
+              {selectedBox === box.id && (
+                <span className="ml-1 text-xs">
+                  ({SAJU_KEYS.filter(k => currentSajuData[k]?.[box.id]?.content).length}/25)
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {selectedBox && (
+        <>
+          {/* 현황 바 */}
+          <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+            <div className="text-sm">
+              입력 현황:{' '}
+              <span className={totalFilled === 25 ? 'text-green-600 font-bold' : 'text-orange-600 font-medium'}>
+                {totalFilled}/25
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setEditMode('individual')}
+                className={`px-3 py-1 text-xs rounded ${
+                  editMode === 'individual' ? 'bg-blue-500 text-white' : 'bg-white border text-gray-600'
+                }`}
+              >
+                개별 입력
+              </button>
+              <button
+                type="button"
+                onClick={() => { setEditMode('json'); exportCurrentBoxJson(); }}
+                className={`px-3 py-1 text-xs rounded ${
+                  editMode === 'json' ? 'bg-blue-500 text-white' : 'bg-white border text-gray-600'
+                }`}
+              >
+                JSON 일괄
+              </button>
+            </div>
+          </div>
+
+          {editMode === 'individual' ? (
+            <>
+              {/* 주오행 탭 */}
+              <div className="flex gap-1">
+                {FIVE_ELEMENTS.map(el => {
+                  const filled = getFilledCount(el);
+                  const colors = elementColors[el];
+                  return (
+                    <button
+                      key={el}
+                      type="button"
+                      onClick={() => setSelectedDominant(el)}
+                      className={`flex-1 py-2 text-sm font-medium rounded-t-lg border border-b-0 transition-colors ${
+                        selectedDominant === el
+                          ? 'text-white'
+                          : 'bg-white text-gray-500 hover:bg-gray-50'
+                      }`}
+                      style={selectedDominant === el ? {
+                        backgroundColor: colors.text,
+                        borderColor: colors.text,
+                      } : {}}
+                    >
+                      {el}({filled}/5)
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 일간 오행별 입력 카드 */}
+              <div
+                className="border rounded-b-lg p-4 space-y-4"
+                style={{
+                  borderColor: elementColors[selectedDominant].border,
+                  backgroundColor: elementColors[selectedDominant].bg,
+                }}
+              >
+                <p className="text-xs font-medium" style={{ color: elementColors[selectedDominant].text }}>
+                  주오행 "{selectedDominant}" — 일간 오행별 콘텐츠 (5개)
+                </p>
+
+                {FIVE_ELEMENTS.map(dayStem => {
+                  const sajuKey = `${selectedDominant}_${dayStem}`;
+                  const content = currentSajuData[sajuKey]?.[selectedBox]?.content || '';
+                  const dayColors = elementColors[dayStem];
+
+                  return (
+                    <div key={sajuKey} className="bg-white rounded-lg p-3 border border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span
+                          className="inline-block px-2 py-0.5 text-xs font-bold rounded"
+                          style={{ backgroundColor: elementColors[selectedDominant].bg, color: elementColors[selectedDominant].text, border: `1px solid ${elementColors[selectedDominant].border}` }}
+                        >
+                          주 {selectedDominant}
+                        </span>
+                        <span className="text-gray-400 text-xs">x</span>
+                        <span
+                          className="inline-block px-2 py-0.5 text-xs font-bold rounded"
+                          style={{ backgroundColor: dayColors.bg, color: dayColors.text, border: `1px solid ${dayColors.border}` }}
+                        >
+                          일간 {dayStem}
+                        </span>
+                        <span className="text-xs text-gray-400 ml-auto">
+                          {selectedDominant === dayStem ? '동일 오행 (기운 강함)' :
+                            (['목화', '화토', '토금', '금수', '수목'].includes(selectedDominant + dayStem) ? '상생 관계' :
+                            ['목토', '토수', '수화', '화금', '금목'].includes(selectedDominant + dayStem) ? '상극 관계' : '')
+                          }
+                        </span>
+                        {content && <span className="text-green-500 text-xs">입력됨</span>}
+                      </div>
+                      <textarea
+                        value={content}
+                        onChange={(e) => updateContent(sajuKey, e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-200 rounded text-sm resize-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+                        rows="3"
+                        placeholder={`주오행 ${selectedDominant}, 일간 ${dayStem}인 사용자의 "${layout.boxes.find(b => b.id === selectedBox)?.title}" 내용을 입력하세요...`}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            /* JSON 일괄 입력 모드 */
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-gray-600">
+                  25개 조합의 JSON을 한번에 붙여넣어 적용할 수 있습니다.
+                </p>
+                <button
+                  type="button"
+                  onClick={applyBulkJson}
+                  className="px-4 py-1.5 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                >
+                  JSON 적용
+                </button>
+              </div>
+
+              <textarea
+                value={bulkJson}
+                onChange={(e) => setBulkJson(e.target.value)}
+                className="w-full px-3 py-2 border rounded font-mono text-sm"
+                rows="18"
+                placeholder={`{
+  "목_목": { "content": "주오행이 목이고 일간이 목인 당신은..." },
+  "목_화": { "content": "..." },
+  ...
+  "수_수": { "content": "..." }
+}`}
+              />
+
+              {jsonError && (
+                <p className="text-red-600 text-xs">⚠️ {jsonError}</p>
+              )}
+            </div>
+          )}
+
+          {/* 사주 프롬프트 생성기 */}
+          <SajuPromptGenerator
+            selectedBox={layout.boxes.find(box => box.id === selectedBox)}
+            onGeneratedPrompt={(prompt) => {
+              navigator.clipboard.writeText(prompt).then(() => {
+                toast.success('프롬프트가 클립보드에 복사되었습니다!');
+              }).catch(() => {
+                toast.error('복사에 실패했습니다.');
+              });
+            }}
+          />
+        </>
+      )}
+    </div>
+  );
+};
+
+// 사주 AI 프롬프트 생성기
+const SajuPromptGenerator = ({ selectedBox, onGeneratedPrompt }) => {
+  const [subject, setSubject] = useState('');
+  const [generatedPrompt, setGeneratedPrompt] = useState('');
+
+  const generatePrompt = () => {
+    if (!subject.trim()) {
+      toast.error('주제를 입력해주세요.');
+      return;
+    }
+
+    const boxTitle = selectedBox?.title || '';
+
+    const prompt = `다음 지침에 따라 사주 기반 "${boxTitle}" 데이터를 JSON 형식으로 생성해주세요.
+
+주제: ${subject}
+
+사주 오행별 성격 특성 (내부 참고용, 결과에 오행 용어를 직접 노출하지 마세요):
+- 목(木) 기질: 성장 지향적, 창의적, 인자함, 새로운 시도를 좋아함
+- 화(火) 기질: 열정적, 표현력이 좋음, 사교적, 에너지가 넘침
+- 토(土) 기질: 안정적, 신뢰감, 포용력, 중재 능력이 뛰어남
+- 금(金) 기질: 결단력, 의리, 정의감, 깔끔하고 체계적
+- 수(水) 기질: 지혜롭고 유연함, 적응력, 관찰력이 뛰어남
+
+조합 구조 (내부 키 형식):
+- 키: "주오행_일간오행" (예: "목_화")
+- 주오행: 사주에서 가장 강한 기운 → 삶 전반의 흐름과 환경
+- 일간오행: 본인의 핵심 성격과 기질
+- 총 25가지 조합 (5 x 5)
+
+중요 요구사항:
+1. 25개 모든 조합에 대해 "${subject}" 관점의 "${boxTitle}" 내용을 작성
+2. 각 내용은 4-5문장으로 구성
+3. **절대로 "주오행이 X이고 일간이 Y인 당신은", "상생 관계로", "목 기운이 강한" 같은 사주 용어를 사용하지 마세요**
+4. 대신 해당 오행 조합이 만들어내는 **성격, 성향, 상황**을 자연스러운 일상 언어로 풀어서 작성
+5. 마치 친한 점술가가 이야기하듯 자연스럽고 따뜻한 톤으로 작성
+6. 구체적이고 실용적인 조언 포함
+7. 각 조합별로 내용이 충분히 다르게 작성 (복붙 느낌 금지)
+
+좋은 예: "요즘 새로운 도전을 하고 싶은 마음이 강하시죠? 그 에너지를 잘 활용하면..."
+나쁜 예: "주오행이 목이고 일간이 화인 당신은 상생 관계로 목이 화를 생하여..."
+
+출력 형식 (반드시 이 JSON 구조를 따르세요):
+\`\`\`json
+{
+  "목_목": {
+    "content": "${subject}에 대한 자연스러운 운세 내용..."
+  },
+  "목_화": {
+    "content": "${subject}에 대한 자연스러운 운세 내용..."
+  },
+  "목_토": {
+    "content": "..."
+  },
+  "목_금": {
+    "content": "..."
+  },
+  "목_수": {
+    "content": "..."
+  },
+  "화_목": {
+    "content": "..."
+  },
+  "화_화": {
+    "content": "..."
+  },
+  "화_토": {
+    "content": "..."
+  },
+  "화_금": {
+    "content": "..."
+  },
+  "화_수": {
+    "content": "..."
+  },
+  "토_목": {
+    "content": "..."
+  },
+  "토_화": {
+    "content": "..."
+  },
+  "토_토": {
+    "content": "..."
+  },
+  "토_금": {
+    "content": "..."
+  },
+  "토_수": {
+    "content": "..."
+  },
+  "금_목": {
+    "content": "..."
+  },
+  "금_화": {
+    "content": "..."
+  },
+  "금_토": {
+    "content": "..."
+  },
+  "금_금": {
+    "content": "..."
+  },
+  "금_수": {
+    "content": "..."
+  },
+  "수_목": {
+    "content": "..."
+  },
+  "수_화": {
+    "content": "..."
+  },
+  "수_토": {
+    "content": "..."
+  },
+  "수_금": {
+    "content": "..."
+  },
+  "수_수": {
+    "content": "..."
+  }
+}
+\`\`\``;
+
+    setGeneratedPrompt(prompt);
+  };
+
+  const copyPrompt = () => {
+    if (generatedPrompt) {
+      onGeneratedPrompt(generatedPrompt);
+    }
+  };
+
+  return (
+    <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg">
+      <h5 className="text-sm font-semibold text-purple-800 mb-3">🤖 사주 AI 프롬프트 생성기</h5>
+      <p className="text-xs text-gray-600 mb-3">
+        25가지 오행 조합별 콘텐츠를 AI로 한번에 생성합니다. 생성된 프롬프트를 ChatGPT/Claude에 붙여넣으세요.
+      </p>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            주제 입력 <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="예: 2026년 상반기 연애운, 올해 재물운, 직장 운세 등"
+            className="w-full px-3 py-2 border border-purple-200 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+          />
+          <p className="text-xs text-gray-600 mt-1">
+            선택한 박스: <span className="font-medium">{selectedBox?.title}</span>
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={generatePrompt}
+            className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-colors"
+          >
+            프롬프트 생성
+          </button>
+
+          {generatedPrompt && (
+            <button
+              type="button"
+              onClick={copyPrompt}
+              className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors flex items-center gap-1"
+            >
+              복사하기
+            </button>
+          )}
+        </div>
+
+        {generatedPrompt && (
+          <div>
+            <label className="block text-sm font-medium mb-2">생성된 프롬프트:</label>
+            <textarea
+              value={generatedPrompt}
+              readOnly
+              className="w-full h-48 px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm font-mono resize-none"
+            />
+            <p className="text-xs text-gray-600 mt-2">
+              💡 이 프롬프트를 ChatGPT나 Claude에 붙여넣어서 사용하세요.
+              생성된 JSON을 위의 데이터 입력란에 붙여넣으면 됩니다.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // 이미지 미리보기 컴포넌트
 const ImagePreview = ({ imageUrl }) => {
   const [imageError, setImageError] = useState(false);
@@ -819,6 +1308,7 @@ const FortuneTemplateManager = () => {
 
   // 폼 초기화
   const resetForm = () => {
+    const isSaju = templateType === 'saju';
     setFormData({
       templateKey: '',
       title: '',
@@ -826,38 +1316,59 @@ const FortuneTemplateManager = () => {
       category: 'special',
       type: templateType,
       imageUrl: '',
-      requiredFields: ['birthDate', 'gender', 'mbti'],
+      requiredFields: isSaju
+        ? ['birthDate', 'birthCalendarType', 'birthTime', 'gender']
+        : ['birthDate', 'gender', 'mbti'],
       characterInfo: {
         name: '',
         imageSrc: ''
       },
-      messageScenarios: {
-        withProfile: [
-          { text: '12월의 운세를 봐줄거래!', sender: 'bot' },
-          { text: '바로 카드를 뽑아보고래!', sender: 'bot', showCardSelect: true }
-        ],
-        needsProfile: [
-          { text: '12월의 운세를 봐줄거래!', sender: 'bot' },
-          { text: '먼저 생년월일을 알려줘~', sender: 'bot', showUserInput: 'birthDate' },
-          { text: '성별도 알려줘!', sender: 'bot', showUserInput: 'gender' },
-          { text: 'MBTI도 궁금해!', sender: 'bot', showUserInput: 'mbti' },
-          { text: '좋아! 이제 카드를 뽑아보고래!', sender: 'bot', showCardSelect: true }
-        ]
-      },
-      cardConfig: {
-        cardNumbers: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
-        cardSelectCount: 3,
-        cardBackImage: '/images/cards/back/camp_band.jpeg'
-      },
+      messageScenarios: isSaju
+        ? {
+            withProfile: [
+              { text: '사주를 봐드릴게요!', sender: 'bot' },
+              { text: '양력/음력을 확인할게요~', sender: 'bot', showUserInput: 'birthCalendarType' },
+              { text: '태어난 시간도 알려주세요!', sender: 'bot', showUserInput: 'birthTime' },
+              { text: '좋아요! 사주를 분석해볼게요!', sender: 'bot' }
+            ],
+            needsProfile: [
+              { text: '사주를 봐드릴게요!', sender: 'bot' },
+              { text: '먼저 생년월일을 알려주세요~', sender: 'bot', showUserInput: 'birthDate' },
+              { text: '양력인가요, 음력인가요?', sender: 'bot', showUserInput: 'birthCalendarType' },
+              { text: '성별도 알려주세요!', sender: 'bot', showUserInput: 'gender' },
+              { text: '태어난 시간을 알려주세요!', sender: 'bot', showUserInput: 'birthTime' },
+              { text: '좋아요! 사주를 분석해볼게요!', sender: 'bot' }
+            ]
+          }
+        : {
+            withProfile: [
+              { text: '12월의 운세를 봐줄거래!', sender: 'bot' },
+              { text: '바로 카드를 뽑아보고래!', sender: 'bot', showCardSelect: true }
+            ],
+            needsProfile: [
+              { text: '12월의 운세를 봐줄거래!', sender: 'bot' },
+              { text: '먼저 생년월일을 알려줘~', sender: 'bot', showUserInput: 'birthDate' },
+              { text: '성별도 알려줘!', sender: 'bot', showUserInput: 'gender' },
+              { text: 'MBTI도 궁금해!', sender: 'bot', showUserInput: 'mbti' },
+              { text: '좋아! 이제 카드를 뽑아보고래!', sender: 'bot', showCardSelect: true }
+            ]
+          },
+      cardConfig: isSaju
+        ? {}
+        : {
+            cardNumbers: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+            cardSelectCount: 3,
+            cardBackImage: '/images/cards/back/camp_band.jpeg'
+          },
       fortuneSettings: {
-        fortuneType: '운세',
-        resultButtonText: '운세 결과 보기',
-        adTitle: '운세 결과'
+        fortuneType: isSaju ? '사주' : '운세',
+        resultButtonText: isSaju ? '사주 결과 보기' : '운세 결과 보기',
+        adTitle: isSaju ? '사주 결과' : '운세 결과'
       },
       resultTemplateData: {
-      layout: { boxes: [] },
-      cardData: {}
-    },
+        layout: { boxes: [] },
+        cardData: {}
+      },
       theme: {
         primaryColor: '#4F46E5',
         secondaryColor: '#7C3AED',
@@ -979,6 +1490,16 @@ const FortuneTemplateManager = () => {
           >
             미니 운세 템플릿
           </button>
+          <button
+            onClick={() => setTemplateType('saju')}
+            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
+              templateType === 'saju'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            사주 템플릿
+          </button>
         </nav>
       </div>
 
@@ -1024,7 +1545,7 @@ const FortuneTemplateManager = () => {
                   )}
                   <div className="text-xs text-gray-400 mt-2">
                     캐릭터: {template.characterInfo?.name || '설정안됨'} |
-                    카드 개수: {template.cardConfig?.cardSelectCount || 0}개 |
+                    {template.type === 'saju' ? '사주' : `카드 개수: ${template.cardConfig?.cardSelectCount || 0}개`} |
                     정렬순서: {template.sortOrder} |
                     이미지: {template.imageUrl ? '설정됨' : '설정안됨'}
                   </div>
@@ -1370,8 +1891,8 @@ const FortuneTemplateManager = () => {
                 </div>
               </div>
 
-              {/* 카드 설정 */}
-              <div className="border p-4 rounded-md">
+              {/* 카드 설정 (사주 타입에서는 숨김) */}
+              {formData.type !== 'saju' && <div className="border p-4 rounded-md">
                 <h4 className="font-medium mb-2">카드 설정</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -1402,145 +1923,220 @@ const FortuneTemplateManager = () => {
                     />
                   </div>
                 </div>
-              </div>
+              </div>}
 
-              {/* 결과 템플릿 데이터 - 박스 시스템 */}
-              <div className="border p-4 rounded-md">
-                <h4 className="font-medium mb-2">결과 페이지 구성 (박스 시스템)</h4>
-                <div className="text-sm text-gray-600 mb-4 space-y-1">
-                  <p>결과 페이지를 박스 단위로 구성하고 각 카드별 내용을 설정합니다.</p>
-                  <p className="font-medium">📋 사용 방법:</p>
-                  <ol className="list-decimal list-inside ml-2 space-y-1">
-                    <li><strong>박스 레이아웃</strong>: 페이지에 표시할 박스들을 추가하고 순서를 정합니다</li>
-                    <li><strong>카드별 데이터</strong>: 각 박스에 카드별로 다른 내용을 JSON으로 입력합니다</li>
-                    <li><strong>JSON 직접 편집</strong>: 전체 구조를 직접 수정할 수 있습니다</li>
-                  </ol>
-                </div>
-
-                {/* 탭 네비게이션 */}
-                <div className="flex gap-2 mb-4 border-b">
-                  <button
-                    type="button"
-                    onClick={() => setResultTabMode('layout')}
-                    className={`px-4 py-2 text-sm font-medium ${
-                      resultTabMode === 'layout'
-                        ? 'border-b-2 border-blue-500 text-blue-600'
-                        : 'text-gray-600 hover:text-gray-800'
-                    }`}
-                  >
-                    1. 박스 레이아웃
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setResultTabMode('data')}
-                    className={`px-4 py-2 text-sm font-medium ${
-                      resultTabMode === 'data'
-                        ? 'border-b-2 border-blue-500 text-blue-600'
-                        : 'text-gray-600 hover:text-gray-800'
-                    }`}
-                  >
-                    2. 카드별 데이터
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setResultTabMode('json')}
-                    className={`px-4 py-2 text-sm font-medium ${
-                      resultTabMode === 'json'
-                        ? 'border-b-2 border-blue-500 text-blue-600'
-                        : 'text-gray-600 hover:text-gray-800'
-                    }`}
-                  >
-                    JSON 직접 편집
-                  </button>
-                </div>
-
-                {/* 탭 컨텐츠 */}
-                {resultTabMode === 'layout' && (
-                  <BoxLayoutEditor
-                    layout={formData.resultTemplateData?.layout || { boxes: [] }}
-                    onLayoutChange={(newLayout) => {
-                      const newResultTemplateData = {
-                        layout: newLayout,
-                        cardData: formData.resultTemplateData?.cardData || {}
-                      };
-                      setFormData({
-                        ...formData,
-                        resultTemplateData: newResultTemplateData
-                      });
-                    }}
-                  />
-                )}
-
-                {resultTabMode === 'data' && (
-                  <CardDataEditor
-                    cardData={formData.resultTemplateData?.cardData || {}}
-                    layout={formData.resultTemplateData?.layout || { boxes: [] }}
-                    onCardDataChange={(newCardData) => {
-                      setFormData({
-                        ...formData,
-                        resultTemplateData: {
-                          layout: formData.resultTemplateData?.layout || { boxes: [] },
-                          cardData: newCardData
-                        }
-                      });
-                    }}
-                  />
-                )}
-
-                {resultTabMode === 'json' && (
-                  <div>
-                    <textarea
-                      value={formData.resultTemplateData ? JSON.stringify(formData.resultTemplateData, null, 2) : ''}
-                      onChange={(e) => {
-                        try {
-                          const parsed = e.target.value ? JSON.parse(e.target.value) : null;
-                          setFormData({ ...formData, resultTemplateData: parsed });
-                        } catch (err) {
-                          // JSON 파싱 오류 시 일단 문자열로 저장
-                          setFormData({ ...formData, resultTemplateData: e.target.value });
-                        }
-                      }}
-                      className="w-full px-3 py-2 border rounded-md font-mono text-sm"
-                      rows="15"
-                      placeholder={`{
-  "layout": {
-    "boxes": [
-      {
-        "id": "card_info",
-        "type": "card_description",
-        "order": 1,
-        "title": "카드 설명"
-      },
-      {
-        "id": "love_fortune",
-        "type": "fortune_box",
-        "order": 2,
-        "title": "💕 연애운",
-        "backgroundColor": "#FEF3E3"
-      }
-    ]
-  },
-  "cardData": {
-    "0": {
-      "card_info": {
-        "cardName": "THE FOOL",
-        "interpretation": "새로운 시작을 의미하는 카드입니다."
-      },
-      "love_fortune": {
-        "content": "12월의 연애운은..."
-      }
-    }
-  }
-}`}
-                    />
-                    {formData.resultTemplateData && typeof formData.resultTemplateData === 'string' && (
-                      <p className="text-red-600 text-xs mt-1">
-                        ⚠️ JSON 형식이 올바르지 않습니다. 문법을 확인해주세요.
-                      </p>
-                    )}
+              {/* 결과 템플릿 데이터 */}
+              {formData.type === 'saju' ? (
+                /* ===== 사주 전용 결과 페이지 구성 ===== */
+                <div className="border p-4 rounded-md">
+                  <h4 className="font-medium mb-2">사주 결과 페이지 구성</h4>
+                  <div className="text-sm text-gray-600 mb-4 space-y-1">
+                    <p>사주 결과 페이지를 구성합니다. 박스를 추가한 뒤, 25가지 오행 조합별 콘텐츠를 입력하세요.</p>
+                    <p className="text-xs text-gray-500">주오행(사주에서 가장 강한 오행) x 일간(일주 천간의 오행) = 5 x 5 = 25가지</p>
                   </div>
-                )}
-              </div>
+
+                  {/* 탭 네비게이션 */}
+                  <div className="flex gap-2 mb-4 border-b">
+                    <button
+                      type="button"
+                      onClick={() => setResultTabMode('layout')}
+                      className={`px-4 py-2 text-sm font-medium ${
+                        resultTabMode === 'layout'
+                          ? 'border-b-2 border-blue-500 text-blue-600'
+                          : 'text-gray-600 hover:text-gray-800'
+                      }`}
+                    >
+                      1. 박스 레이아웃
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setResultTabMode('data')}
+                      className={`px-4 py-2 text-sm font-medium ${
+                        resultTabMode === 'data'
+                          ? 'border-b-2 border-blue-500 text-blue-600'
+                          : 'text-gray-600 hover:text-gray-800'
+                      }`}
+                    >
+                      2. 사주 데이터 (25조합)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setResultTabMode('json')}
+                      className={`px-4 py-2 text-sm font-medium ${
+                        resultTabMode === 'json'
+                          ? 'border-b-2 border-blue-500 text-blue-600'
+                          : 'text-gray-600 hover:text-gray-800'
+                      }`}
+                    >
+                      JSON 직접 편집
+                    </button>
+                  </div>
+
+                  {/* 탭 컨텐츠 */}
+                  {resultTabMode === 'layout' && (
+                    <BoxLayoutEditor
+                      layout={formData.resultTemplateData?.layout || { boxes: [] }}
+                      onLayoutChange={(newLayout) => {
+                        setFormData({
+                          ...formData,
+                          resultTemplateData: {
+                            layout: newLayout,
+                            sajuData: formData.resultTemplateData?.sajuData || {}
+                          }
+                        });
+                      }}
+                    />
+                  )}
+
+                  {resultTabMode === 'data' && (
+                    <SajuDataEditor
+                      sajuData={formData.resultTemplateData?.sajuData || {}}
+                      layout={formData.resultTemplateData?.layout || { boxes: [] }}
+                      onSajuDataChange={(newSajuData) => {
+                        setFormData({
+                          ...formData,
+                          resultTemplateData: {
+                            layout: formData.resultTemplateData?.layout || { boxes: [] },
+                            sajuData: newSajuData
+                          }
+                        });
+                      }}
+                    />
+                  )}
+
+                  {resultTabMode === 'json' && (
+                    <div>
+                      <textarea
+                        value={formData.resultTemplateData ? JSON.stringify(formData.resultTemplateData, null, 2) : ''}
+                        onChange={(e) => {
+                          try {
+                            const parsed = e.target.value ? JSON.parse(e.target.value) : null;
+                            setFormData({ ...formData, resultTemplateData: parsed });
+                          } catch (err) {
+                            setFormData({ ...formData, resultTemplateData: e.target.value });
+                          }
+                        }}
+                        className="w-full px-3 py-2 border rounded-md font-mono text-sm"
+                        rows="15"
+                        placeholder='{ "layout": { "boxes": [...] }, "sajuData": { "목_목": { "box_id": { "content": "..." } }, ... } }'
+                      />
+                      {formData.resultTemplateData && typeof formData.resultTemplateData === 'string' && (
+                        <p className="text-red-600 text-xs mt-1">
+                          ⚠️ JSON 형식이 올바르지 않습니다.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* ===== 타로 결과 페이지 구성 (기존) ===== */
+                <div className="border p-4 rounded-md">
+                  <h4 className="font-medium mb-2">결과 페이지 구성 (박스 시스템)</h4>
+                  <div className="text-sm text-gray-600 mb-4 space-y-1">
+                    <p>결과 페이지를 박스 단위로 구성하고 각 카드별 내용을 설정합니다.</p>
+                    <p className="font-medium">📋 사용 방법:</p>
+                    <ol className="list-decimal list-inside ml-2 space-y-1">
+                      <li><strong>박스 레이아웃</strong>: 페이지에 표시할 박스들을 추가하고 순서를 정합니다</li>
+                      <li><strong>카드별 데이터</strong>: 각 박스에 카드별로 다른 내용을 JSON으로 입력합니다</li>
+                      <li><strong>JSON 직접 편집</strong>: 전체 구조를 직접 수정할 수 있습니다</li>
+                    </ol>
+                  </div>
+
+                  {/* 탭 네비게이션 */}
+                  <div className="flex gap-2 mb-4 border-b">
+                    <button
+                      type="button"
+                      onClick={() => setResultTabMode('layout')}
+                      className={`px-4 py-2 text-sm font-medium ${
+                        resultTabMode === 'layout'
+                          ? 'border-b-2 border-blue-500 text-blue-600'
+                          : 'text-gray-600 hover:text-gray-800'
+                      }`}
+                    >
+                      1. 박스 레이아웃
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setResultTabMode('data')}
+                      className={`px-4 py-2 text-sm font-medium ${
+                        resultTabMode === 'data'
+                          ? 'border-b-2 border-blue-500 text-blue-600'
+                          : 'text-gray-600 hover:text-gray-800'
+                      }`}
+                    >
+                      2. 카드별 데이터
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setResultTabMode('json')}
+                      className={`px-4 py-2 text-sm font-medium ${
+                        resultTabMode === 'json'
+                          ? 'border-b-2 border-blue-500 text-blue-600'
+                          : 'text-gray-600 hover:text-gray-800'
+                      }`}
+                    >
+                      JSON 직접 편집
+                    </button>
+                  </div>
+
+                  {/* 탭 컨텐츠 */}
+                  {resultTabMode === 'layout' && (
+                    <BoxLayoutEditor
+                      layout={formData.resultTemplateData?.layout || { boxes: [] }}
+                      onLayoutChange={(newLayout) => {
+                        setFormData({
+                          ...formData,
+                          resultTemplateData: {
+                            layout: newLayout,
+                            cardData: formData.resultTemplateData?.cardData || {}
+                          }
+                        });
+                      }}
+                    />
+                  )}
+
+                  {resultTabMode === 'data' && (
+                    <CardDataEditor
+                      cardData={formData.resultTemplateData?.cardData || {}}
+                      layout={formData.resultTemplateData?.layout || { boxes: [] }}
+                      onCardDataChange={(newCardData) => {
+                        setFormData({
+                          ...formData,
+                          resultTemplateData: {
+                            layout: formData.resultTemplateData?.layout || { boxes: [] },
+                            cardData: newCardData
+                          }
+                        });
+                      }}
+                    />
+                  )}
+
+                  {resultTabMode === 'json' && (
+                    <div>
+                      <textarea
+                        value={formData.resultTemplateData ? JSON.stringify(formData.resultTemplateData, null, 2) : ''}
+                        onChange={(e) => {
+                          try {
+                            const parsed = e.target.value ? JSON.parse(e.target.value) : null;
+                            setFormData({ ...formData, resultTemplateData: parsed });
+                          } catch (err) {
+                            setFormData({ ...formData, resultTemplateData: e.target.value });
+                          }
+                        }}
+                        className="w-full px-3 py-2 border rounded-md font-mono text-sm"
+                        rows="15"
+                        placeholder='{ "layout": { "boxes": [...] }, "cardData": { "0": { ... }, "1": { ... } } }'
+                      />
+                      {formData.resultTemplateData && typeof formData.resultTemplateData === 'string' && (
+                        <p className="text-red-600 text-xs mt-1">
+                          ⚠️ JSON 형식이 올바르지 않습니다.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
 
               {/* 정렬 순서 */}
               <div className="grid grid-cols-1 gap-4">

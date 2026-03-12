@@ -9,6 +9,7 @@ import InstagramManager from '../components/admin/InstagramManager';
 import VideoManager from '../components/admin/VideoManager';
 import FortuneTemplateManager from '../components/admin/FortuneTemplateManager';
 import CharacterManager from '../components/admin/CharacterManager';
+import PsychTestManager from '../components/admin/PsychTestManager';
 
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -145,6 +146,16 @@ const Admin = () => {
             >
               캐릭터 관리
             </button>
+            <button
+              onClick={() => setActiveTab('psych-tests')}
+              className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'psych-tests'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-black'
+              }`}
+            >
+              심리 테스트 관리
+            </button>
           </div>
         </div>
       </nav>
@@ -159,6 +170,7 @@ const Admin = () => {
         {activeTab === 'video' && <VideoManager />}
         {activeTab === 'fortune-templates' && <FortuneTemplateManager />}
         {activeTab === 'characters' && <CharacterManager />}
+        {activeTab === 'psych-tests' && <PsychTestManager />}
       </div>
     </div>
   );
